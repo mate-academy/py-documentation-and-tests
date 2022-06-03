@@ -60,11 +60,6 @@ class MovieImageUploadTests(TestCase):
         self.client.force_authenticate(self.user)
         self.movie = sample_movie()
         self.movie_session = sample_movie_session(movie=self.movie)
-        with tempfile.NamedTemporaryFile(suffix='.jpg') as ntf:
-            img = Image.new('RGB', (10, 10))
-            img.save(ntf, format='JPEG')
-            ntf.seek(0)
-            self.image = ntf
 
     def tearDown(self):
         self.movie.image.delete()
@@ -72,7 +67,11 @@ class MovieImageUploadTests(TestCase):
     def test_upload_image_to_movie(self):
         """Test uploading an image to movie"""
         url = image_upload_url(self.movie.id)
-        res = self.client.post(url, {'image': self.image}, format='multipart')
+        with tempfile.NamedTemporaryFile(suffix='.jpg') as ntf:
+            img = Image.new('RGB', (10, 10))
+            img.save(ntf, format='JPEG')
+            ntf.seek(0)
+            res = self.client.post(url, {'image': ntf}, format='multipart')
         self.movie.refresh_from_db()
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
@@ -86,55 +85,55 @@ class MovieImageUploadTests(TestCase):
 
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
 
-    def test_post_image_to_movie_detail(self):
-        url = detail_url(self.movie.id)
-
-        res = self.client.post(
-            url,
-            {
-                "title": "Title",
-                "description": "Description",
-                "duration": 90,
-                'image': self.image,
-            },
-            format='multipart'
-        )
-        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(Movie.objects.filter(title="Title").exists(), False)
-
     def test_post_image_to_movie_list(self):
         url = MOVIE_URL
-        res = self.client.post(
-            url,
-            {
-                "title": "Title",
-                "description": "Description",
-                "duration": 90,
-                'image': self.image,
-            },
-            format='multipart'
-        )
+        with tempfile.NamedTemporaryFile(suffix='.jpg') as ntf:
+            img = Image.new('RGB', (10, 10))
+            img.save(ntf, format='JPEG')
+            ntf.seek(0)
+            res = self.client.post(
+                url,
+                {
+                    "title": "Title",
+                    "description": "Description",
+                    "duration": 90,
+                    'image': ntf,
+                },
+                format='multipart'
+            )
 
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(Movie.objects.filter(title="Title").exists(), False)
 
     def test_image_url_is_shown_on_movie_detail(self):
         url = image_upload_url(self.movie.id)
-        self.client.post(url, {'image': self.image}, format='multipart')
+        with tempfile.NamedTemporaryFile(suffix='.jpg') as ntf:
+            img = Image.new('RGB', (10, 10))
+            img.save(ntf, format='JPEG')
+            ntf.seek(0)
+            self.client.post(url, {'image': ntf}, format='multipart')
         res = self.client.get(detail_url(self.movie.id))
 
         self.assertIn("image", res.data)
 
     def test_image_url_is_shown_on_movie_list(self):
         url = image_upload_url(self.movie.id)
-        self.client.post(url, {'image': self.image}, format='multipart')
+        with tempfile.NamedTemporaryFile(suffix='.jpg') as ntf:
+            img = Image.new('RGB', (10, 10))
+            img.save(ntf, format='JPEG')
+            ntf.seek(0)
+            self.client.post(url, {'image': ntf}, format='multipart')
         res = self.client.get(MOVIE_URL)
 
         self.assertIn("image", res.data[0].keys())
 
     def test_image_url_is_shown_on_movie_session_detail(self):
         url = image_upload_url(self.movie.id)
-        self.client.post(url, {'image': self.image}, format='multipart')
+        with tempfile.NamedTemporaryFile(suffix='.jpg') as ntf:
+            img = Image.new('RGB', (10, 10))
+            img.save(ntf, format='JPEG')
+            ntf.seek(0)
+            self.client.post(url, {'image': ntf}, format='multipart')
         res = self.client.get(MOVIE_SESSION_URL)
 
-        self.assertIn("image", res.data[0].keys())
+        self.assertIn("movie_image", res.data[0].keys())
