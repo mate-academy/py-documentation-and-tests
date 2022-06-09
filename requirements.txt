@@ -1,5 +1,6 @@
 asgiref==3.5.1
 attrs==21.4.0
+backports.zoneinfo==0.2.1
 Django==4.0.4
 django-debug-toolbar==3.4.0
 djangorestframework==3.13.1
@@ -7,6 +8,7 @@ flake8==4.0.1
 iniconfig==1.1.1
 mccabe==0.6.1
 packaging==21.3
+Pillow==9.1.1
 pluggy==1.0.0
 py==1.11.0
 pycodestyle==2.8.0
