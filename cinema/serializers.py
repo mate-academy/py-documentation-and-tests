@@ -1,7 +1,15 @@
 from django.db import transaction
 from rest_framework import serializers
 
-from cinema.models import Genre, Actor, CinemaHall, Movie, MovieSession, Ticket, Order
+from cinema.models import (
+    Genre,
+    Actor,
+    CinemaHall,
+    Movie,
+    MovieSession,
+    Ticket,
+    Order,
+)
 
 
 class GenreSerializer(serializers.ModelSerializer):
@@ -32,21 +40,44 @@ class MovieSerializer(serializers.ModelSerializer):
             "duration",
             "genres",
             "actors",
+        )
+
+
+class MovieListSerializer(serializers.ModelSerializer):
+
+    genres = serializers.SlugRelatedField(many=True, read_only=True, slug_field="name")
+    actors = serializers.SlugRelatedField(
+        many=True, read_only=True, slug_field="full_name",
+    )
+
+    class Meta:
+        model = Movie
+        fields = (
+            "id",
+            "title",
+            "description",
+            "duration",
+            "genres",
+            "actors",
             "image",
         )
 
 
-class MovieListSerializer(MovieSerializer):
-    genres = serializers.SlugRelatedField(many=True, read_only=True, slug_field="name")
-    actors = serializers.SlugRelatedField(
-        many=True, read_only=True, slug_field="full_name"
-    )
-
-
-class MovieDetailSerializer(MovieSerializer):
+class MovieDetailSerializer(serializers.ModelSerializer):
     genres = GenreSerializer(many=True, read_only=True)
     actors = ActorSerializer(many=True, read_only=True)
 
+    class Meta:
+        model = Movie
+        fields = (
+            "id",
+            "title",
+            "description",
+            "duration",
+            "genres",
+            "actors",
+            "image",
+        )
 
 class MovieImageSerializer(serializers.ModelSerializer):
 
