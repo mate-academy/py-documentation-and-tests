@@ -104,25 +104,6 @@ class MovieImageUploadTests(TestCase):
 
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
 
-    # def test_post_image_to_movie_list(self):
-    #     url = MOVIE_URL
-    #     with tempfile.NamedTemporaryFile(suffix=".jpg") as ntf:
-    #         img = Image.new("RGB", (10, 10))
-    #         img.save(ntf, format="JPEG")
-    #         ntf.seek(0)
-    #         res = self.client.post(
-    #             url,
-    #             {
-    #                 "title": "Title",
-    #                 "description": "Description",
-    #                 "duration": 90,
-    #                 "image": ntf,
-    #             },
-    #             format="multipart"
-    #         )
-    #
-    #     self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
-    #     self.assertEqual(Movie.objects.filter(title="Title").exists(), False)
 
     def test_post_image_to_movie_list(self):
         url = MOVIE_URL
