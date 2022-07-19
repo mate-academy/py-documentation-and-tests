@@ -25,6 +25,7 @@ def sample_movie(**params):
 
     return Movie.objects.create(**defaults)
 
+
 def sample_genre(**params):
     defaults = {
         "name": "Drama",
@@ -32,6 +33,7 @@ def sample_genre(**params):
     defaults.update(params)
 
     return Genre.objects.create(**defaults)
+
 
 def sample_actor(**params):
     defaults = {
@@ -103,7 +105,6 @@ class MovieImageUploadTests(TestCase):
         res = self.client.post(url, {"image": "not image"}, format="multipart")
 
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
-
 
     def test_post_image_to_movie_list(self):
         url = MOVIE_URL

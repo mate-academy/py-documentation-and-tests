@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime
 
 from django.contrib.auth import get_user_model
 from django.db.models import Count, F
@@ -9,8 +9,11 @@ from rest_framework import status
 from rest_framework.test import APIClient
 
 from cinema.models import CinemaHall, Movie, MovieSession
-from cinema.serializers import MovieSessionSerializer, \
-    MovieSessionListSerializer, MovieSessionDetailSerializer
+from cinema.serializers import (
+    MovieSessionListSerializer,
+    MovieSessionDetailSerializer
+)
+
 
 MOVIE_SESSION_URL = reverse("cinema:moviesession-list")
 
@@ -83,9 +86,9 @@ class AuthenticatedMovieSessionApiTests(TestCase):
             .select_related("movie", "cinema_hall")
             .annotate(
                 tickets_available=(
-                        F("cinema_hall__rows")
-                        * F("cinema_hall__seats_in_row")
-                        - Count("tickets")
+                    F("cinema_hall__rows")
+                    * F("cinema_hall__seats_in_row")
+                    - Count("tickets")
                 )
             )
         )
@@ -240,4 +243,3 @@ class AdminMovieSessionApiTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(payload["movie"], new_session.movie.id)
         self.assertNotEqual(old_session.movie.id, new_session.movie.id)
-
