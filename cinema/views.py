@@ -165,6 +165,11 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
     serializer_class = MovieSessionSerializer
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
+    @staticmethod
+    def _params_to_ints(qs):
+        """Converts a list of string IDs to a list of integers"""
+        return [int(str_id) for str_id in qs.split(",")]
+
     def get_queryset(self):
         date = self.request.query_params.get("date")
         movie_id_str = self.request.query_params.get("movie")
@@ -176,7 +181,8 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(show_time__date=date)
 
         if movie_id_str:
-            queryset = queryset.filter(movie_id=int(movie_id_str))
+            movies_ids = self._params_to_ints(movie_id_str)
+            queryset = queryset.filter(movie_id__in=movies_ids)
 
         return queryset
 
