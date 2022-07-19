@@ -10,7 +10,7 @@ from rest_framework.test import APIClient
 
 from cinema.models import CinemaHall, Movie, MovieSession
 from cinema.serializers import MovieSessionSerializer, \
-    MovieSessionListSerializer
+    MovieSessionListSerializer, MovieSessionDetailSerializer
 
 MOVIE_SESSION_URL = reverse("cinema:moviesession-list")
 
@@ -48,6 +48,10 @@ def sample_movie_session(**params):
     defaults.update(params)
 
     return MovieSession.objects.create(**defaults)
+
+
+def detail_url(session_id: int):
+    return reverse("cinema:moviesession-detail", args=[session_id])
 
 
 class UnauthenticatedBusApiTests(TestCase):
@@ -105,23 +109,15 @@ class AuthenticatedBusApiTests(TestCase):
                 MOVIE_SESSION_URL,
                 {"movie": f"{movie.id}"}
             )
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
             for movie_session in response.data:
                 self.assertTrue(movie.title, movie_session["movie_title"])
-
-    def test_filter_movie_sessions_by_multiple_movies(self):
-        movie_1 = sample_movie(title="title 1")
-        movie_2 = sample_movie(title="title 2")
-        movie_3 = sample_movie(title="title 3")
-
-        sample_movie_session(movie=movie_1)
-        sample_movie_session(movie=movie_1)
-        sample_movie_session(movie=movie_2)
-        sample_movie_session(movie=movie_3)
 
         response = self.client.get(
             MOVIE_SESSION_URL,
             {"movie": f"{movie_1.id},{movie_2.id}"}
         )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
         for movie_session in response.data:
             self.assertIn(
                 movie_session["movie_title"],
@@ -141,10 +137,32 @@ class AuthenticatedBusApiTests(TestCase):
             MOVIE_SESSION_URL,
             {"date": filter_date.strftime("%Y-%m-%d")}
         )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         for movie_session in response.data:
             session_date = datetime.strptime(
                 movie_session["show_time"], "%Y-%m-%dT%H:%M:%S%z"
             )
-
             self.assertEqual(session_date.date(), filter_date.date())
+
+    def test_retrieve_movie_session_detail(self):
+        movie_session = sample_movie_session()
+        url = detail_url(movie_session.id)
+        response = self.client.get(url)
+
+        serializer = MovieSessionDetailSerializer(movie_session)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, serializer.data)
+
+    def test_create_movie_session_forbidden(self):
+        payload = {
+            "show_time": datetime.now(),
+            "movie": 1,
+            "cinema_hall": 1,
+        }
+
+        response = self.client.post(MOVIE_SESSION_URL, payload)
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
