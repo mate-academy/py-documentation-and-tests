@@ -54,7 +54,7 @@ def detail_url(session_id: int):
     return reverse("cinema:moviesession-detail", args=[session_id])
 
 
-class UnauthenticatedBusApiTests(TestCase):
+class UnauthenticatedMovieSessionApiTests(TestCase):
     def setUp(self):
         self.client = APIClient()
 
@@ -64,7 +64,7 @@ class UnauthenticatedBusApiTests(TestCase):
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
-class AuthenticatedBusApiTests(TestCase):
+class AuthenticatedMovieSessionApiTests(TestCase):
     def setUp(self):
         self.client = APIClient()
         self.user = get_user_model().objects.create_user(
@@ -165,4 +165,79 @@ class AuthenticatedBusApiTests(TestCase):
         response = self.client.post(MOVIE_SESSION_URL, payload)
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
+class AdminMovieSessionApiTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.user = get_user_model().objects.create_user(
+            "test@test.com",
+            "test12345",
+            is_staff=True
+        )
+        self.client.force_authenticate(self.user)
+
+    def test_create_movie_sessions(self):
+        movie = sample_movie()
+        cinema_hall = sample_cinema_hall()
+
+        payload = {
+            "show_time": datetime.now(),
+            "movie": movie.id,
+            "cinema_hall": cinema_hall.id,
+        }
+
+        response = self.client.post(MOVIE_SESSION_URL, payload)
+        movie_session = MovieSession.objects.get(pk=response.data["id"])
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(payload["movie"], movie_session.movie.id)
+        self.assertEqual(payload["cinema_hall"], movie_session.cinema_hall.id)
+        self.assertEqual(
+            payload["show_time"].date(), movie_session.show_time.date()
+        )
+
+    def test_update_movie_sessions(self):
+        old_session = sample_movie_session()
+
+        movie = sample_movie()
+        cinema_hall = sample_cinema_hall()
+        payload = {
+            "show_time": datetime.now(),
+            "movie": movie.id,
+            "cinema_hall": cinema_hall.id,
+        }
+
+        url = reverse("cinema:moviesession-detail", args=[old_session.id])
+        response = self.client.put(url, payload)
+        new_session = MovieSession.objects.get(pk=response.data["id"])
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        self.assertEqual(payload["movie"], new_session.movie.id)
+        self.assertEqual(payload["cinema_hall"], new_session.cinema_hall.id)
+        self.assertEqual(
+            payload["show_time"].date(), new_session.show_time.date()
+        )
+
+        self.assertNotEqual(old_session.movie.id, new_session.movie.id)
+        self.assertNotEqual(
+            old_session.cinema_hall.id, new_session.cinema_hall.id
+        )
+
+    def test_partial_update_movie_sessions(self):
+        old_session = sample_movie_session()
+
+        movie = sample_movie()
+        payload = {
+            "movie": movie.id,
+        }
+
+        url = reverse("cinema:moviesession-detail", args=[old_session.id])
+        response = self.client.patch(url, payload)
+        new_session = MovieSession.objects.get(pk=response.data["id"])
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(payload["movie"], new_session.movie.id)
+        self.assertNotEqual(old_session.movie.id, new_session.movie.id)
 
