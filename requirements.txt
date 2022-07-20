@@ -1,8 +1,5 @@
 Django==4.0.6
 djangorestframework==3.13.1
-djangorestframework_simplejwt==5.2.0
-drf_spectacular==0.22.1
-Pillow==9.2.0
 djangorestframework-simplejwt==5.2.0
 flake8==4.0.1
 iniconfig==1.1.1
