@@ -219,23 +219,6 @@ class AuthenticatedMovieApiTests(TestCase):
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(res.data, serializer.data)
 
-        def test_update_movie_forbidden(self):
-            movie = sample_movie()
-
-            movie_info_put = {
-                "title": "New movie",
-                "description": "New description",
-                "duration": 80,
-            }
-            movie_info_patch = {
-                "title": "Old movie",
-            }
-
-            response1 = self.client.put(detail_url(movie.id), movie_info_put)
-            response2 = self.client.patch(detail_url(movie.id), movie_info_patch)
-
-            self.assertEqual(response1.status_code, status.HTTP_403_FORBIDDEN)
-            self.assertEqual(response2.status_code, status.HTTP_403_FORBIDDEN)
 
     class MovieAdminUserTests(TestCase):
 
