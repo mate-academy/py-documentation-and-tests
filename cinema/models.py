@@ -126,10 +126,10 @@ class Ticket(models.Model):
 
     def save(
         self,
-            force_insert=False,
-            force_update=False,
-            using=None,
-            update_fields=None
+        force_insert=False,
+        force_update=False,
+        using=None,
+        update_fields=None
     ):
         self.full_clean()
         return super(Ticket, self).save(
