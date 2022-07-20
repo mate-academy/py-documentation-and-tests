@@ -220,66 +220,66 @@ class AuthenticatedMovieApiTests(TestCase):
         self.assertEqual(res.data, serializer.data)
 
 
-    class MovieAdminUserTests(TestCase):
+class MovieAdminUserTests(TestCase):
 
-        def setUp(self) -> None:
-            self.client = APIClient()
-            self.user = get_user_model().objects.create_superuser(
-                "test_user@tu.com",
-                "teat_pass1"
-            )
-            self.client.force_authenticate(self.user)
+    def setUp(self) -> None:
+        self.client = APIClient()
+        self.user = get_user_model().objects.create_superuser(
+            "test_user@tu.com",
+            "teat_pass1"
+        )
+        self.client.force_authenticate(self.user)
 
-        def test_create_movie(self):
-            genre = sample_genre()
-            actor = sample_actor()
-            movie_info = {
-                "title": "Sample movie",
-                "description": "Sample description",
-                "duration": 90,
-                "actors": f"{actor.id}",
-                "genres": f"{genre.id}",
-            }
+    def test_create_movie(self):
+        genre = sample_genre()
+        actor = sample_actor()
+        movie_info = {
+            "title": "Sample movie",
+            "description": "Sample description",
+            "duration": 90,
+            "actors": f"{actor.id}",
+            "genres": f"{genre.id}",
+        }
 
-            response = self.client.post(MOVIE_URL, movie_info)
-            print(response.data)
+        response = self.client.post(MOVIE_URL, movie_info)
+        print(response.data)
 
-            movie = Movie.objects.get(pk=response.data["id"])
-            serializer = MovieSerializer(movie)
+        movie = Movie.objects.get(pk=response.data["id"])
+        serializer = MovieSerializer(movie)
 
-            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-            self.assertEqual(serializer.data, response.data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(serializer.data, response.data)
 
-        def test_update_movie_not_allowed(self):
-            movie = sample_movie()
+    def test_update_movie_not_allowed(self):
+        movie = sample_movie()
 
-            movie_info_put = {
-                "title": "New movie",
-                "description": "New description",
-                "duration": 80,
-            }
-            movie_info_patch = {
-                "title": "Old movie",
-            }
+        movie_info_put = {
+            "title": "New movie",
+            "description": "New description",
+            "duration": 80,
+        }
+        movie_info_patch = {
+            "title": "Old movie",
+        }
 
-            response1 = self.client.put(detail_url(movie.id), movie_info_put)
-            response2 = self.client.patch(detail_url(movie.id), movie_info_patch)
+        response1 = self.client.put(detail_url(movie.id), movie_info_put)
+        response2 = self.client.patch(detail_url(movie.id), movie_info_patch)
 
-            self.assertEqual(
-                response1.status_code,
-                status.HTTP_405_METHOD_NOT_ALLOWED
-            )
-            self.assertEqual(
-                response2.status_code,
-                status.HTTP_405_METHOD_NOT_ALLOWED
-            )
+        self.assertEqual(
+            response1.status_code,
+            status.HTTP_405_METHOD_NOT_ALLOWED
+        )
+        self.assertEqual(
+            response2.status_code,
+            status.HTTP_405_METHOD_NOT_ALLOWED
+        )
 
-        def test_delete_movie_not_allowed(self):
-            movie = sample_movie()
+    def test_delete_movie_not_allowed(self):
+        movie = sample_movie()
 
-            response = self.client.delete(detail_url(movie.id))
+        response = self.client.delete(detail_url(movie.id))
 
-            self.assertEqual(
-                response.status_code,
-                status.HTTP_405_METHOD_NOT_ALLOWED
-            )
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_405_METHOD_NOT_ALLOWED
+        )
