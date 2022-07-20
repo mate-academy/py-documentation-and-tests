@@ -24,7 +24,8 @@ from cinema.serializers import (
     MovieSessionDetailSerializer,
     MovieListSerializer,
     OrderSerializer,
-    OrderListSerializer, MovieImageSerializer,
+    OrderListSerializer,
+    MovieImageSerializer,
 )
 
 
@@ -110,7 +111,7 @@ class MovieViewSet(
         methods=["POST"],
         detail=True,
         url_path="upload-image",
-        permission_classes=[IsAdminUser]
+        permission_classes=[IsAdminUser],
     )
     def upload_image(self, request, pk=None):
         """Endpoint for uploading image to specific movie"""
@@ -128,17 +129,17 @@ class MovieViewSet(
             OpenApiParameter(
                 "title",
                 type={"type": "string"},
-                description="Filter by title (ex. ?title=title_name)"
+                description="Filter by title (ex. ?title=title_name)",
             ),
             OpenApiParameter(
                 "actors",
                 type={"type": "list", "items": {"type": "number"}},
-                description="Filter by actors ids (ex. ?actors=1,2)"
+                description="Filter by actors ids (ex. ?actors=1,2)",
             ),
             OpenApiParameter(
                 "genres",
                 type={"type": "list", "items": {"type": "number"}},
-                description="Filter by genres ids (ex. ?genres=1,2)"
+                description="Filter by genres ids (ex. ?genres=1,2)",
             ),
         ]
     )
@@ -152,9 +153,8 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
         .select_related("movie", "cinema_hall")
         .annotate(
             tickets_available=(
-                    F("cinema_hall__rows")
-                    * F("cinema_hall__seats_in_row")
-                    - Count("tickets")
+                F("cinema_hall__rows") * F("cinema_hall__seats_in_row")
+                - Count("tickets")
             )
         )
     )
@@ -190,12 +190,12 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
             OpenApiParameter(
                 "date",
                 type={"type": "string"},
-                description="Filter by date (ex. ?date=2022-07-20)"
+                description="Filter by date (ex. ?date=2022-07-20)",
             ),
             OpenApiParameter(
                 "movie",
                 type={"type": "number"},
-                description="Filter by movie id (ex. ?movie=1)"
+                description="Filter by movie id (ex. ?movie=1)",
             ),
         ]
     )
