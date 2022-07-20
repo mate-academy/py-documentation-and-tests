@@ -158,7 +158,7 @@ SPECTACULAR_SETTINGS = {
     "SWAGGER_UI_SETTINGS": {
         "deepLinking": True,
         "defaultModelRendering": "model",
-        "defaultModesExpandDepth": 2,
+        "defaultModelsExpandDepth": 2,
         "defaultModelExpandDepth": 2,
     },
 }
