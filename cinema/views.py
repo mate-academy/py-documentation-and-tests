@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from django.db.models import F, Count
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import viewsets, mixins, status
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import action
@@ -127,6 +128,33 @@ class MovieViewSet(
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                "title",
+                type={"type": "list", "item": {"type": "number"}},
+                description="Filter by title movie"
+                            "( example : ?title=2,3 )"
+            ),
+            OpenApiParameter(
+                "genres",
+                type={"type": "list", "item": {"type": "number"}},
+                description="Filter by genres"
+                            "( example : ?genres=1,2 )"
+            ),
+            OpenApiParameter(
+                "actors",
+                type={"type": "list", "item": {"type": "number"}},
+                description="Filter by title actors"
+                            "( example : ?actors=1,3 )"
+            )
+
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+
 class MovieSessionViewSet(viewsets.ModelViewSet):
     queryset = (
         MovieSession.objects.all()
@@ -167,6 +195,25 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
 
         return MovieSessionSerializer
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                "date",
+                type={"type":"list", "item": {"type": "date"}},
+                description="Filter by date of movie session "
+                            "(example: ?date=2022-07-20,2022-07-21)"
+            ),
+            OpenApiParameter(
+                "movie",
+                type={"type": "list", "item": {"type": "number"}},
+                description="Filter by movie in movie session"
+                            "(example: ?movie=1,2)"
+            )
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
 
 class OrderPagination(PageNumberPagination):
     page_size = 10
@@ -197,3 +244,4 @@ class OrderViewSet(
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
+
