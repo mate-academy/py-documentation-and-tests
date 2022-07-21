@@ -110,7 +110,7 @@ class MovieViewSet(
         methods=["POST"],
         detail=True,
         url_path="upload-image",
-        permission_classes=[IsAdminUser]
+        permission_classes=[IsAdminUser],
     )
     def upload_image(self, request, pk=None):
         """Endpoint for uploading image to specific movie"""
@@ -128,18 +128,18 @@ class MovieViewSet(
             OpenApiParameter(
                 "title",
                 type={"type": "list", "items": {"type": "string"}},
-                description="Filter by part of movie title (ex. ?title=la)"
+                description="Filter by part of movie title (ex. ?title=la)",
             ),
             OpenApiParameter(
                 "genres",
                 type={"type": "list", "items": {"type": "number"}},
-                description="Filter by genres ids (ex. ?genres=2,3)"
+                description="Filter by genres ids (ex. ?genres=2,3)",
             ),
             OpenApiParameter(
                 "actors",
                 type={"type": "list", "items": {"type": "number"}},
-                description="Filter by actors ids (ex. ?actors=1,4)"
-            )
+                description="Filter by actors ids (ex. ?actors=1,4)",
+            ),
         ]
     )
     def list(self, request, *args, **kwargs):
@@ -152,9 +152,8 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
         .select_related("movie", "cinema_hall")
         .annotate(
             tickets_available=(
-                    F("cinema_hall__rows")
-                    * F("cinema_hall__seats_in_row")
-                    - Count("tickets")
+                F("cinema_hall__rows") * F("cinema_hall__seats_in_row")
+                - Count("tickets")
             )
         )
     )
@@ -189,17 +188,14 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
         parameters=[
             OpenApiParameter(
                 "date",
-                type={"type": "list", "items": {
-                    "type": "string", "format": "date"
-                }},
-                description="Filter by movie session date "
-                            "(ex. ?date=2022-08-20)"
+                type={"type": "list", "items": {"type": "string", "format": "date"}},
+                description="Filter by movie session date " "(ex. ?date=2022-08-20)",
             ),
             OpenApiParameter(
                 "movie",
                 type={"type": "list", "items": {"type": "number"}},
-                description="Filter by movie id (ex. ?movie=3)"
-            )
+                description="Filter by movie id (ex. ?movie=3)",
+            ),
         ]
     )
     def list(self, request, *args, **kwargs):
