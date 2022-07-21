@@ -6,7 +6,7 @@
 
 1. Add Swagger documentation for the whole project. It should include 
 all query params described, such as filtering by title, genres, actors for 
-movie; filtering by date, movie for movie session.
+movie; filtering by date, movie for movie session. 
 2. Add throttling settings, it should allow:
     - 10 requests per minute for unauthorized users
     - 30 requests per minute for authorized ones
