@@ -184,9 +184,13 @@ class AuthenticatedCinemaAPITests(TestCase):
 
         actor = sample_actor(first_name="Test", last_name="Actor")
         genre = sample_genre(name="Test genre")
+        actor2 = sample_actor(first_name="Test2", last_name="Actor2")
+        genre2 = sample_genre(name="Test genre2")
 
         movie_with_genre_and_actors.actors.add(actor)
         movie_with_genre_and_actors.genres.add(genre)
+        movie_with_genre_and_actors.actors.add(actor2)
+        movie_with_genre_and_actors.genres.add(genre2)
 
         result = self.client.get(path=MOVIE_URL)
 
@@ -268,7 +272,6 @@ class AdminCinemaAPITests(TestCase):
         }
 
         res = self.client.post(MOVIE_URL, payload)
-        print(res.data)
         movie = Movie.objects.get(id=res.data["id"])
         serializer = MovieSerializer(movie)
         genres = movie.genres.all()

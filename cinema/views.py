@@ -127,18 +127,19 @@ class MovieViewSet(
         parameters=[
             OpenApiParameter(
                 "title",
-                type={"type": "list", "item": {"type": "number"}},
-                description="Filter by title movie" "( example : ?title=2,3 )",
+                type={"type": "list", "item": {"type": "string"}},
+                description="Filter by title movie" 
+                            "( example : ?title=title1, title2 )",
             ),
             OpenApiParameter(
                 "genres",
-                type={"type": "list", "item": {"type": "number"}},
+                type={"type": "list", "item": {"type": "int"}},
                 description="Filter by genres"
                             "( example : ?genres=1,2 )",
             ),
             OpenApiParameter(
                 "actors",
-                type={"type": "list", "item": {"type": "number"}},
+                type={"type": "list", "item": {"type": "int"}},
                 description="Filter by title actors"
                             "( example : ?actors=1,3 )",
             ),
@@ -190,13 +191,13 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
         parameters=[
             OpenApiParameter(
                 "date",
-                type={"type": "list", "item": {"type": "date"}},
+                type={"type": "string", "format": "date" },
                 description="Filter by date of movie session "
-                            "(example: ?date=2022-07-20,2022-07-21)",
+                            "(example: ?date=2022-07-20)",
             ),
             OpenApiParameter(
                 "movie",
-                type={"type": "list", "item": {"type": "number"}},
+                type={"type": "list", "item": {"type": "int"}},
                 description="Filter by movie in movie session"
                             "(example: ?movie=1,2)",
             ),
