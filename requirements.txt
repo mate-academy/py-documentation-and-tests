@@ -3,6 +3,7 @@ attrs==21.4.0
 Django==4.0.4
 django-debug-toolbar==3.4.0
 djangorestframework==3.13.1
+djangorestframework-simplejwt==5.2.0
 drf-spectacular==0.22.1
 flake8==4.0.1
 inflection==0.5.1
@@ -15,6 +16,7 @@ pluggy==1.0.0
 py==1.11.0
 pycodestyle==2.8.0
 pyflakes==2.4.0
+PyJWT==2.4.0
 pyparsing==3.0.8
 pyrsistent==0.18.1
 pytest==6.2.5
