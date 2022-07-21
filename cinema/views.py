@@ -189,8 +189,11 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
             OpenApiParameter(
                 "date",
                 type={"type": "date"},
-                description="Filter by actors id (ex. ?date=2022-07-19)"
-            ),
+                description="Filter by date (ex. ?date=2022-07-19)"),
+            OpenApiParameter(
+                name="movie",
+                type={"type": "string"},
+                description="Filter by title (ex. ?title=MovieName)"),
         ]
     )
     def list(self, request, *args, **kwargs):
