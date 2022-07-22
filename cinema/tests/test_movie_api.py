@@ -283,3 +283,4 @@ class MovieAdminUserTests(TestCase):
             response.status_code,
             status.HTTP_405_METHOD_NOT_ALLOWED
         )
+#comment to push
