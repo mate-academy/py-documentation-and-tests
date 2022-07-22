@@ -1,6 +1,5 @@
 import os
 import uuid
-
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.conf import settings
@@ -42,7 +41,6 @@ class Actor(models.Model):
 def movie_image_file_path(instance, filename):
     _, extension = os.path.splitext(filename)
     filename = f"{slugify(instance.title)}-{uuid.uuid4()}{extension}"
-
     return os.path.join("uploads/movies/", filename)
 
 
@@ -75,7 +73,9 @@ class MovieSession(models.Model):
 
 class Order(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE
+    )
 
     def __str__(self):
         return str(self.created_at)
@@ -88,7 +88,9 @@ class Ticket(models.Model):
     movie_session = models.ForeignKey(
         MovieSession, on_delete=models.CASCADE, related_name="tickets"
     )
-    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="tickets")
+    order = models.ForeignKey(
+        Order, on_delete=models.CASCADE, related_name="tickets"
+    )
     row = models.IntegerField()
     seat = models.IntegerField()
 
@@ -102,7 +104,7 @@ class Ticket(models.Model):
             if not (1 <= ticket_attr_value <= count_attrs):
                 raise error_to_raise(
                     {
-                        ticket_attr_name: f"{ticket_attr_name} number must be in available range: "
+                                          f"must be in available range: "
                         f"(1, {cinema_hall_attr_name}): "
                         f"(1, {count_attrs})"
                     }
@@ -110,11 +112,18 @@ class Ticket(models.Model):
 
     def clean(self):
         Ticket.validate_ticket(
-            self.row, self.seat, self.movie_session.cinema_hall, ValidationError
+            self.row,
+            self.seat,
+            self.movie_session.cinema_hall,
+            ValidationError
         )
 
     def save(
-        self, force_insert=False, force_update=False, using=None, update_fields=None
+        self,
+        force_insert=False,
+        force_update=False,
+        using=None,
+        update_fields=None
     ):
         self.full_clean()
         return super(Ticket, self).save(
@@ -122,7 +131,8 @@ class Ticket(models.Model):
         )
 
     def __str__(self):
-        return f"{str(self.movie_session)} (row: {self.row}, seat: {self.seat})"
+        return f"{str(self.movie_session)} (row: " \
+               f"{self.row}, seat: {self.seat})"
 
     class Meta:
         unique_together = ("movie_session", "row", "seat")
