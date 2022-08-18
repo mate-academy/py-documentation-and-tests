@@ -27,7 +27,9 @@ class UserSerializer(serializers.ModelSerializer):
 
 class AuthTokenSerializer(serializers.Serializer):
     email = serializers.CharField(label=_("Email"))
-    password = serializers.CharField(label=_("Password"), style={"input_type": "password"})
+    password = serializers.CharField(
+        label=_("Password"), style={"input_type": "password"}
+    )
 
     def validate(self, attrs):
         email = attrs.get("email")
