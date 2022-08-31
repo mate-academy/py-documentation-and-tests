@@ -205,7 +205,10 @@ class AuthenticatedMovieTests(TestCase):
         movie1.genres.add(genre1)
         movie2.genres.add(genre2)
 
-        res = self.client.get(MOVIE_URL, {"genres": f"{genre1.id},{genre2.id}"})
+        res = self.client.get(
+            MOVIE_URL,
+            {"genres": f"{genre1.id},{genre2.id}"}
+        )
 
         serializer1 = MovieListSerializer(movie1)
         serializer2 = MovieListSerializer(movie2)
@@ -226,7 +229,10 @@ class AuthenticatedMovieTests(TestCase):
         movie1.actors.add(actor1)
         movie2.actors.add(actor2)
 
-        res = self.client.get(MOVIE_URL, {"actors": f"{actor1.id},{actor2.id}"})
+        res = self.client.get(
+            MOVIE_URL,
+            {"actors": f"{actor1.id},{actor2.id}"}
+        )
 
         serializer1 = MovieListSerializer(movie1)
         serializer2 = MovieListSerializer(movie2)
@@ -258,13 +264,13 @@ class AuthenticatedMovieTests(TestCase):
         res = self.client.post(MOVIE_URL, payload)
         self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
 
-"""
+
 class AdminMovieAPITests(TestCase):
     def setUp(self):
         self.client = APIClient()
         self.user = get_user_model().objects.create_user(
             "admin@yahoo.com",
-            "secure_admin2022",
+            "admin2022",
             is_staff=True
         )
         self.client.force_authenticate(self.user)
@@ -283,4 +289,3 @@ class AdminMovieAPITests(TestCase):
 
         for key in payload:
             self.assertEqual(payload[key], getattr(movie, key))
-"""
