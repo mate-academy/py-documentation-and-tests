@@ -182,38 +182,6 @@ class AuthenticatedBusApiTests(TestCase):
         )
         self.client.force_authenticate(self.user)
 
-        # movie1 = Movie.objects.create(
-        #     title="Test movie 1",
-        #     description="Test",
-        #     duration=120
-        # )
-        # movie2 = Movie.objects.create(
-        #     title="Test movie 2",
-        #     description="Test",
-        #     duration=150
-        # )
-        # movie3 = Movie.objects.create(
-        #     title="Test movie 3",
-        #     description="Test",
-        #     duration=180
-        # )
-        #
-        # genre1 = Genre.objects.create(name="test_genre1")
-        # genre2 = Genre.objects.create(name="test_genre2")
-        # genre3 = Genre.objects.create(name="test_genre3")
-        #
-        # movie1.genres.add(genre1, genre2)
-        # movie2.genres.add(genre2)
-        # movie3.genres.add(genre3)
-        #
-        # actor1 = Actor.objects.create(first_name="Test1", last_name="Actor1")
-        # actor2 = Actor.objects.create(first_name="Test2", last_name="Actor2")
-        # actor3 = Actor.objects.create(first_name="Test2", last_name="Actor3")
-        #
-        # movie1.actors.add(actor1, actor3)
-        # movie2.actors.add(actor2)
-        # movie3.actors.add(actor3)
-
     def test_list_movies(self):
         sample_movie()
         sample_movie(title="Sample movie 2")
