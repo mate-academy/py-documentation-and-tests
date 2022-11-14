@@ -11,6 +11,7 @@ from rest_framework import status
 
 from cinema.models import Movie, MovieSession, CinemaHall, Genre, Actor
 
+
 MOVIE_URL = reverse("cinema:movie-list")
 MOVIE_SESSION_URL = reverse("cinema:moviesession-list")
 
@@ -157,3 +158,99 @@ class MovieImageUploadTests(TestCase):
         res = self.client.get(MOVIE_SESSION_URL)
 
         self.assertIn("movie_image", res.data[0].keys())
+
+
+class UnauthorizedUserMovieViewSetTests(TestCase):
+    def setUp(self) -> None:
+        self.client = APIClient()
+
+    def test_auth_required(self):
+        response = self.client.get(MOVIE_URL)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+
+class AuthorizedUserMovieViewSetTests(TestCase):
+    def setUp(self) -> None:
+        self.client = APIClient()
+
+        self.user = get_user_model().objects.create_user(
+            email="user1@gmail.com",
+            password="testpassword"
+        )
+
+        self.client.force_authenticate(self.user)
+
+    def test_user_have_not_access_create_action(self):
+        sample_actor()
+        sample_genre()
+        movie_data = {
+            "title": "Unbreakable",
+            "description": "A man learns something extraordinary about himself after a devastating accident.",
+            "duration": 106,
+            "genres": 1,
+            "actors": 1
+        }
+        response = self.client.post(path=MOVIE_URL, data=movie_data)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_user_have_access_list_action(self):
+        sample_movie()
+        sample_movie()
+        sample_movie()
+
+        response = self.client.get(MOVIE_URL)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_user_access_detail_action(self):
+        sample_movie()
+        sample_movie()
+        sample_movie()
+
+        response = self.client.get(detail_url(1))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+
+class AdminMovieViewSetTests(TestCase):
+    def setUp(self) -> None:
+        self.client = APIClient()
+
+        self.user = get_user_model().objects.create_user(
+            email="admin1@admin.com",
+            password="testpassword",
+            is_staff=True
+        )
+
+        self.client.force_authenticate(self.user)
+
+    def test_anyone_cant_delete_movie(self):
+        sample_movie()
+
+        response = self.client.delete(path=detail_url(1))
+
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def test_admin_have_access_create_action(self):
+        sample_actor()
+        sample_genre()
+        movie_data = {
+            "title": "Unbreakable",
+            "description": "A man learns something extraordinary about himself after a devastating accident.",
+            "duration": 106,
+            "genres": 1,
+            "actors": 1
+        }
+        response = self.client.post(path=MOVIE_URL, data=movie_data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def test_admin_have_access_list_action(self):
+        sample_movie()
+        sample_movie()
+
+        response = self.client.get(MOVIE_URL)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_admin_have_access_detail_action(self):
+        sample_movie()
+
+        response = self.client.get(detail_url(1))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
