@@ -308,7 +308,6 @@ class AdminMovieApiTest(TestCase):
         movie = Movie.objects.get(id=resp.data["id"])
         actors = movie.actors.all()
         genres = movie.genres.all()
-
         self.assertEqual(actors.count(), 1)
         self.assertEqual(genres.count(), 1)
         self.assertIn(actor, actors)
