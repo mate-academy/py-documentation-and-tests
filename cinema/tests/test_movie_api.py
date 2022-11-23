@@ -1,13 +1,12 @@
-import tempfile
 import os
+import tempfile
 
 from PIL import Image
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
-
-from rest_framework.test import APIClient
 from rest_framework import status
+from rest_framework.test import APIClient
 
 from cinema.models import Movie, MovieSession, CinemaHall, Genre, Actor
 from cinema.serializers import MovieListSerializer, MovieDetailSerializer
