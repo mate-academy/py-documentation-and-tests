@@ -184,17 +184,16 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
             return MovieSessionDetailSerializer
 
         return MovieSessionSerializer
+
     @extend_schema(
         parameters=[
             OpenApiParameter(
                 "date",
                 type=str,
-                description="Filter by date (ex. ?date=1993-12-25)"
+                description="Filter by date (ex. ?date=1993-12-25)",
             ),
             OpenApiParameter(
-                "movie",
-                type=int,
-                description="Filter by movie (ex. ?movie=5)"
+                "movie", type=int, description="Filter by movie (ex. ?movie=5)"
             ),
         ]
     )
