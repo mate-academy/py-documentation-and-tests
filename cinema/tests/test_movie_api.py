@@ -160,7 +160,7 @@ class MovieImageUploadTests(TestCase):
         self.assertIn("movie_image", res.data[0].keys())
 
 
-class UnauthenticatedMovieApi(TestCase):
+class UnauthenticatedMovieApiTest(TestCase):
     def setUp(self):
         self.client = APIClient()
 
@@ -169,7 +169,7 @@ class UnauthenticatedMovieApi(TestCase):
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
-class AuthenticatedMovieApi(TestCase):
+class AuthenticatedMovieApiTest(TestCase):
     def setUp(self):
         self.client = APIClient()
         self.user = get_user_model().objects.create_user(
@@ -197,7 +197,7 @@ class AuthenticatedMovieApi(TestCase):
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(res.data, serializer.data)
 
-    def test_movies_by_actors(self):
+    def test_filter_movies_by_actors(self):
         movie1 = sample_movie(title="test1")
         movie2 = sample_movie(title="test2")
         movie3 = sample_movie(title="test3_w/o_actors")
@@ -218,7 +218,7 @@ class AuthenticatedMovieApi(TestCase):
         self.assertIn(serializer2.data, res.data)
         self.assertNotIn(serializer3.data, res.data)
 
-    def test_movies_by_genres(self):
+    def test_filter_movies_by_genres(self):
         movie1 = sample_movie(title="test1")
         movie2 = sample_movie(title="test2")
         movie3 = sample_movie(title="test3_w/o_actors")
@@ -239,7 +239,7 @@ class AuthenticatedMovieApi(TestCase):
         self.assertIn(serializer2.data, res.data)
         self.assertNotIn(serializer3.data, res.data)
 
-    def test_movie_by_title(self):
+    def test_filter_movie_by_title(self):
         movie1 = sample_movie(title="test1")
         movie2 = sample_movie(title="test2")
 

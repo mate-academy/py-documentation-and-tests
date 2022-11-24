@@ -127,9 +127,9 @@ class MovieViewSet(
     @extend_schema(
         parameters=[
             OpenApiParameter(
-                "actors",
+                "title",
                 type=str,
-                description="Filter by title (ex. ?actors=test)"
+                description="Filter by title (ex. ?title=test)"
             ),
             OpenApiParameter(
                 "actors",
