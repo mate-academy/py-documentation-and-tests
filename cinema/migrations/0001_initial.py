@@ -9,14 +9,21 @@ class Migration(migrations.Migration):
 
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
             name="Actor",
             fields=[
-                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
                 ("first_name", models.CharField(max_length=255)),
                 ("last_name", models.CharField(max_length=255)),
             ],
@@ -24,7 +31,15 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="CinemaHall",
             fields=[
-                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
                 ("name", models.CharField(max_length=255)),
                 ("rows", models.IntegerField()),
                 ("seats_in_row", models.IntegerField()),
@@ -33,18 +48,40 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="Genre",
             fields=[
-                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
                 ("name", models.CharField(max_length=255, unique=True)),
             ],
         ),
         migrations.CreateModel(
             name="Movie",
             fields=[
-                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
                 ("title", models.CharField(max_length=255)),
                 ("description", models.TextField()),
                 ("duration", models.IntegerField()),
-                ("image", models.ImageField(null=True, upload_to=cinema.models.movie_image_file_path)),
+                (
+                    "image",
+                    models.ImageField(
+                        null=True,
+                        upload_to=cinema.models.movie_image_file_path,
+                    ),
+                ),
             ],
             options={
                 "ordering": ["title"],
@@ -53,7 +90,15 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="MovieSession",
             fields=[
-                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
                 ("show_time", models.DateTimeField()),
             ],
             options={
@@ -63,7 +108,15 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="Order",
             fields=[
-                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
                 ("created_at", models.DateTimeField(auto_now_add=True)),
             ],
             options={
@@ -73,11 +126,33 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="Ticket",
             fields=[
-                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
                 ("row", models.IntegerField()),
                 ("seat", models.IntegerField()),
-                ("movie_session", models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name="tickets", to="cinema.moviesession")),
-                ("order", models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name="tickets", to="cinema.order")),
+                (
+                    "movie_session",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="tickets",
+                        to="cinema.moviesession",
+                    ),
+                ),
+                (
+                    "order",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="tickets",
+                        to="cinema.order",
+                    ),
+                ),
             ],
             options={
                 "ordering": ["row", "seat"],
