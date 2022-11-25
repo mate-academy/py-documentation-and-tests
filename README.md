@@ -12,6 +12,7 @@ It should include all query params described, such as:
    - filtering by date, movie for movie session
 
 **Remember:** don't forget to add `description` to your `OpenApiParameter`.
+
 2. Add throttling settings, it should allow:
     - 10 requests per minute for unauthorized users
     - 30 requests per minute for authorized ones
