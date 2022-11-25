@@ -137,7 +137,7 @@ class MovieViewSet(
             ),
             OpenApiParameter(
                 "actors",
-                type=str,
+                type={"type": "list", "items": {"type": "number"}},
                 description="Filter by movie actors ids (ex. ?actors=1,2)",
             )
         ]
