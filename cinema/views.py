@@ -132,7 +132,7 @@ class MovieViewSet(
             ),
             OpenApiParameter(
                 "title",
-                type={"type": "list", "items": {"type": "text"}},
+                type=str,
                 description="filtering by title (ex. ?title=Departed)",
             ),
             OpenApiParameter(
@@ -193,7 +193,7 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
             ),
             OpenApiParameter(
                 "movie",
-                type={"type": "list", "items": {"type": "number"}},
+                type=int,
                 description="filtering by movie id (ex. ?movie=1)",
             ),
         ]
