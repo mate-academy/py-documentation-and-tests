@@ -17,22 +17,22 @@ def movie_detail_url(movie_id: int = 1):
 
 def fast_movie_create(name: str = "TestMovieName", time: int = 20) -> Movie:
     return Movie.objects.create(
-        title=name + " Title",
-        description="Description for " + name,
+        title=f"{name} Title",
+        description=f"Description for {name}",
         duration=time,
     )
 
 
 def fast_actor_create(name: str = "TestActorName") -> Actor:
     return Actor.objects.create(
-        first_name=name + " Name",
-        last_name=name + " Surname",
+        first_name=f"{name} Name",
+        last_name=f"{name} Surname",
     )
 
 
-def fast_genre_create(name:str = "TestGenre") -> Genre:
+def fast_genre_create(name: str = "TestGenre") -> Genre:
     return Genre.objects.create(
-        name=name + " Name"
+        name=f"{name} Name"
     )
 
 
