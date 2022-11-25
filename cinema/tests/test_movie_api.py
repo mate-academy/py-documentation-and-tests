@@ -110,7 +110,7 @@ class AuthenticatedMovieApiTests(TestCase):
         movie2 = sample_movie(title="World of Warcraft")
         movie3 = sample_movie(title="Movie 3")
 
-        res = self.client.get(MOVIE_URL, {"title": f"world"})
+        res = self.client.get(MOVIE_URL, {"title": "world"})
 
         serializer1, serializer2, serializer3 = call_list_serializer(movie1, movie2, movie3)
 
@@ -241,31 +241,31 @@ class AdminMovieApiTests(TestCase):
         self.assertIn(actor2, actors)
 
     def test_update_movie_forbidden(self):
-        bus = sample_movie()
+        movie = sample_movie()
         payload = {
             "title": "Test",
             "description": "Movie for tests",
             "duration": 15
         }
 
-        res = self.client.put(detail_url(bus.id), payload)
+        res = self.client.put(detail_url(movie.id), payload)
 
         self.assertEqual(res.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def test_partial_update_movie_forbidden(self):
-        bus = sample_movie()
+        movie = sample_movie()
         payload = {
             "description": "Movie for tests",
         }
 
-        res = self.client.patch(detail_url(bus.id), payload)
+        res = self.client.patch(detail_url(movie.id), payload)
 
         self.assertEqual(res.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def test_delete_movie_forbidden(self):
-        bus = sample_movie()
+        movie = sample_movie()
 
-        res = self.client.delete(detail_url(bus.id))
+        res = self.client.delete(detail_url(movie.id))
 
         self.assertEqual(res.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
