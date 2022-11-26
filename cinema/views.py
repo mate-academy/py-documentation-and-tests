@@ -1,15 +1,24 @@
 from datetime import datetime
+from typing import Type
 
-from django.db.models import F, Count
+from django.db.models import F, Count, QuerySet
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import viewsets, mixins, status
-from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
-from rest_framework.viewsets import GenericViewSet, ReadOnlyModelViewSet
+from rest_framework.viewsets import GenericViewSet
 
-from cinema.models import Genre, Actor, CinemaHall, Movie, MovieSession, Order
+from cinema.models import (
+    Genre,
+    Actor,
+    CinemaHall,
+    Movie,
+    MovieSession,
+    Order,
+)
 from cinema.permissions import IsAdminOrIfAuthenticatedReadOnly
 
 from cinema.serializers import (
@@ -29,35 +38,26 @@ from cinema.serializers import (
 
 
 class GenreViewSet(
-    mixins.CreateModelMixin,
-    mixins.ListModelMixin,
-    GenericViewSet,
+    mixins.CreateModelMixin, mixins.ListModelMixin, GenericViewSet,
 ):
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
-    authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
 
 class ActorViewSet(
-    mixins.CreateModelMixin,
-    mixins.ListModelMixin,
-    GenericViewSet,
+    mixins.CreateModelMixin, mixins.ListModelMixin, GenericViewSet,
 ):
     queryset = Actor.objects.all()
     serializer_class = ActorSerializer
-    authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
 
 class CinemaHallViewSet(
-    mixins.CreateModelMixin,
-    mixins.ListModelMixin,
-    GenericViewSet,
+    mixins.CreateModelMixin, mixins.ListModelMixin, GenericViewSet,
 ):
     queryset = CinemaHall.objects.all()
     serializer_class = CinemaHallSerializer
-    authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
 
@@ -67,13 +67,12 @@ class MovieViewSet(
     mixins.RetrieveModelMixin,
     viewsets.GenericViewSet,
 ):
-    queryset = Movie.objects.all().prefetch_related("genres", "actors")
+    queryset = Movie.objects.prefetch_related("genres", "actors")
     serializer_class = MovieSerializer
-    authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
     @staticmethod
-    def _params_to_ints(qs):
+    def _params_to_ints(qs: str) -> list[int]:
         """Converts a list of string IDs to a list of integers"""
         return [int(str_id) for str_id in qs.split(",")]
 
@@ -98,7 +97,14 @@ class MovieViewSet(
 
         return queryset.distinct()
 
-    def get_serializer_class(self):
+    def get_serializer_class(
+        self,
+    ) -> Type[
+        MovieListSerializer
+        | MovieDetailSerializer
+        | MovieImageSerializer
+        | MovieSerializer
+    ]:
         if self.action == "list":
             return MovieListSerializer
 
@@ -116,7 +122,7 @@ class MovieViewSet(
         url_path="upload-image",
         permission_classes=[IsAdminUser],
     )
-    def upload_image(self, request, pk=None):
+    def upload_image(self, request, pk=None) -> Response:
         """Endpoint for uploading image to specific movie"""
         movie = self.get_object()
         serializer = self.get_serializer(movie, data=request.data)
@@ -126,6 +132,29 @@ class MovieViewSet(
             return Response(serializer.data, status=status.HTTP_200_OK)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    # Only for documentation purposes
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="title",
+                description="Filtering by title (example: ?title=Insomnia)",
+                type=str,
+            ),
+            OpenApiParameter(
+                name="genres",
+                description="Filtering by genre ids (example: ?genres=1,2)",
+                type={"type": "list", "items": {"type": "number"}},
+            ),
+            OpenApiParameter(
+                name="actors",
+                description="Filtering by actor ids (example: ?actors=1,2)",
+                type={"type": "list", "items": {"type": "number"}},
+            ),
+        ]
+    )
+    def list(self, request, *args, **kwargs) -> Response:
+        return super().list(request, *args, **kwargs)
 
 
 class MovieSessionViewSet(viewsets.ModelViewSet):
@@ -140,10 +169,9 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
         )
     )
     serializer_class = MovieSessionSerializer
-    authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
-    def get_queryset(self):
+    def get_queryset(self) -> QuerySet[MovieSession]:
         date = self.request.query_params.get("date")
         movie_id_str = self.request.query_params.get("movie")
 
@@ -158,7 +186,11 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
 
         return queryset
 
-    def get_serializer_class(self):
+    def get_serializer_class(self) -> Type[
+        MovieSessionListSerializer
+        | MovieSessionDetailSerializer
+        | MovieSessionSerializer
+    ]:
         if self.action == "list":
             return MovieSessionListSerializer
 
@@ -167,6 +199,24 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
 
         return MovieSessionSerializer
 
+    # Only for documentation purposes
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="date",
+                description="Filtering by date (example: ?date=2022-11-26)",
+                type=OpenApiTypes.DATE,
+            ),
+            OpenApiParameter(
+                name="movie",
+                description="Filtering by movie id (example: ?movie=1)",
+                type=int,
+            ),
+        ]
+    )
+    def list(self, request, *args, **kwargs) -> Response:
+        return super().list(request, *args, **kwargs)
+
 
 class OrderPagination(PageNumberPagination):
     page_size = 10
@@ -174,26 +224,26 @@ class OrderPagination(PageNumberPagination):
 
 
 class OrderViewSet(
-    mixins.ListModelMixin,
-    mixins.CreateModelMixin,
-    GenericViewSet,
+    mixins.ListModelMixin, mixins.CreateModelMixin, GenericViewSet,
 ):
-    queryset = Order.objects.all().prefetch_related(
+    queryset = Order.objects.prefetch_related(
         "tickets__movie_session__movie", "tickets__movie_session__cinema_hall"
     )
     serializer_class = OrderSerializer
     pagination_class = OrderPagination
-    authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAuthenticated,)
 
-    def get_queryset(self):
+    def get_queryset(self) -> QuerySet[Order]:
         return Order.objects.filter(user=self.request.user)
 
-    def get_serializer_class(self):
+    def get_serializer_class(self) -> Type[
+        OrderListSerializer
+        | OrderSerializer
+    ]:
         if self.action == "list":
             return OrderListSerializer
 
         return OrderSerializer
 
-    def perform_create(self, serializer):
+    def perform_create(self, serializer) -> None:
         serializer.save(user=self.request.user)
