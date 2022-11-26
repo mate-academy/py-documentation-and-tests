@@ -223,3 +223,14 @@ class AuthenticatedMovieApiViewTests(TestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, serializer.data)
+
+
+    def test_creat_movie_forbidden(self):
+        payload = {
+            "title": "Seven",
+            "description": "test",
+            "duration": 99,
+        }
+
+        response = self.client.post(MOVIE_URL, payload)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
