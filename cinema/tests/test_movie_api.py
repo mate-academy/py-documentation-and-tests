@@ -290,3 +290,11 @@ class AdminMovieApiViewTests(TestCase):
         self.assertIn(actor1, actors)
         self.assertIn(actor2, actors)
         self.assertEqual(actors.count(), 2)
+
+    def test_delete_movie_not_allowed(self):
+        movie = sample_movie()
+        url = detail_url(movie.id)
+
+        response = self.client.delete(url)
+
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
