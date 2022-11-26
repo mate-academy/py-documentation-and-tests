@@ -293,7 +293,7 @@ class AdminMovieApiViewTests(TestCase):
 
         self.assertEqual(actors.count(), 2)
         self.assertIn(actor1, actors)
-        self.assertIn(actor1, actors)
+        self.assertIn(actor2, actors)
 
     def test_delete_movie_not_allowed(self):
         movie = sample_movie()
