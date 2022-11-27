@@ -44,7 +44,9 @@ def sample_actor(**params):
 
 
 def sample_movie_session(**params):
-    cinema_hall = CinemaHall.objects.create(name="Blue", rows=20, seats_in_row=20)
+    cinema_hall = CinemaHall.objects.create(
+        name="Blue", rows=20, seats_in_row=20
+    )
 
     defaults = {
         "show_time": "2022-06-02 14:00:00",
@@ -212,8 +214,12 @@ class AuthenticatedCinemaAPITests(TestCase):
         response1 = self.client.get(MOVIE_URL, {"title": f"{movie1.title}"})
         response2 = self.client.get(MOVIE_URL, {"title": f"{movie2.title}"})
 
-        self.assertIn(self.data_from_list_serializer(movie1).data, response1.data)
-        self.assertIn(self.data_from_list_serializer(movie2).data, response2.data)
+        self.assertIn(
+            self.data_from_list_serializer(movie1).data, response1.data
+        )
+        self.assertIn(
+            self.data_from_list_serializer(movie2).data, response2.data
+        )
 
     def test_filter_movies_by_genres(self):
         movie1 = sample_movie(title="Test movie 1")
@@ -235,11 +241,19 @@ class AuthenticatedCinemaAPITests(TestCase):
             title="Movie test without genres",
         )
 
-        response = self.client.get(MOVIE_URL, {"genres": f"{genre1.id},{genre2.id}"})
+        response = self.client.get(
+            MOVIE_URL, {"genres": f"{genre1.id},{genre2.id}"}
+        )
 
-        self.assertIn(self.data_from_list_serializer(movie1).data, response.data)
-        self.assertIn(self.data_from_list_serializer(movie2).data, response.data)
-        self.assertNotIn(self.data_from_list_serializer(movie3).data, response.data)
+        self.assertIn(
+            self.data_from_list_serializer(movie1).data, response.data
+        )
+        self.assertIn(
+            self.data_from_list_serializer(movie2).data, response.data
+        )
+        self.assertNotIn(
+            self.data_from_list_serializer(movie3).data, response.data
+        )
 
     def test_filter_movies_by_actors(self):
         movie1 = sample_movie(title="Test movie 1")
@@ -264,11 +278,19 @@ class AuthenticatedCinemaAPITests(TestCase):
             title="Movie test without actors",
         )
 
-        response = self.client.get(MOVIE_URL, {"actors": f"{actor1.id},{actor2.id}"})
+        response = self.client.get(
+            MOVIE_URL, {"actors": f"{actor1.id},{actor2.id}"}
+        )
 
-        self.assertIn(self.data_from_list_serializer(movie1).data, response.data)
-        self.assertIn(self.data_from_list_serializer(movie2).data, response.data)
-        self.assertNotIn(self.data_from_list_serializer(movie3).data, response.data)
+        self.assertIn(
+            self.data_from_list_serializer(movie1).data, response.data
+        )
+        self.assertIn(
+            self.data_from_list_serializer(movie2).data, response.data
+        )
+        self.assertNotIn(
+            self.data_from_list_serializer(movie3).data, response.data
+        )
 
     def test_retrieve_movie_detail(self):
         movie = sample_movie()
@@ -335,9 +357,13 @@ class AdminMovieAPITests(TestCase):
             name="Test genre 2",
         )
 
-        actor1 = sample_actor(first_name="Test first 1", last_name="Test last 1")
+        actor1 = sample_actor(
+            first_name="Test first 1", last_name="Test last 1"
+        )
 
-        actor2 = sample_actor(first_name="Test first 2", last_name="Test last 2")
+        actor2 = sample_actor(
+            first_name="Test first 2", last_name="Test last 2"
+        )
 
         payload = {
             "title": "Test title",
@@ -369,4 +395,6 @@ class AdminMovieAPITests(TestCase):
 
         response = self.client.delete(url)
 
-        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.assertEqual(
+            response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED
+        )
