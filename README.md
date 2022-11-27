@@ -1,6 +1,8 @@
 # Documentation, throttling, JWT and tests
 
 - **Read** [the guideline](https://github.com/mate-academy/py-task-guideline/blob/main/README.md) before start
+- Use the following command to load prepared data from fixture to test and debug your code:
+  `python manage.py loaddata cinema_service_db_data.json`.
 - After loading data from fixture you can use following superuser (or create another one by yourself):
   - Email: `admin.user@cinema.com`
   - Password: `1qazcde3`
