@@ -218,13 +218,13 @@ class AuthenticatedMovieApiTests(TestCase):
         movie1 = sample_movie(title="Sample")
         movie2 = sample_movie(title="MovieTest")
 
-        genre1 = sample_genre()
-        genre2 = sample_genre()
+        genre1 = sample_genre(name="test1")
+        genre2 = sample_genre(name="test2")
 
         movie1.genres.add(genre1)
         movie2.genres.add(genre2)
 
-        response = self.client.get(MOVIE_URL, {"actors": f"{genre1.id}"})
+        response = self.client.get(MOVIE_URL, {"genres": f"{genre1.id}"})
 
         serializer1 = MovieListSerializer(movie1)
         serializer2 = MovieListSerializer(movie2)
