@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from django.db.models import F, Count
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import viewsets, mixins, status
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import action
@@ -127,8 +128,37 @@ class MovieViewSet(
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                "title",
+                type=str,
+                description="Filter movies by title (i.e. ?title=some_title)"
+            ),
+            OpenApiParameter(
+                "genres",
+                type={
+                    "type": "list",
+                    "items": {"type": "number"}
+                },
+                description="Filter movies by genre ids (i.e. ?genres=1,2)"
+            ),
+            OpenApiParameter(
+                "actors",
+                type={
+                    "type": "list",
+                    "items": {"type": "number"}
+                },
+                description="Filter movies by actor ids (i.e. ?actors=1,2)"
+            )
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
 
 class MovieSessionViewSet(viewsets.ModelViewSet):
+    """Viewset for managing movie sessions"""
     queryset = (
         MovieSession.objects.all()
         .select_related("movie", "cinema_hall")
@@ -166,6 +196,27 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
             return MovieSessionDetailSerializer
 
         return MovieSessionSerializer
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                "date",
+                type=str,
+                description="Filter by date (i.e. ?date=%Y-%m-%d)"
+            ),
+            OpenApiParameter(
+                "movies",
+                type={
+                    "type": "list",
+                    "item": {"type": "number"},
+                },
+                description="Filter by movie ids (i.e. ?movie=1,2)"
+
+            )
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
 
 
 class OrderPagination(PageNumberPagination):
