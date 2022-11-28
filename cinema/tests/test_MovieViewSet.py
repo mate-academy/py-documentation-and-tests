@@ -68,16 +68,13 @@ class AuthenticatedMovieApiTests(TestCase):
         serializer_with_actor = MovieListSerializer(movie_with_actors)
         serializer_with_genre = MovieListSerializer(movie_with_genres)
 
-        # filtering by title
         self.assertIn(serializer_with_title.data, filtering_by_title.data)
         self.assertNotIn(serializer_with_actor.data, filtering_by_title.data)
         self.assertNotIn(serializer_with_genre.data, filtering_by_title.data)
 
-        # filtering by actor
         self.assertIn(serializer_with_actor.data, filtering_by_actor.data)
         self.assertNotIn(serializer_with_title.data, filtering_by_actor.data)
 
-        # filtering by genre
         self.assertIn(serializer_with_genre.data, filtering_by_genre.data)
         self.assertNotIn(serializer_with_title.data, filtering_by_genre.data)
 
@@ -108,7 +105,8 @@ class AdminMovieApiTests(TestCase):
     def setUp(self):
         self.client = APIClient()
         self.user = get_user_model().objects.create_superuser(
-            "admin@admin.com", "adminpassword1"
+            "admin@admin.com",
+            "adminpassword1",
         )
         self.client.force_authenticate(self.user)
 
