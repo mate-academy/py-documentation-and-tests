@@ -227,7 +227,7 @@ class TestMovieViewSetPrivate(TestCase):
         ]
         sample_movie(title="Filtered out")
 
-        res = self.client.get(f"{MOVIE_URL}?title=samPle")
+        res = self.client.get(MOVIE_URL, {"title": "samPle"})
         serializer_in = MovieListSerializer(movies_in, many=True)
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
@@ -252,7 +252,7 @@ class TestMovieViewSetPrivate(TestCase):
 
         movies_out[0].actors.add(actor_out)
 
-        res = self.client.get(f"{MOVIE_URL}?actors=1,2")
+        res = self.client.get(MOVIE_URL, {"actors": "1,2"})
         serializer_in = MovieListSerializer(movies_in, many=True)
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
@@ -277,7 +277,7 @@ class TestMovieViewSetPrivate(TestCase):
 
         movies_out[0].genres.add(genre_out)
 
-        res = self.client.get(f"{MOVIE_URL}?genres=1,2")
+        res = self.client.get(MOVIE_URL, {"genres": "1,2"})
         serializer_in = MovieListSerializer(movies_in, many=True)
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
@@ -298,7 +298,9 @@ class TestMovieViewSetPrivate(TestCase):
         movies_in[0].genres.add(genre)
         movies_in[0].actors.add(actor)
 
-        res = self.client.get(f"{MOVIE_URL}?title=sample&genres=1&actors=1")
+        res = self.client.get(
+            MOVIE_URL, {"title": "sample", "genre": "1", "actors": "1"}
+        )
         serializer_in = MovieListSerializer(movies_in, many=True)
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
