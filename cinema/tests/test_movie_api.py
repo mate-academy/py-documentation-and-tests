@@ -190,23 +190,6 @@ class AuthedMovieApiViewTests(TestCase):
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(res.data, serializer.data)
 
-    def test_retrieve_movie_with_props(self):
-        movie = sample_movie()
-        movie.genres.add(Genre.objects.create(
-            name="Test_genre"
-        ))
-        movie.actors.add(Actor.objects.create(
-            first_name="Some",
-            last_name="Actor"
-        ))
-        serializer = MovieDetailSerializer(movie)
-
-        url = detail_url(movie.id)
-        res = self.client.get(url)
-
-        self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertEqual(serializer.data, res.data)
-
     def test_movies_by_title(self):
         movie1 = sample_movie(title="The test: prologue")
         movie2 = sample_movie(title="The test: testing intensifies")
@@ -261,6 +244,25 @@ class AuthedMovieApiViewTests(TestCase):
         self.assertIn(serializer1.data, res.data)
         self.assertIn(serializer2.data, res.data)
 
+    def test_retrieve_movie_with_props(self):
+        movie = sample_movie()
+        genre = sample_genre(name="Very chinese comedy")
+        actor = sample_actor(
+                first_name="Stephen",
+                last_name="Chow"
+            )
+
+        movie.genres.add(genre)
+        movie.actors.add(actor)
+
+        serializer = MovieDetailSerializer(movie)
+
+        url = detail_url(movie.id)
+        res = self.client.get(url)
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(serializer.data, res.data)
+
     def test_user_create_forbidden(self):
         payload = {
             "title": "Api User vs the Forbidden Creation",
@@ -271,4 +273,66 @@ class AuthedMovieApiViewTests(TestCase):
 
         self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
 
-# TODO: Add Admin permissions tests
+
+class AdminMovieApiViewTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.user = get_user_model().objects.create_user(
+            "admin_test@mail.com",
+            "some_test_pass_123",
+            is_staff=True,
+        )
+        self.client.force_authenticate(self.user)
+
+    def test_create_movie(self):
+        payload = {
+            "title": "Admin vs the Forbidden Creation: the revenge",
+            "description": "Will Admin prevail where User has failed?",
+            "duration": 42,
+        }
+
+        res = self.client.post(MOVIE_URL, payload)
+        movie = Movie.objects.get(id=res.data["id"])
+
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+
+        for key in payload:
+            self.assertEqual(payload[key], getattr(movie, key))
+
+    def test_create_movie_with_genres_actors(self):
+        genre1 = sample_genre(name="Heroic fiction")
+        genre2 = sample_genre(name="Drama")
+
+        actor1 = sample_actor(first_name="D.R.F", last_name="Admin")
+        actor2 = sample_actor(first_name="Database", last_name="Entity")
+
+        payload = {
+            "title": "Admin: rise of the Movie With Props",
+            "description": "Admin's movie creation skills put to the final test."
+                           "Will he succeed?",
+            "duration": 42,
+            "genres": [genre1.id, genre2.id],
+            "actors": [actor1.id, actor2.id],
+        }
+
+        res = self.client.post(MOVIE_URL, payload)
+        movie = Movie.objects.get(id=res.data["id"])
+        genres = movie.genres.all()
+        actors = movie.actors.all()
+
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(genres.count(), 2)
+        self.assertEqual(actors.count(), 2)
+        self.assertIn(genre1, genres)
+        self.assertIn(actor1, actors)
+
+    def test_destroy_movie_forbidden(self):
+        movie = sample_movie(
+            title="Admin and the Forbidden Action",
+            description="The only thing forbidden for an Admin is...",
+        )
+
+        url = detail_url(movie.id)
+        res = self.client.delete(url)
+
+        self.assertEqual(res.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
