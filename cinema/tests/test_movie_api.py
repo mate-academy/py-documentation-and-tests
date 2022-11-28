@@ -231,7 +231,7 @@ class AuthenticatedMovieApiTests(TestCase):
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(res.data, serializer.data)
 
-    def test_creat_movie_forbidden(self):
+    def test_create_movie_forbidden(self):
         payload = {
             "title": "Movie",
             "description": "Description",
