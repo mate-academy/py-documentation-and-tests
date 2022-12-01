@@ -248,7 +248,7 @@ class AuthenticatedMovieApiTests(TestCase):
         movie1 = sample_movie(title="Iron Man")
         movie2 = sample_movie(title="Sherlock")
 
-        res = self.client.get(MOVIE_URL, {"title": f"{movie1.title}"})
+        res = self.client.get(MOVIE_URL, {"title": movie1.title})
 
         serializer1 = MovieListSerializer(movie1)
         serializer2 = MovieListSerializer(movie2)
@@ -341,3 +341,11 @@ class AdminMovieApiTests(TestCase):
         self.assertIn(genre2, genres)
         self.assertIn(actor1, actors)
         self.assertIn(actor2, actors)
+
+    def test_delete_movie_forbidden(self):
+        movie = sample_movie()
+        url = detail_url(movie.id)
+
+        response = self.client.delete(url)
+
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
