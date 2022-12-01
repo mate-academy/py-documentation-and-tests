@@ -212,6 +212,57 @@ class AuthenticatedMovieApiViewTests(TestCase):
         self.assertIn(serializer2.data, res.data)
         self.assertNotIn(serializer3.data, res.data)
 
+    def test_filter_movies_by_actors(self):
+        movie1 = sample_movie(title="Test1")
+        movie2 = sample_movie(title="Test2")
+
+        actor1 = sample_actor(first_name="Will", last_name="Smith")
+        actor2 = sample_actor(first_name="Bred", last_name="Pitt")
+
+        movie1.actors.add(actor1)
+        movie2.actors.add(actor2)
+
+        movie3 = sample_movie(title="Movie without actors")
+
+        res = self.client.get(MOVIE_URL, {"actors": f"{actor1.id},{actor2.id}"})
+
+        serializer1 = MovieListSerializer(movie1)
+        serializer2 = MovieListSerializer(movie2)
+        serializer3 = MovieListSerializer(movie3)
+
+        self.assertIn(serializer1.data, res.data)
+        self.assertIn(serializer2.data, res.data)
+        self.assertNotIn(serializer3.data, res.data)
+
+    def test_filter_movie_by_genre_and_actors(self):
+        movie1 = sample_movie(title="movie")
+        movie2 = sample_movie(title="movie plus genre")
+        movie3 = sample_movie(title="movie plus actor")
+        movie4 = sample_movie(title="movie plus genre plus actor")
+
+        genre = sample_genre()
+        actor = sample_actor()
+
+        movie2.genres.add(genre)
+        movie3.actors.add(actor)
+        movie4.genres.add(genre)
+        movie4.actors.add(actor)
+
+        res_genre = self.client.get(MOVIE_URL, {"genres": f"{genre.id}"})
+        res_actor = self.client.get(MOVIE_URL, {"actors": f"{actor.id}"})
+
+        serializer1 = MovieListSerializer(movie1)
+        serializer2 = MovieListSerializer(movie2)
+        serializer3 = MovieListSerializer(movie3)
+        serializer4 = MovieListSerializer(movie4)
+
+        self.assertNotIn(serializer1.data, res_actor.data)
+        self.assertNotIn(serializer1.data, res_genre.data)
+        self.assertIn(serializer2.data, res_genre.data)
+        self.assertIn(serializer4.data, res_genre.data)
+        self.assertIn(serializer3.data, res_actor.data)
+        self.assertIn(serializer4.data, res_actor.data)
+
     def test_retrieve_movie_detail(self):
         movie = sample_movie()
         movie.genres.add(Genre.objects.create(name="Testgenre"))
