@@ -162,6 +162,15 @@ class AdminMovieListTest(TestCase):
         for key in data:
             self.assertEqual(data[key], getattr(movie, key))
 
+    def test_admin_can_not_delete_movie(self):
+        movie = fast_movie_create()
+
+        response = self.client.delete(
+            reverse("cinema:movie-detail", args=[movie.id])
+        )
+        self.assertEqual(response.status_code, 405)
+        self.assertTrue(Movie.objects.filter(pk=movie.id).exists())
+
     def test_create_movie_with_genres(self):
         actor = fast_actor_create("Actor")
         genre1 = fast_genre_create("Test1")
