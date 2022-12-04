@@ -218,6 +218,43 @@ class AuthenticatedMovieApiTests(TestCase):
         self.assertIn(serializer2.data, res.data)
         self.assertNotIn(serializer3.data, res.data)
 
+    def test_filter_movies_by_actor(self):
+        movie1 = sample_movie(title="TestMovie")
+        movie2 = sample_movie(title="TestMovie1")
+
+        actor1 = sample_actor(first_name="Test", last_name="Actor")
+        actor2 = sample_actor(first_name="Test1", last_name="Actor1")
+
+        movie1.actors.add(actor1)
+        movie2.actors.add(actor2)
+
+        movie3 = sample_movie(title="Without actors")
+
+        res = self.client.get(MOVIE_URL, {"actors": f"{actor1.id},{actor2.id}"})
+
+        serializer1 = MovieListSerializer(movie1)
+        serializer2 = MovieListSerializer(movie2)
+        serializer3 = MovieListSerializer(movie3)
+
+        self.assertIn(serializer1.data, res.data)
+        self.assertIn(serializer2.data, res.data)
+        self.assertNotIn(serializer3.data, res.data)
+
+    def test_filter_movies_by_title(self):
+        movie1 = sample_movie(title="movie1")
+        movie2 = sample_movie(title="movie2")
+        movie3 = sample_movie(title="movie3")
+
+        res = self.client.get(MOVIE_URL, {"title": f"{movie1.title}"})
+
+        serializer1 = MovieListSerializer(movie1)
+        serializer2 = MovieListSerializer(movie2)
+        serializer3 = MovieListSerializer(movie3)
+
+        self.assertIn(serializer1.data, res.data)
+        self.assertNotIn(serializer2.data, res.data)
+        self.assertNotIn(serializer3.data, res.data)
+
     def test_retrieve_movie_detail(self):
         movie = sample_movie()
         movie.actors.add(sample_actor())
@@ -294,3 +331,10 @@ class AdminMovieApiTests(TestCase):
         self.assertIn(genre2, genres)
         self.assertIn(actor1, actors)
         self.assertIn(actor2, actors)
+
+    def test_can_not_delete_movie(self):
+        movie = sample_movie()
+
+        res = self.client.delete(reverse("cinema:movie-detail", args=[movie.id]))
+        self.assertEqual(res.status_code, 405)
+        self.assertTrue(Movie.objects.filter(pk=movie.id).exists())
