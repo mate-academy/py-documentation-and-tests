@@ -199,7 +199,7 @@ class AuthenticatedMovieApiTests(TestCase):
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(res.data, serializer.data)
 
-    def test_filter_movies_by_title(self):
+    def test_filter_movies_by_title_and_actors(self):
         movie1 = sample_movie(title="A")
         movie2 = sample_movie(title="B")
 
@@ -302,3 +302,13 @@ class AdminApiTest(TestCase):
         self.assertIn(genre2, genres)
         self.assertIn(actor1, actors)
         self.assertIn(actor2, actors)
+
+    def test_delete_movie_not_allowed(self):
+        movie = sample_movie()
+        url = detail_url(movie.id)
+
+        response = self.client.delete(url)
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_405_METHOD_NOT_ALLOWED
+        )
