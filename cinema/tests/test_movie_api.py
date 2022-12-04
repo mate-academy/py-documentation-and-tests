@@ -79,7 +79,7 @@ class UnauthenticatedMovieApiTest(TestCase):
 class AuthenticatedMovieApiTest(TestCase):
     def setUp(self) -> None:
         self.client = APIClient()
-        self.user = get_user_model().objects.create_superuser(
+        self.user = get_user_model().objects.create_user(
             "user@myproject.com",
             "password",
         )
@@ -194,6 +194,8 @@ class AuthenticatedMovieApiTest(TestCase):
     def test_create_movie_forbidden(self) -> None:
         payload = {
             "title": "Sample movie",
+            "description": "Description",
+            "duration": 90,
         }
 
         res = self.client.post(MOVIE_URL, payload)
