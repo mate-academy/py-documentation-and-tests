@@ -217,24 +217,24 @@ class AuthenticatedMovieApiTests(TestCase):
 
         movie2 = create_film_with_custom_params()
 
-        res1 = self.client.get(MOVIE_URL, {"title": "star"})
-        res2 = self.client.get(MOVIE_URL, {"genres": f"{genre.id}"})
-        res3 = self.client.get(MOVIE_URL, {"actors": f"{actor.id}"})
+        res_filter_by_title = self.client.get(MOVIE_URL, {"title": "star"})
+        res_filter_by_genre = self.client.get(MOVIE_URL, {"genres": f"{genre.id}"})
+        res_filter_by_actor = self.client.get(MOVIE_URL, {"actors": f"{actor.id}"})
 
         serializer1 = MovieListSerializer(movie1)
         serializer2 = MovieListSerializer(movie2)
 
         # test filter by title
-        self.assertNotIn(serializer1.data, res1.data)
-        self.assertIn(serializer2.data, res1.data)
+        self.assertNotIn(serializer1.data, res_filter_by_title.data)
+        self.assertIn(serializer2.data, res_filter_by_title.data)
 
         # test filter by genres
-        self.assertIn(serializer1.data, res2.data)
-        self.assertNotIn(serializer2.data, res2.data)
+        self.assertIn(serializer1.data, res_filter_by_genre.data)
+        self.assertNotIn(serializer2.data, res_filter_by_genre.data)
 
         # test filter by actors
-        self.assertIn(serializer1.data, res3.data)
-        self.assertNotIn(serializer2.data, res3.data)
+        self.assertIn(serializer1.data, res_filter_by_actor.data)
+        self.assertNotIn(serializer2.data, res_filter_by_actor.data)
 
     def test_retrieve_movie_detail(self):
         movie = create_film_with_custom_params()
