@@ -77,9 +77,7 @@ class UnauthenticatedMovieApiTests(TestCase):
 class AuthenticatedMovieApiTests(TestCase):
     def setUp(self):
         self.client = APIClient()
-        self.user = get_user_model().objects.create_user(
-            "test@test.com", "password123"
-        )
+        self.user = get_user_model().objects.create_user("test@test.com", "password123")
         self.client.force_authenticate(self.user)
 
     def test_list_movies(self):

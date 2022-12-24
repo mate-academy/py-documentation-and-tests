@@ -139,7 +139,7 @@ class MovieViewSet(
                 "title",
                 type={"type": "list", "items": {"type": "string"}},
                 description="Filter by title of movie (exp. ?title=1984)",
-            )
+            ),
         ]
     )
     def list(self, request, *args, **kwargs):
@@ -189,12 +189,14 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
             OpenApiParameter(
                 "date",
                 type={"type": "list", "items": {"type": "string"}},
-                description="Filter by date of Movie Session (exp. ?date=1984-10-31)",
+                description="Filter by date of Movie "
+                            "Session (exp. ?date=1984-10-31)",
             ),
             OpenApiParameter(
                 "movie",
                 type={"type": "list", "items": {"type": "number"}},
-                description="Filter by movie id numbers of Movie Session (exp. ?movie=1,2)",
+                description="Filter by movie id numbers "
+                            "of Movie Session (exp. ?movie=1,2)",
             ),
         ]
     )
