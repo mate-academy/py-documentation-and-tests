@@ -46,7 +46,7 @@ class AuthTokenSerializer(serializers.Serializer):
                         code="authorization")
             else:
                 msg = _("Unable to log in with provided credentials.")
-                raise serializers.ValidationError(msg, code="authorization")
+                raise serializers.DjangoValidationError
         else:
             msg = _("Must include 'username' and 'password'.")
             raise serializers.ValidationError(msg, code="authorization")

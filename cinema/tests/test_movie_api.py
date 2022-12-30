@@ -70,8 +70,8 @@ class UnauthenticatedMovieApiTests(TestCase):
         self.client = APIClient()
 
     def test_auth_required(self):
-        res = self.client.get(MOVIE_URL)
-        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+        res = self.client.get(MOVIE_SESSION_URL)
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
 class AuthenticatedMovieApiTests(TestCase):
