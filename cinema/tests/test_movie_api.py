@@ -178,9 +178,11 @@ class AuthenticatedMovieAPITest(TestCase):
     def test_list_movies(self):
         sample_movie()
         sample_movie()
+
         res = self.client.get(MOVIE_URL)
         movies = Movie.objects.all()
         serializer = MovieListSerializer(movies, many=True)
+
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(res.data, serializer.data)
 
@@ -189,7 +191,6 @@ class AuthenticatedMovieAPITest(TestCase):
         movie2 = sample_movie(title="test2")
 
         res = self.client.get(MOVIE_URL, {"title": "test1"})
-
         serializer1 = MovieListSerializer(movie1)
         serializer2 = MovieListSerializer(movie2)
 
@@ -201,13 +202,11 @@ class AuthenticatedMovieAPITest(TestCase):
         movie2 = sample_movie()
         genre1 = sample_genre(name="test1")
         genre2 = sample_genre(name="test2")
-
         movie1.genres.add(genre1)
         movie2.genres.add(genre2)
 
         serializer1 = MovieListSerializer(movie1)
         serializer2 = MovieListSerializer(movie2)
-
         res = self.client.get(MOVIE_URL, {"genres": f"{genre1.id}"})
 
         self.assertIn(serializer1.data, res.data)
@@ -218,13 +217,11 @@ class AuthenticatedMovieAPITest(TestCase):
         movie2 = sample_movie()
         actor1 = sample_actor()
         actor2 = sample_actor()
-
         movie1.actors.add(actor1)
         movie2.actors.add(actor2)
 
         serializer1 = MovieListSerializer(movie1)
         serializer2 = MovieListSerializer(movie2)
-
         res = self.client.get(MOVIE_URL, {"actors": f"{actor1.id}"})
 
         self.assertIn(serializer1.data, res.data)
@@ -232,9 +229,9 @@ class AuthenticatedMovieAPITest(TestCase):
 
     def test_retrieve_movie_detail(self):
         movie = sample_movie()
+
         url = detail_url(movie.id)
         res = self.client.get(url)
-
         serializer = MovieDetailSerializer(movie)
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
@@ -287,7 +284,6 @@ class AdminMovieApiTest(TestCase):
         movie = sample_movie()
 
         url = detail_url(movie.id)
-
         res = self.client.delete(url)
 
         self.assertEqual(res.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
@@ -296,7 +292,6 @@ class AdminMovieApiTest(TestCase):
         movie = sample_movie()
 
         url = detail_url(movie.id)
-
         res = self.client.put(url)
 
         self.assertEqual(res.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
@@ -305,7 +300,6 @@ class AdminMovieApiTest(TestCase):
         movie = sample_movie()
 
         url = detail_url(movie.id)
-
         res = self.client.patch(url)
 
         self.assertEqual(res.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
