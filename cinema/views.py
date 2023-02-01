@@ -128,7 +128,7 @@ class MovieViewSet(
         parameters=[
             OpenApiParameter(
                 "title",
-                type={"type": "list", "item": {"type": "str"}},
+                type=str,
                 description="Filter by title name (ex, ?=title=Looper)",
             ),
             OpenApiParameter(
@@ -189,13 +189,13 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
         parameters=[
             OpenApiParameter(
                 "date",
-                type={"type": "list", "item": {"type": "number"}},
+                type=int,
                 description="Filter by date number (ex, ?=date=2023-01-01)",
             ),
             OpenApiParameter(
                 "movie",
-                type={"type": "list", "item": {"type": "number"}},
-                description="Filter by movie number (ex, ?=date=2,3)",
+                type=int,
+                description="Filter by movie number (ex, ?=date=2)",
             )
         ]
     )
