@@ -126,20 +126,20 @@ class MovieViewSet(
     @extend_schema(
         parameters=[
             OpenApiParameter(
-                "title",
-                type={"type": "list", "items": {"type": "string"}},
-                description="Filter by title id (ex ?title=1,3)"
-            ),
-            OpenApiParameter(
                 "genres",
                 type={"type": "list", "items": {"type": "number"}},
-                description="Filter by genres id (ex ?genres=2,4)"
+                description="Filter by genres id numbers (exp. ?genres=1,3)",
             ),
             OpenApiParameter(
                 "actors",
                 type={"type": "list", "items": {"type": "number"}},
-                description="Filter by actors id (ex ?actors=1,2)"
-            )
+                description="Filter by actors id numbers (exp. ?actors=1,3)",
+            ),
+            OpenApiParameter(
+                "title",
+                type={"type": "list", "items": {"type": "string"}},
+                description="Filter by title of movie (exp. ?title=Matrix)",
+            ),
         ]
     )
     def list(self, request, *args, **kwargs):
@@ -183,6 +183,25 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
             return MovieSessionDetailSerializer
 
         return MovieSessionSerializer
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                "date",
+                type={"type": "list", "items": {"type": "string"}},
+                description="Filter by date of Movie "
+                            "Session (exp. ?date=2014-07-31)",
+            ),
+            OpenApiParameter(
+                "movie",
+                type={"type": "list", "items": {"type": "number"}},
+                description="Filter by movie id numbers "
+                            "of Movie Session (exp. ?movie=1,3)",
+            ),
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
 
 
 class OrderPagination(PageNumberPagination):
