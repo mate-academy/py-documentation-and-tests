@@ -6,7 +6,7 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 
-from rest_framework.test import APIClient
+from rest_framework.test import APIClient, APITestCase
 from rest_framework import status
 
 from cinema.models import Movie, MovieSession, CinemaHall, Genre, Actor
@@ -157,3 +157,88 @@ class MovieImageUploadTests(TestCase):
         res = self.client.get(MOVIE_SESSION_URL)
 
         self.assertIn("movie_image", res.data[0].keys())
+
+
+User = get_user_model()
+
+
+class MovieViewSetAdminTestCase(APITestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.user = get_user_model().objects.create_superuser(
+            "admin@myproject.com", "password"
+        )
+        self.client.force_authenticate(self.user)
+        self.movie = sample_movie()
+        self.genre = sample_genre()
+        self.actor = sample_actor()
+        self.movie_session = sample_movie_session(movie=self.movie)
+
+    def test_list_movies_with_title(self):
+        # Test filtering movies by title
+        url = MOVIE_URL+"?title={title}"
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_list_movies_with_genres(self):
+        # Test filtering movies by genres
+        url = MOVIE_URL+"?genres.id={genres.id}"
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_list_movies_with_actors(self):
+        # Test filtering movies by actors
+        url = MOVIE_URL+"?actors.id={actors.id}"
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_retrieve_movie(self):
+        # Test retrieving a single movie by ID
+        url = MOVIE_URL+"?pk={movie.id}"
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+
+class MovieViewSetAuthenticatedApiTests(TestCase):
+    def setUp(self) -> None:
+        self.client = APIClient()
+        self.user = get_user_model().objects.create_user(
+            "test@test.com",
+            "testpass",
+        )
+        self.client.force_authenticate(self.user)
+
+    def test_list_movies_with_title(self):
+        # Test filtering movies by title
+        url = MOVIE_URL + "?title={title}"
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_list_movies_with_genres(self):
+        # Test filtering movies by genres
+        url = MOVIE_URL + "?genres.id={genres.id}"
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_list_movies_with_actors(self):
+        # Test filtering movies by actors
+        url = MOVIE_URL + "?actors.id={actors.id}"
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_retrieve_movie(self):
+        # Test retrieving a single movie by ID
+        url = MOVIE_URL + "?pk={movie.id}"
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_create_movie_forbidden(self):
+        payload = {
+            "title": "Title",
+            "description": "Description",
+            "duration": 90,
+            "genres": [1],
+            "actors": [1],
+        }
+        res = self.client.post(MOVIE_URL, payload)
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
