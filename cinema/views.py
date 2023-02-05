@@ -134,18 +134,6 @@ class MovieViewSet(
                 description="Filter by genres id numbers (exp. ?genres=1,3)",
             ),
             OpenApiParameter(
-                "date",
-                type={"type": "list", "items": {"type": "string"}},
-                description="Filter by date of Movie "
-                            "Session (exp. ?date=2014-07-31)",
-            ),
-            OpenApiParameter(
-                "movie",
-                type={"type": "list", "items": {"type": "number"}},
-                description="Filter by movie id numbers "
-                            "of Movie Session (exp. ?movie=1,3)",
-            ),
-            OpenApiParameter(
                 "actors",
                 type={"type": "list", "items": {"type": "number"}},
                 description="Filter by actors id numbers (exp. ?actors=1,3)",
@@ -155,7 +143,8 @@ class MovieViewSet(
                 type={"type": "list", "items": {"type": "string"}},
                 description="Filter by title of movie (exp. ?title=Matrix)",
             )
-        ])
+        ]
+    )
     def list(self, request, *args, **kwargs):
         return super().list(request, *args, **kwargs)
 
