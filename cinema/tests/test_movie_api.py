@@ -169,10 +169,6 @@ class MovieViewSetAdminTestCase(APITestCase):
             "admin@myproject.com", "password"
         )
         self.client.force_authenticate(self.user)
-        self.movie = sample_movie()
-        self.genre = sample_genre()
-        self.actor = sample_actor()
-        self.movie_session = sample_movie_session(movie=self.movie)
 
     def test_list_movies_with_title(self):
         # Test filtering movies by title
