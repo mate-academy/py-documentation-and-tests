@@ -162,7 +162,7 @@ class MovieImageUploadTests(TestCase):
 User = get_user_model()
 
 
-class MovieViewSetAdminTestCase(APITestCase):
+class MovieViewSetAdminTestCase(TestCase):
     def setUp(self):
         self.client = APIClient()
         self.user = get_user_model().objects.create_superuser(
@@ -172,26 +172,30 @@ class MovieViewSetAdminTestCase(APITestCase):
 
     def test_list_movies_with_title(self):
         # Test filtering movies by title
-        url = MOVIE_URL+"?title={title}"
-        response = self.client.get(url)
+        title = "Movie1"
+        data = {"title": title}
+        response = self.client.get(MOVIE_URL, data=data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_list_movies_with_genres(self):
         # Test filtering movies by genres
-        url = MOVIE_URL+"?genres.id={genres.id}"
-        response = self.client.get(url)
+        genre = "genre1"
+        data = {"genre": genre}
+        response = self.client.get(MOVIE_URL, data=data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_list_movies_with_actors(self):
         # Test filtering movies by actors
-        url = MOVIE_URL+"?actors.id={actors.id}"
-        response = self.client.get(url)
+        actor = "actor1"
+        data = {"actor": actor}
+        response = self.client.get(MOVIE_URL, data=data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_retrieve_movie(self):
         # Test retrieving a single movie by ID
-        url = MOVIE_URL+"?pk={movie.id}"
-        response = self.client.get(url)
+        pk = "1"
+        data = {"actor": pk}
+        response = self.client.get(MOVIE_URL, data=data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
 
@@ -206,26 +210,29 @@ class MovieViewSetAuthenticatedApiTests(TestCase):
 
     def test_list_movies_with_title(self):
         # Test filtering movies by title
-        url = MOVIE_URL + "?title={title}"
-        response = self.client.get(url)
+        title = "Movie1"
+        data = {"title": title}
+        response = self.client.get(MOVIE_URL, data=data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_list_movies_with_genres(self):
         # Test filtering movies by genres
-        url = MOVIE_URL + "?genres.id={genres.id}"
-        response = self.client.get(url)
+        genre = "genre1"
+        data = {"genre": genre}
+        response = self.client.get(MOVIE_URL, data=data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_list_movies_with_actors(self):
         # Test filtering movies by actors
-        url = MOVIE_URL + "?actors.id={actors.id}"
-        response = self.client.get(url)
+        actor = "actor1"
+        data = {"actor": actor}
+        response = self.client.get(MOVIE_URL, data=data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_retrieve_movie(self):
-        # Test retrieving a single movie by ID
-        url = MOVIE_URL + "?pk={movie.id}"
-        response = self.client.get(url)
+        pk = "1"
+        data = {"actor": pk}
+        response = self.client.get(MOVIE_URL, data=data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_create_movie_forbidden(self):
