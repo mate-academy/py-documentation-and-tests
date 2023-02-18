@@ -36,11 +36,11 @@ class Actor(models.Model):
         return f"{self.first_name} {self.last_name}"
 
     @property
-    def full_name(self):
+    def full_name(self) -> str:
         return f"{self.first_name} {self.last_name}"
 
 
-def movie_image_file_path(instance, filename: str) -> str:
+def movie_image_file_path(instance: "Movie", filename: str) -> str:
     _, ext = os.path.splitext(filename)
     filename = f"{slugify(instance.title)}-{uuid.uuid4()}{ext}"
     return os.path.join("uploads/movies/", filename)
