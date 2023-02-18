@@ -81,7 +81,7 @@ class MovieViewSet(
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
     @staticmethod
-    def _params_to_ints(qs: list[str]) -> list[int]:
+    def _params_to_ints(qs: str) -> list[int]:
         """Converts a list of string IDs to a list of integers"""
         return [int(str_id) for str_id in qs.split(",")]
 
@@ -138,7 +138,7 @@ class MovieViewSet(
         parameters=[
             OpenApiParameter(
                 "title",
-                type={"type": "list", "items": {"type": "str"}},
+                type=str,
                 description="Filter by title name (ex. ?title=Inception)"
             ),
             OpenApiParameter(
@@ -207,7 +207,7 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
             ),
             OpenApiParameter(
                 "movie",
-                type={"type": "list", "items": {"type": "number"}},
+                type=int,
                 description="Filter by movie id (ex. ?movie=2)"
             )
         ]
