@@ -1,6 +1,7 @@
 from datetime import datetime
+from typing import Any
 
-from django.db.models import F, Count
+from django.db.models import F, Count, QuerySet
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import viewsets, mixins, status
 from rest_framework.decorators import action
@@ -69,11 +70,11 @@ class MovieViewSet(
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
     @staticmethod
-    def _params_to_ints(qs):
+    def _params_to_ints(qs) -> list[int]:
         """Converts a list of string IDs to a list of integers"""
         return [int(str_id) for str_id in qs.split(",")]
 
-    def get_queryset(self):
+    def get_queryset(self) -> Any:
         """Retrieve the movies with filters"""
         title = self.request.query_params.get("title")
         genres = self.request.query_params.get("genres")
@@ -94,7 +95,7 @@ class MovieViewSet(
 
         return queryset.distinct()
 
-    def get_serializer_class(self):
+    def get_serializer_class(self) -> object:
         if self.action == "list":
             return MovieListSerializer
 
@@ -146,7 +147,7 @@ class MovieViewSet(
 
         ]
     )
-    def list(self, request, *args, **kwargs):
+    def list(self, request: Any, *args: tuple, **kwargs: Any) -> QuerySet:
         return super().list(self, request, *args, **kwargs)
 
 
@@ -164,7 +165,7 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
     serializer_class = MovieSessionSerializer
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
-    def get_queryset(self):
+    def get_queryset(self) -> QuerySet[MovieSession]:
         date = self.request.query_params.get("date")
         movie_id_str = self.request.query_params.get("movie")
 
@@ -179,7 +180,7 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
 
         return queryset
 
-    def get_serializer_class(self):
+    def get_serializer_class(self) -> Any:
         if self.action == "list":
             return MovieSessionListSerializer
 
@@ -204,7 +205,7 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
             ),
         ]
     )
-    def list(self, request, *args, **kwargs):
+    def list(self, request: Any, *args: tuple, **kwargs: Any) -> QuerySet:
         return super().list(self, request, *args, **kwargs)
 
 
@@ -225,14 +226,14 @@ class OrderViewSet(
     pagination_class = OrderPagination
     permission_classes = (IsAuthenticated,)
 
-    def get_queryset(self):
+    def get_queryset(self) -> QuerySet[Order]:
         return Order.objects.filter(user=self.request.user)
 
-    def get_serializer_class(self):
+    def get_serializer_class(self) -> Any:
         if self.action == "list":
             return OrderListSerializer
 
         return OrderSerializer
 
-    def perform_create(self, serializer):
+    def perform_create(self, serializer) -> None:
         serializer.save(user=self.request.user)
