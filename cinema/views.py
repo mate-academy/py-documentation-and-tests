@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any
+from typing import Any, Type
 
 from django.db.models import F, Count, QuerySet
 from drf_spectacular.utils import extend_schema, OpenApiParameter
@@ -8,6 +8,7 @@ from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
+from rest_framework.serializers import Serializer
 from rest_framework.viewsets import GenericViewSet
 
 from cinema.models import Genre, Actor, CinemaHall, Movie, MovieSession, Order
@@ -70,11 +71,11 @@ class MovieViewSet(
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
     @staticmethod
-    def _params_to_ints(qs) -> list[int]:
+    def _params_to_ints(qs: str) -> list[int]:
         """Converts a list of string IDs to a list of integers"""
         return [int(str_id) for str_id in qs.split(",")]
 
-    def get_queryset(self) -> Any:
+    def get_queryset(self) -> QuerySet:
         """Retrieve the movies with filters"""
         title = self.request.query_params.get("title")
         genres = self.request.query_params.get("genres")
@@ -95,7 +96,7 @@ class MovieViewSet(
 
         return queryset.distinct()
 
-    def get_serializer_class(self) -> object:
+    def get_serializer_class(self) -> Type[Serializer]:
         if self.action == "list":
             return MovieListSerializer
 
@@ -128,7 +129,7 @@ class MovieViewSet(
         parameters=[
             OpenApiParameter(
                 name="title",
-                type={"type": "list", "items": {"type": "str"}},
+                type={"type": "list"},
                 description="Filter by title text (ex. ?title=de)",
                 required=False,
             ),
@@ -180,7 +181,7 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
 
         return queryset
 
-    def get_serializer_class(self) -> Any:
+    def get_serializer_class(self) -> Type[Serializer]:
         if self.action == "list":
             return MovieSessionListSerializer
 
@@ -193,13 +194,13 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
         parameters=[
             OpenApiParameter(
                 name="date",
-                type={"type": "list", "items": {"type": "date"}},
+                type={"type": "list"},
                 description="Filter by date (ex. ?date=2022-10-10)",
                 required=False,
             ),
             OpenApiParameter(
                 name="movie",
-                type={"type": "list", "items": {"type": "str"}},
+                type={"type": "list"},
                 description="Filter by movie id (ex. ?movie=3,4)",
                 required=False,
             ),
@@ -229,7 +230,7 @@ class OrderViewSet(
     def get_queryset(self) -> QuerySet[Order]:
         return Order.objects.filter(user=self.request.user)
 
-    def get_serializer_class(self) -> Any:
+    def get_serializer_class(self) -> Type[Serializer]:
         if self.action == "list":
             return OrderListSerializer
 

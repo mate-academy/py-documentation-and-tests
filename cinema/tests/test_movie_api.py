@@ -59,12 +59,12 @@ def sample_movie_session(**params: Any) -> MovieSession:
     return MovieSession.objects.create(**defaults)
 
 
-def image_upload_url(movie_id: Any) -> str:
+def image_upload_url(movie_id: int) -> str:
     """Return URL for recipe image upload"""
     return reverse("cinema:movie-upload-image", args=[movie_id])
 
 
-def detail_url(movie_id: Any) -> str:
+def detail_url(movie_id: int) -> str:
     return reverse("cinema:movie-detail", args=[movie_id])
 
 
