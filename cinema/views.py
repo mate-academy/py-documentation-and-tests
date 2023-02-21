@@ -190,7 +190,7 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
             OpenApiParameter(
                 name="movie",
                 description="Filter movie by id",
-                type=str
+                type={"type": "list", "items": {"type": "number"}},
             ),
             OpenApiParameter(
                 name="date",
