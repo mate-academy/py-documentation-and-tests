@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from django.db.models import F, Count
+from django.http import HttpRequest
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import viewsets, mixins, status
 from rest_framework.authentication import TokenAuthentication
@@ -205,7 +206,9 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
             )
         ]
     )
-    def list(self, request, *args, **kwargs):
+    def list(
+            self, request: HttpRequest, *args: tuple, **kwargs: dict
+    ) -> Response:
         return super().list(request, *args, **kwargs)
 
 
