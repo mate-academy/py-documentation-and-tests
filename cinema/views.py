@@ -145,7 +145,9 @@ class MovieViewSet(
             ),
         ]
     )
-    def list(self, request, *args, **kwargs):
+    def list(
+            self, request: HttpRequest, *args: tuple, **kwargs: dict
+    ) -> Response:
         return super().list(request, *args, **kwargs)
 
 
