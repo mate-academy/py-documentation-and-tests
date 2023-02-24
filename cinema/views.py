@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Any
 
 from django.db.models import F, Count
 from django.http import HttpRequest
@@ -146,7 +147,7 @@ class MovieViewSet(
         ]
     )
     def list(
-            self, request: HttpRequest, *args: tuple, **kwargs: dict
+            self, request: HttpRequest, *args: Any, **kwargs: Any
     ) -> Response:
         return super().list(request, *args, **kwargs)
 
@@ -203,13 +204,13 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
                 "movie",
                 type=str,
                 description="Filter movie by movie id "
-                            "(example: ?date=2023-03-10&movie=1)",
+                            "(example: ?movie=1)",
                 required=False,
             )
         ]
     )
     def list(
-            self, request: HttpRequest, *args: tuple, **kwargs: dict
+            self, request: HttpRequest, *args: Any, **kwargs: Any
     ) -> Response:
         return super().list(request, *args, **kwargs)
 
