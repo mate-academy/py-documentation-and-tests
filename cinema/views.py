@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Any
 
 from django.db.models import F, Count
 from drf_spectacular.utils import extend_schema, OpenApiParameter
@@ -7,6 +8,7 @@ from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet, ReadOnlyModelViewSet
 from rest_framework_simplejwt.authentication import JWTAuthentication
@@ -144,7 +146,7 @@ class MovieViewSet(
             ),
         ]
     )
-    def list(self, request, *args, **kwargs):
+    def list(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         return super().list(request, *args, **kwargs)
 
 
@@ -196,11 +198,11 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
             OpenApiParameter(
                 "data",
                 type={"type": "data"},
-                description="Filter by data (year-month-date)",
+                description="Filter by data (ex. ?date=2022-03-01)",
             ),
         ]
     )
-    def list(self, request, *args, **kwargs):
+    def list(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         return super().list(request, *args, **kwargs)
 
 
