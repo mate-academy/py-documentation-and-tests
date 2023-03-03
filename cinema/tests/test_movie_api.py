@@ -106,9 +106,9 @@ class AuthenticatedMovieSetApiTests(TestCase):
         serializers = []
         movies = []
         for i in range(4):
-            title = "Movie " + str(i)
+            title = f"Movie {str(i)}"
             movie = sample_movie(title=title)
-            name = "Genre " + str(i)
+            name = f"Genre {str(i)}"
             genre = sample_genre(name=name)
             movie.genres.add(genre)
             movies.append(movie)
@@ -116,11 +116,9 @@ class AuthenticatedMovieSetApiTests(TestCase):
 
         serializer_without_genre = MovieListSerializer(sample_movie())
 
-        id_str = ""
-        for movie in movies:
-            id_str += str(movie.id) + ","
+        id_str = ",".join(list(map(lambda movie: str(movie.id), movies)))
 
-        res = self.client.get(MOVIE_URL, {"genres": id_str[0:-1]})
+        res = self.client.get(MOVIE_URL, {"genres": id_str})
 
         for serializer in serializers:
             self.assertIn(serializer.data, res.data)
@@ -130,9 +128,9 @@ class AuthenticatedMovieSetApiTests(TestCase):
         serializers = []
         movies = []
         for i in range(3):
-            title = "Movie " + str(i)
+            title = f"Movie {str(i)}"
             movie = sample_movie(title=title)
-            name = "Test " + str(i)
+            name = f"Test {str(i)}"
             actor = sample_actor(first_name=name)
             movie.actors.add(actor)
             movies.append(movie)
@@ -140,11 +138,9 @@ class AuthenticatedMovieSetApiTests(TestCase):
 
         serializer_without_actor = MovieListSerializer(sample_movie())
 
-        id_str = ""
-        for movie in movies:
-            id_str += str(movie.id) + ","
+        id_str = ",".join(list(map(lambda movie: str(movie.id), movies)))
 
-        res = self.client.get(MOVIE_URL, {"actors": id_str[0:-1]})
+        res = self.client.get(MOVIE_URL, {"actors": id_str})
 
         for serializer in serializers:
             self.assertIn(serializer.data, res.data)

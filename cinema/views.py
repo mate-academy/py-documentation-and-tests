@@ -148,7 +148,7 @@ class MovieViewSet(
             self,
             request: Request,
             *args: tuple[Any],
-            **kwargs:  dict[str, Any]
+            **kwargs: dict[str, Any]
     ) -> Response:
         return super().list(request, *args, **kwargs)
 
