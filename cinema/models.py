@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 import os
 import uuid
+from typing import Type, Any
 
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -16,14 +19,14 @@ class CinemaHall(models.Model):
     def capacity(self) -> int:
         return self.rows * self.seats_in_row
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.name
 
 
 class Genre(models.Model):
     name = models.CharField(max_length=255, unique=True)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.name
 
 
@@ -31,15 +34,15 @@ class Actor(models.Model):
     first_name = models.CharField(max_length=255)
     last_name = models.CharField(max_length=255)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.first_name + " " + self.last_name
 
     @property
-    def full_name(self):
+    def full_name(self) -> str:
         return f"{self.first_name} {self.last_name}"
 
 
-def movie_image_file_path(instance, filename):
+def movie_image_file_path(instance: Movie, filename: str) -> str:
     _, extension = os.path.splitext(filename)
     filename = f"{slugify(instance.title)}-{uuid.uuid4()}{extension}"
 
@@ -57,7 +60,7 @@ class Movie(models.Model):
     class Meta:
         ordering = ["title"]
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.title
 
 
@@ -69,7 +72,7 @@ class MovieSession(models.Model):
     class Meta:
         ordering = ["-show_time"]
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.movie.title + " " + str(self.show_time)
 
 
@@ -79,7 +82,7 @@ class Order(models.Model):
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE
     )
 
-    def __str__(self):
+    def __str__(self) -> str:
         return str(self.created_at)
 
     class Meta:
@@ -97,7 +100,12 @@ class Ticket(models.Model):
     seat = models.IntegerField()
 
     @staticmethod
-    def validate_ticket(row, seat, cinema_hall, error_to_raise):
+    def validate_ticket(
+        row: int,
+        seat: int,
+        cinema_hall: CinemaHall,
+        error_to_raise: Type[ValidationError],
+    ) -> None:
         for ticket_attr_value, ticket_attr_name, cinema_hall_attr_name in [
             (row, "row", "rows"),
             (seat, "seat", "seats_in_row"),
@@ -113,7 +121,7 @@ class Ticket(models.Model):
                     }
                 )
 
-    def clean(self):
+    def clean(self) -> None:
         Ticket.validate_ticket(
             self.row,
             self.seat,
@@ -123,17 +131,17 @@ class Ticket(models.Model):
 
     def save(
         self,
-        force_insert=False,
-        force_update=False,
-        using=None,
-        update_fields=None,
-    ):
+        force_insert: bool = False,
+        force_update: bool = False,
+        using: Any = None,
+        update_fields: Any = None,
+    ) -> Ticket:
         self.full_clean()
         return super(Ticket, self).save(
             force_insert, force_update, using, update_fields
         )
 
-    def __str__(self):
+    def __str__(self) -> str:
         return (
             f"{str(self.movie_session)} (row: {self.row}, seat: {self.seat})"
         )
