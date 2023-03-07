@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 import uuid
-from typing import Type, Any
+from typing import Type, Any, Optional
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
@@ -133,8 +133,8 @@ class Ticket(models.Model):
         self,
         force_insert: bool = False,
         force_update: bool = False,
-        using: Any = None,
-        update_fields: Any = None,
+        using: Optional[Any] = None,
+        update_fields: Optional[Any] = None,
     ) -> Ticket:
         self.full_clean()
         return super(Ticket, self).save(

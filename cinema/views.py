@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Any
 
 from django.db.models import F, Count
 from drf_spectacular.utils import extend_schema, OpenApiParameter
@@ -137,7 +138,9 @@ class MovieViewSet(
             ),
         ]
     )
-    def list(self, request: Request, *args: list, **kwargs: dict) -> Response:
+    def list(
+        self, request: Request, *args: tuple[Any], **kwargs: dict[str]
+    ) -> Response:
         return super().list(request, *args, **kwargs)
 
 
@@ -192,7 +195,9 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
             ),
         ]
     )
-    def list(self, request: Request, *args: list, **kwargs: dict) -> Response:
+    def list(
+        self, request: Request, *args: tuple[Any], **kwargs: dict[str]
+    ) -> Response:
         return super().list(request, *args, **kwargs)
 
 
