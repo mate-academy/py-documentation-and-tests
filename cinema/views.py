@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any, Type
+from typing import Any, Type, Optional
 
 from django.db.models import F, Count, QuerySet
 from drf_spectacular.utils import OpenApiParameter, extend_schema
@@ -110,7 +110,7 @@ class MovieViewSet(
         url_path="upload-image",
         permission_classes=[IsAdminUser],
     )
-    def upload_image(self, request: Request, pk: int = None) -> Response:
+    def upload_image(self, request: Request, pk: Optional[int] = None) -> Response:
         """Endpoint for uploading image to specific movie"""
         movie = self.get_object()
         serializer = self.get_serializer(movie, data=request.data)
