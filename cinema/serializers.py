@@ -1,15 +1,14 @@
 from django.db import transaction
 from rest_framework import serializers
-from rest_framework.exceptions import ValidationError
 
 from cinema.models import (
-    Genre,
     Actor,
+    Genre,
     CinemaHall,
     Movie,
     MovieSession,
-    Ticket,
     Order,
+    Ticket,
 )
 
 
@@ -31,7 +30,15 @@ class CinemaHallSerializer(serializers.ModelSerializer):
         fields = ("id", "name", "rows", "seats_in_row", "capacity")
 
 
+class MovieImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Movie
+        fields = ("id", "image")
+
+
 class MovieSerializer(serializers.ModelSerializer):
+    image = MovieImageSerializer(read_only=True)
+
     class Meta:
         model = Movie
         fields = (
@@ -41,18 +48,16 @@ class MovieSerializer(serializers.ModelSerializer):
             "duration",
             "genres",
             "actors",
+            "image",
         )
 
 
 class MovieListSerializer(serializers.ModelSerializer):
-
     genres = serializers.SlugRelatedField(
         many=True, read_only=True, slug_field="name"
     )
     actors = serializers.SlugRelatedField(
-        many=True,
-        read_only=True,
-        slug_field="full_name",
+        many=True, read_only=True, slug_field="full_name"
     )
 
     class Meta:
@@ -83,12 +88,6 @@ class MovieDetailSerializer(serializers.ModelSerializer):
             "actors",
             "image",
         )
-
-
-class MovieImageSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Movie
-        fields = ("id", "image")
 
 
 class MovieSessionSerializer(serializers.ModelSerializer):
@@ -122,13 +121,13 @@ class MovieSessionListSerializer(MovieSessionSerializer):
 
 
 class TicketSerializer(serializers.ModelSerializer):
-    def validate(self, attrs):
+    def validate(self, attrs: dict) -> dict:
         data = super(TicketSerializer, self).validate(attrs=attrs)
         Ticket.validate_ticket(
-            attrs["row"], 
-            attrs["seat"], 
-            attrs["movie_session"].cinema_hall, 
-            ValidationError
+            attrs["row"],
+            attrs["seat"],
+            attrs["movie_session"],
+            serializers.ValidationError
         )
         return data
 
@@ -166,13 +165,13 @@ class OrderSerializer(serializers.ModelSerializer):
         model = Order
         fields = ("id", "tickets", "created_at")
 
-    def create(self, validated_data):
-        with transaction.atomic():
-            tickets_data = validated_data.pop("tickets")
-            order = Order.objects.create(**validated_data)
-            for ticket_data in tickets_data:
-                Ticket.objects.create(order=order, **ticket_data)
-            return order
+    @transaction.atomic
+    def create(self, validated_data: dict) -> Order:
+        tickets_data = validated_data.pop("tickets")
+        order = Order.objects.create(**validated_data)
+        for ticket_data in tickets_data:
+            Ticket.objects.create(order=order, **ticket_data)
+        return order
 
 
 class OrderListSerializer(OrderSerializer):
