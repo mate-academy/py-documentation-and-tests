@@ -3,7 +3,7 @@
     "model": "cinema.cinemahall",
     "pk": 1,
     "fields": {
-      "name": "Ricciotto Canudo",
+      "name": "ex",
       "rows": 25,
       "seats_in_row": 30
     }
