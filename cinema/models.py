@@ -1,7 +1,9 @@
 import os
 import uuid
+from typing import Type, Optional
+
 from django.core.exceptions import ValidationError
-from django.db import models
+from django.db import models, DEFAULT_DB_ALIAS
 from django.conf import settings
 from django.utils.text import slugify
 
@@ -31,7 +33,7 @@ class Actor(models.Model):
     last_name = models.CharField(max_length=255)
 
     @property
-    def full_name(self):
+    def full_name(self) -> str:
         return f"{self.first_name} {self.last_name}"
 
     def __str__(self) -> str:
@@ -97,7 +99,12 @@ class Ticket(models.Model):
     seat = models.IntegerField()
 
     @staticmethod
-    def validate_ticket(row, seat, cinema_hall, error_to_raise):
+    def validate_ticket(
+            row: int,
+            seat: int,
+            cinema_hall: CinemaHall,
+            error_to_raise: Type[ValidationError]
+    ) -> None:
         for ticket_attr_value, ticket_attr_name, cinema_hall_attr_name in [
             (row, "row", "rows"),
             (seat, "seat", "seats_in_row"),
@@ -114,7 +121,7 @@ class Ticket(models.Model):
                     }
                 )
 
-    def clean(self):
+    def clean(self) -> None:
         Ticket.validate_ticket(
             self.row,
             self.seat,
@@ -124,11 +131,11 @@ class Ticket(models.Model):
 
     def save(
             self,
-            force_insert=False,
-            force_update=False,
-            using=None,
-            update_fields=None,
-    ):
+            force_insert: bool = Optional[False],
+            force_update: bool = Optional[False],
+            using: Optional[DEFAULT_DB_ALIAS] = None,
+            update_fields: Optional[list[str]] = None,
+    ) -> None:
         self.full_clean()
         return super(Ticket, self).save(
             force_insert, force_update, using, update_fields

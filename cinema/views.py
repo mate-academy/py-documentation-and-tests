@@ -69,7 +69,7 @@ class MovieViewSet(
         """Converts a list of string IDs to a list of integers"""
         return [int(str_id) for str_id in qs.split(",")]
 
-    def get_queryset(self) -> QuerySet:
+    def get_queryset(self) -> QuerySet[Movie]:
         """Retrieve the movies with filters"""
         title = self.request.query_params.get("title")
         genres = self.request.query_params.get("genres")
@@ -90,7 +90,12 @@ class MovieViewSet(
 
         return queryset.distinct()
 
-    def get_serializer_class(self):
+    def get_serializer_class(self) -> Type[
+        MovieSerializer
+        | MovieListSerializer
+        | MovieDetailSerializer
+        | MovieImageSerializer
+    ]:
         if self.action == "list":
             return MovieListSerializer
 
@@ -140,7 +145,7 @@ class MovieViewSet(
             ),
         ]
     )
-    def list(self, request, *args, **kwargs):
+    def list(self, request: Request, *args, **kwargs) -> list[Movie]:
         return super().list(request, *args, **kwargs)
 
 
@@ -148,7 +153,7 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
     queryset = MovieSession.objects.select_related("movie", "cinema_hall")
     serializer_class = MovieSessionSerializer
 
-    def get_queryset(self) -> QuerySet:
+    def get_queryset(self) -> QuerySet[MovieSession]:
         date = self.request.query_params.get("date")
         movie_id_str = self.request.query_params.get("movie")
 
@@ -198,7 +203,7 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
             ),
         ]
     )
-    def list(self, request, *args, **kwargs):
+    def list(self, request: Request, *args, **kwargs) -> list[MovieSession]:
         return super().list(request, *args, **kwargs)
 
 
@@ -220,7 +225,7 @@ class OrderViewSet(
     pagination_class = OrderPagination
     permission_classes = (IsAuthenticated,)
 
-    def get_queryset(self) -> QuerySet:
+    def get_queryset(self) -> QuerySet[Order]:
         return Order.objects.filter(user=self.request.user)
 
     def get_serializer_class(self) -> Type[OrderSerializer]:
