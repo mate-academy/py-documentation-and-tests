@@ -198,7 +198,7 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
             OpenApiParameter(
                 "date",
                 type={"type": "list", "items": {"type": "str"}},
-                description="Filter by show time of movie session (ex. ?date=2022-12-12)"
+                description="Filter by show time (ex. ?date=2022-12-12)"
             ),
             OpenApiParameter(
                 "movie",
