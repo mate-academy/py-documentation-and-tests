@@ -131,8 +131,8 @@ class Ticket(models.Model):
 
     def save(
             self,
-            force_insert: bool = Optional[False],
-            force_update: bool = Optional[False],
+            force_insert: Optional[bool] = False,
+            force_update: Optional[bool] = False,
             using: Optional[DEFAULT_DB_ALIAS] = None,
             update_fields: Optional[list[str]] = None,
     ) -> None:
