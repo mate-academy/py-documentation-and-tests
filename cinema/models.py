@@ -53,8 +53,12 @@ class Movie(models.Model):
     title = models.CharField(max_length=255)
     description = models.TextField()
     duration = models.IntegerField()
-    genres = models.ManyToManyField(Genre, related_name="movies")
-    actors = models.ManyToManyField(Actor, related_name="movies")
+    genres = models.ManyToManyField(
+        Genre, related_name="movies", blank=True
+    )
+    actors = models.ManyToManyField(
+        Actor, related_name="movies", blank=True
+    )
     image = models.ImageField(null=True, upload_to=movie_image_file_path)
 
     class Meta:
@@ -111,7 +115,7 @@ class Ticket(models.Model):
             seat: int,
             cinema_hall: CinemaHall,
             error_to_raise: Type[ValidationError]
-    ):
+    ) -> None:
         for ticket_attr_value, ticket_attr_name, cinema_hall_attr_name in [
             (row, "row", "rows"),
             (seat, "seat", "seats_in_row"),
@@ -141,7 +145,7 @@ class Ticket(models.Model):
         force_update: bool = False,
         using: Optional[Any] = None,
         update_fields: Optional[Any] = None,
-    ) -> None:
+    ) -> Ticket:
         self.full_clean()
         return super(Ticket, self).save(
             force_insert, force_update, using, update_fields
