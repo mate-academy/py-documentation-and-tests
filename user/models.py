@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Optional
+from typing import Optional, Any
 
 from django.db import models
 from django.utils.translation import gettext as _
@@ -13,7 +13,7 @@ class UserManager(BaseUserManager):
     use_in_migrations = True
 
     def _create_user(
-            self, email: str, password: str, **extra_fields: dict
+            self, email: str, password: str, **extra_fields: dict[str, Any]
     ) -> ValueError | User:
         """Create and save a User with the given email and password."""
         if not email:
@@ -25,7 +25,7 @@ class UserManager(BaseUserManager):
         return user
 
     def create_user(
-            self, email: str, password: Optional[str] = None, **extra_fields: dict
+            self, email: str, password: Optional[str] = None, **extra_fields: dict[str, Any]
     ) -> User:
         """Create and save a regular User with the given email and password."""
         extra_fields.setdefault("is_staff", False)
@@ -33,7 +33,7 @@ class UserManager(BaseUserManager):
         return self._create_user(email, password, **extra_fields)
 
     def create_superuser(
-            self, email: str, password: str, **extra_fields: dict
+            self, email: str, password: str, **extra_fields: dict[str, Any]
     ) -> ValueError | User:
         """Create and save a SuperUser with the given email and password."""
         extra_fields.setdefault("is_staff", True)
