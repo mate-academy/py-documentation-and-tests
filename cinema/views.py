@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import Type, Optional
 
 from django.db.models import F, Count, QuerySet
+from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import viewsets, mixins, status
 from rest_framework.decorators import action
@@ -113,7 +114,7 @@ class MovieViewSet(
         permission_classes=[IsAdminUser],
     )
     def upload_image(
-            self, request: Request, pk: Optional[int] = None
+        self, request: Request, pk: Optional[int] = None
     ) -> Response:
         """Endpoint for uploading image to specific movie"""
         movie = self.get_object()
@@ -127,18 +128,18 @@ class MovieViewSet(
         parameters=[
             OpenApiParameter(
                 "title",
-                type={"type": "list", "items": {"type": "str"}},
-                description="Filter by title of movie (ex. ?title=break)"
+                type=str,
+                description="Filter by title of movie (ex. ?title=break)",
             ),
             OpenApiParameter(
                 "actors",
                 type={"type": "list", "items": {"type": "number"}},
-                description="Filter by actors id (ex. ?actors=1,2)"
+                description="Filter by actors id (ex. ?actors=1,2)",
             ),
             OpenApiParameter(
                 "genres",
                 type={"type": "list", "items": {"type": "number"}},
-                description="Filter by genres id (ex. ?genres=1,3)"
+                description="Filter by genres id (ex. ?genres=1,3)",
             ),
         ]
     )
@@ -187,13 +188,13 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
         parameters=[
             OpenApiParameter(
                 "date",
-                type={"type": "list", "items": {"type": "str"}},
-                description="Filter by show time (ex. ?date=2022-12-12)"
+                type=OpenApiTypes.DATE,
+                description="Filter by show time (ex. ?date=2022-12-12)",
             ),
             OpenApiParameter(
                 "movie",
-                type={"type": "list", "items": {"type": "number"}},
-                description="Filter by movie id (ex. ?movie=1)"
+                type=str,
+                description="Filter by movie id (ex. ?movie=1)",
             ),
         ]
     )
