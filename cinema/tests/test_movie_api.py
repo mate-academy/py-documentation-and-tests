@@ -1,13 +1,12 @@
-import tempfile
 import os
+import tempfile
 
 from PIL import Image
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
-
-from rest_framework.test import APIClient
 from rest_framework import status
+from rest_framework.test import APIClient
 
 from cinema.models import Movie, MovieSession, CinemaHall, Genre, Actor
 from cinema.serializers import MovieListSerializer, MovieDetailSerializer
@@ -16,7 +15,7 @@ MOVIE_URL = reverse("cinema:movie-list")
 MOVIE_SESSION_URL = reverse("cinema:moviesession-list")
 
 
-def sample_movie(**params):
+def sample_movie(**params) -> Movie:
     defaults = {
         "title": "Sample movie",
         "description": "Sample description",
@@ -27,7 +26,7 @@ def sample_movie(**params):
     return Movie.objects.create(**defaults)
 
 
-def sample_genre(**params):
+def sample_genre(**params) -> Genre:
     defaults = {
         "name": "Drama",
     }
@@ -36,14 +35,14 @@ def sample_genre(**params):
     return Genre.objects.create(**defaults)
 
 
-def sample_actor(**params):
+def sample_actor(**params) -> Actor:
     defaults = {"first_name": "George", "last_name": "Clooney"}
     defaults.update(params)
 
     return Actor.objects.create(**defaults)
 
 
-def sample_movie_session(**params):
+def sample_movie_session(**params) -> MovieSession:
     cinema_hall = CinemaHall.objects.create(
         name="Blue", rows=20, seats_in_row=20
     )
@@ -62,17 +61,17 @@ def detail_movie_url(movie_id: int) -> str:
     return reverse("cinema:movie-detail", kwargs={"pk": movie_id})
 
 
-def image_upload_url(movie_id):
+def image_upload_url(movie_id) -> str:
     """Return URL for recipe image upload"""
     return reverse("cinema:movie-upload-image", args=[movie_id])
 
 
-def detail_url(movie_id):
+def detail_url(movie_id) -> str:
     return reverse("cinema:movie-detail", args=[movie_id])
 
 
 class MovieImageUploadTests(TestCase):
-    def setUp(self):
+    def setUp(self) -> None:
         self.client = APIClient()
         self.user = get_user_model().objects.create_superuser(
             "admin@myproject.com", "password"
@@ -83,10 +82,10 @@ class MovieImageUploadTests(TestCase):
         self.actor = sample_actor()
         self.movie_session = sample_movie_session(movie=self.movie)
 
-    def tearDown(self):
+    def tearDown(self) -> None:
         self.movie.image.delete()
 
-    def test_upload_image_to_movie(self):
+    def test_upload_image_to_movie(self) -> None:
         """Test uploading an image to movie"""
         url = image_upload_url(self.movie.id)
         with tempfile.NamedTemporaryFile(suffix=".jpg") as ntf:
@@ -100,14 +99,14 @@ class MovieImageUploadTests(TestCase):
         self.assertIn("image", res.data)
         self.assertTrue(os.path.exists(self.movie.image.path))
 
-    def test_upload_image_bad_request(self):
+    def test_upload_image_bad_request(self) -> None:
         """Test uploading an invalid image"""
         url = image_upload_url(self.movie.id)
         res = self.client.post(url, {"image": "not image"}, format="multipart")
 
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
 
-    def test_post_image_to_movie_list(self):
+    def test_post_image_to_movie_list(self) -> None:
         url = MOVIE_URL
         with tempfile.NamedTemporaryFile(suffix=".jpg") as ntf:
             img = Image.new("RGB", (10, 10))
@@ -130,7 +129,7 @@ class MovieImageUploadTests(TestCase):
         movie = Movie.objects.get(title="Title")
         self.assertFalse(movie.image)
 
-    def test_image_url_is_shown_on_movie_detail(self):
+    def test_image_url_is_shown_on_movie_detail(self) -> None:
         url = image_upload_url(self.movie.id)
         with tempfile.NamedTemporaryFile(suffix=".jpg") as ntf:
             img = Image.new("RGB", (10, 10))
@@ -141,7 +140,7 @@ class MovieImageUploadTests(TestCase):
 
         self.assertIn("image", res.data)
 
-    def test_image_url_is_shown_on_movie_list(self):
+    def test_image_url_is_shown_on_movie_list(self) -> None:
         url = image_upload_url(self.movie.id)
         with tempfile.NamedTemporaryFile(suffix=".jpg") as ntf:
             img = Image.new("RGB", (10, 10))
@@ -152,7 +151,7 @@ class MovieImageUploadTests(TestCase):
 
         self.assertIn("image", res.data[0].keys())
 
-    def test_image_url_is_shown_on_movie_session_detail(self):
+    def test_image_url_is_shown_on_movie_session_detail(self) -> None:
         url = image_upload_url(self.movie.id)
         with tempfile.NamedTemporaryFile(suffix=".jpg") as ntf:
             img = Image.new("RGB", (10, 10))
