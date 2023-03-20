@@ -43,7 +43,6 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "drf_spectacular",
     "rest_framework",
-    "rest_framework.authtoken",
     "debug_toolbar",
     "cinema",
     "user",
@@ -148,6 +147,9 @@ REST_FRAMEWORK = {
         "anon": "10/min",
         "user": "30/min"
     },
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+    )
 }
 
 SPECTACULAR_SETTINGS = {
