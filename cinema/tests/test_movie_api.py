@@ -251,12 +251,48 @@ class AdminMovieApi(TestCase):
             "testpass",
             is_staff=True
         )
+        self.movie = sample_movie()
+        self.url = detail_url(self.movie.id)
         self.client.force_authenticate(self.user)
 
-    def test_delete_movie_not_allowed(self):
-        movie = sample_movie()
-        url = detail_url(movie.id)
+    def test_create_movie_with_genres_and_actors_allowed(self):
+        genre = Genre.objects.create(name="test_genre")
+        actor = Actor.objects.create(
+            first_name="test_first_name",
+            last_name="test_last_name"
+        )
+        payload = {
+            "title": "title",
+            "description": "description",
+            "genres": [genre.id],
+            "actors": [actor.id],
+            "duration": 150,
+        }
+        response = self.client.post(MOVIE_URL, payload)
 
-        response = self.client.delete(url)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def test_create_movie_without_genres_and_actors_not_allowed(self):
+        payload = {
+            "title": "title",
+            "description": "description",
+            "duration": 150,
+        }
+        response = self.client.post(MOVIE_URL, payload)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_update_movie_not_allowed(self):
+        response = self.client.put(self.url)
+
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def test_partial_update_movie_not_allowed(self):
+        response = self.client.patch(self.url)
+
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def test_delete_movie_not_allowed(self):
+        response = self.client.delete(self.url)
 
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
