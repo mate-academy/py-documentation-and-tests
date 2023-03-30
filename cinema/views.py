@@ -155,7 +155,7 @@ class MovieViewSet(
             ),
             OpenApiParameter(
                 name="genres",
-                type=OpenApiTypes.STR,
+                type=OpenApiTypes.NUMBER,
                 description="Filter by genres(movie.genres)",
                 examples=[
                     OpenApiExample(
@@ -175,7 +175,7 @@ class MovieViewSet(
             ),
             OpenApiParameter(
                 name="actors",
-                type=OpenApiTypes.STR,
+                type=OpenApiTypes.NUMBER,
                 description="Filter by actors(movie.actors)",
                 examples=[
                     OpenApiExample(
@@ -261,7 +261,7 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
             ),
             OpenApiParameter(
                 name="movie",
-                type=OpenApiTypes.STR,
+                type=OpenApiTypes.NUMBER,
                 description="Filter by movie(movie.id)",
                 examples=[
                     OpenApiExample(
