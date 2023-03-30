@@ -1,13 +1,15 @@
 from datetime import datetime
 
 from django.db.models import F, Count
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiExample
 from rest_framework import viewsets, mixins, status
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
-from rest_framework.viewsets import GenericViewSet, ReadOnlyModelViewSet
+from rest_framework.viewsets import GenericViewSet
 
 from cinema.models import Genre, Actor, CinemaHall, Movie, MovieSession, Order
 from cinema.permissions import IsAdminOrIfAuthenticatedReadOnly
@@ -127,6 +129,72 @@ class MovieViewSet(
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="title",
+                type=OpenApiTypes.STR,
+                description="Filter by title(movie.title)",
+                examples=[
+                    OpenApiExample(
+                        "Without title",
+                        value="",
+                    ),
+                    OpenApiExample(
+                        "Full name",
+                        value="Inception",
+                    ),
+                    OpenApiExample(
+                        "No full name",
+                        value="Loop",
+                    ),
+                ],
+            ),
+            OpenApiParameter(
+                name="genres",
+                type=OpenApiTypes.STR,
+                description="Filter by genres(movie.genres)",
+                examples=[
+                    OpenApiExample(
+                        "Without genres",
+                        value="",
+                    ),
+                    OpenApiExample(
+                        "With 1 genre",
+                        value="1",
+                    ),
+                    OpenApiExample(
+                        "With many genres",
+                        description="logic(2 or 3)",
+                        value="2,3",
+                    ),
+                ],
+            ),
+            OpenApiParameter(
+                name="actors",
+                type=OpenApiTypes.STR,
+                description="Filter by actors(movie.actors)",
+                examples=[
+                    OpenApiExample(
+                        "Without actors",
+                        value="",
+                    ),
+                    OpenApiExample(
+                        "With 1 actor",
+                        value="1",
+                    ),
+                    OpenApiExample(
+                        "With many actors",
+                        description="logic(2 or 4)",
+                        value="2,4",
+                    ),
+                ],
+            ),
+        ],
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
 
 class MovieSessionViewSet(viewsets.ModelViewSet):
     queryset = (
@@ -166,6 +234,51 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
             return MovieSessionDetailSerializer
 
         return MovieSessionSerializer
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="date",
+                type=OpenApiTypes.DATETIME,
+                description="Filter by date(show_time)",
+                examples=[
+                    OpenApiExample(
+                        "Without date",
+                        value="",
+                    ),
+                    OpenApiExample(
+                        "Example 1",
+                        value="2024-10-08",
+                    ),
+                    OpenApiExample(
+                        "Example 2",
+                        value="2024-10-09",
+                    ),
+                ],
+            ),
+            OpenApiParameter(
+                name="movie",
+                type=OpenApiTypes.STR,
+                description="Filter by movie(movie.id)",
+                examples=[
+                    OpenApiExample(
+                        "Without movie",
+                        value="",
+                    ),
+                    OpenApiExample(
+                        "Example 1",
+                        value="1",
+                    ),
+                    OpenApiExample(
+                        "Example 2",
+                        value="2",
+                    ),
+                ],
+            ),
+        ],
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
 
 
 class OrderPagination(PageNumberPagination):
