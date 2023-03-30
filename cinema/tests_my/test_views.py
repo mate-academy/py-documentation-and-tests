@@ -29,8 +29,7 @@ class PrivateMovieViewSetTests(TestCase):
     def setUp(self) -> None:
         self.client = APIClient()
         self.user = get_user_model().objects.create_user(
-            "us1er@test.com",
-            "passwordtest123"
+            "us1er@test.com", "passwordtest123"
         )
         self.client.force_authenticate(self.user)
         self.movie1 = create_movie()
@@ -76,9 +75,7 @@ class PrivateMovieViewSetTests(TestCase):
         serializer2 = MovieListSerializer(self.movie2)
         serializer3 = MovieListSerializer(movie3)
 
-        response = self.client.get(
-            MOVIE_URL, {"actors": f"{actor1.id},123"}
-        )
+        response = self.client.get(MOVIE_URL, {"actors": f"{actor1.id},123"})
 
         self.assertNotIn(serializer1.data, response.data)
         self.assertNotIn(serializer2.data, response.data)
@@ -101,9 +98,7 @@ class PrivateMovieViewSetTests(TestCase):
         serializer2 = MovieListSerializer(self.movie2)
         serializer3 = MovieListSerializer(movie3)
 
-        response = self.client.get(
-            MOVIE_URL, {"genres": f"{genre1.id},{genre2.id}"}
-        )
+        response = self.client.get(MOVIE_URL, {"genres": f"{genre1.id},{genre2.id}"})
 
         self.assertNotIn(serializer1.data, response.data)
         self.assertNotIn(serializer2.data, response.data)
@@ -131,9 +126,7 @@ class AdminMovieApiTests(TestCase):
     def setUp(self) -> None:
         self.client = APIClient()
         self.admin = get_user_model().objects.create_user(
-            "admin@admin.com",
-            "test_pass",
-            is_staff=True
+            "admin@admin.com", "test_pass", is_staff=True
         )
         self.client.force_authenticate(self.admin)
 
@@ -166,9 +159,7 @@ class AdminMovieApiTests(TestCase):
         movie = create_movie()
         url = detail_url(movie.id)
         response = self.client.delete(url)
-        self.assertEqual(
-            response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED
-        )
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def test_update_movie_not_allowed(self) -> None:
         movie = create_movie()
@@ -179,9 +170,7 @@ class AdminMovieApiTests(TestCase):
             "duration": 123,
         }
         response = self.client.put(url, data=context)
-        self.assertEqual(
-            response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED
-        )
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def test_partial_update_movie_not_allowed(self) -> None:
         movie = create_movie()
@@ -190,6 +179,4 @@ class AdminMovieApiTests(TestCase):
             "title": "TITLE",
         }
         response = self.client.patch(url, data=context)
-        self.assertEqual(
-            response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED
-        )
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
