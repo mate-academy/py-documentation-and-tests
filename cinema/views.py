@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import List
 
 from django.db.models import F, Count
 from drf_spectacular.types import OpenApiTypes
@@ -155,7 +156,7 @@ class MovieViewSet(
             ),
             OpenApiParameter(
                 name="genres",
-                type=OpenApiTypes.NUMBER,
+                type={"type": "list", "item": "number"},
                 description="Filter by genres(movie.genres)",
                 examples=[
                     OpenApiExample(
@@ -175,7 +176,7 @@ class MovieViewSet(
             ),
             OpenApiParameter(
                 name="actors",
-                type=OpenApiTypes.NUMBER,
+                type={"type": "list", "item": "number"},
                 description="Filter by actors(movie.actors)",
                 examples=[
                     OpenApiExample(
