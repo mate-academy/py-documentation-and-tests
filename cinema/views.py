@@ -128,17 +128,17 @@ class MovieViewSet(
             OpenApiParameter(
                 "title",
                 type=str,
-                description="Filtering movies by title name",
+                description="Filtering movies by title name (ex, ?movie=title)",  # noqa: E501
             ),
             OpenApiParameter(
                 "genres",
                 type={"type": "list", "item": "number"},
-                description="Filtering movies by genre id",
+                description="Filtering movies by genre id (ex, ?genres=[genre_id, ...])",  # noqa: E501
             ),
             OpenApiParameter(
                 "actors",
                 type={"type": "list", "item": "number"},
-                description="Filtering movies by actors id",
+                description="Filtering movies by actors id (ex, ?actors=[actor_id, ...])",  # noqa: E501
             ),
         ]
     )
