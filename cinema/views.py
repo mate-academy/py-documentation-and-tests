@@ -200,7 +200,7 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
                 name="movie",
                 description="Filter by movie",
                 required=False,
-                type={"type": "list", "items": {"type": "number"}},
+                type=OpenApiTypes.NUMBER,
             ),
         ]
     )
