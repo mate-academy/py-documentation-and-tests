@@ -101,7 +101,7 @@ class Ticket(models.Model):
             row: int,
             seat: int,
             cinema_hall: CinemaHall,
-            error_to_raise
+            error_to_raise: ValidationError
     ) -> None:
         for ticket_attr_value, ticket_attr_name, cinema_hall_attr_name in [
             (row, "row", "rows"),
