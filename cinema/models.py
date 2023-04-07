@@ -39,7 +39,7 @@ class Actor(models.Model):
         return f"{self.first_name} {self.last_name}"
 
 
-def movie_image_file_path(instance, filename) -> str:
+def movie_image_file_path(instance, filename: str) -> str:
     _, extension = os.path.splitext(filename)
     filename = f"{slugify(instance.title)}-{uuid.uuid4()}{extension}"
 
@@ -97,7 +97,12 @@ class Ticket(models.Model):
     seat = models.IntegerField()
 
     @staticmethod
-    def validate_ticket(row, seat, cinema_hall, error_to_raise) -> None:
+    def validate_ticket(
+            row: int,
+            seat: int,
+            cinema_hall: CinemaHall,
+            error_to_raise
+    ) -> None:
         for ticket_attr_value, ticket_attr_name, cinema_hall_attr_name in [
             (row, "row", "rows"),
             (seat, "seat", "seats_in_row"),
