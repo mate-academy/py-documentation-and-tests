@@ -14,7 +14,7 @@ from cinema.serializers import (
     MovieSessionDetailSerializer,
 )
 
-MOVIE_SESSION_URL = reverse("cinema:moviesession-list")
+MOVIE_SESSION_URL = reverse("cinema:movie_session-list")
 
 
 def data_converter(data: str):
@@ -23,7 +23,7 @@ def data_converter(data: str):
 
 
 def detail_url(movie_session_id: int):
-    return reverse("cinema:moviesession-detail", args=[movie_session_id])
+    return reverse("cinema:movie-session-detail", args=[movie_session_id])
 
 
 def sample_movie_sessions(**params):
