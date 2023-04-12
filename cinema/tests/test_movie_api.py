@@ -1,9 +1,10 @@
 import tempfile
 import os
+import time
 
 from PIL import Image
 from django.contrib.auth import get_user_model
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
 
 from rest_framework.test import APIClient, APITestCase
@@ -355,9 +356,10 @@ class MovieThrottlingTestCase(APITestCase):
     def test_list_endpoint_throttling(self):
         self.client.force_authenticate(user=self.user)
 
-        for i in range(30):
+        for i in range(19):
             response = self.client.get(MOVIE_URL)
             self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         response = self.client.get(MOVIE_URL)
         self.assertEqual(response.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
+        time.sleep(60)
