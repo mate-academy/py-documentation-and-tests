@@ -106,6 +106,7 @@ class AuthenticatedMovieApiTests(TestCase):
         self.assertIn(serializer.data, res.data)
 
     def test_filter_movies_by_genre(self):
+
         movie1 = sample_movie(title="Game")
         movie2 = sample_movie(title="The Godfather")
         movie3 = sample_movie(title="Avatar")
@@ -159,7 +160,47 @@ class AuthenticatedMovieApiTests(TestCase):
         self.assertIn(serializer1.data, res.data)
         self.assertNotIn(serializer2.data, res.data)
 
+    def test_filter_movies_by_genre_and_actor(self):
+
+        movie1 = sample_movie(title="Titanic")
+        movie2 = sample_movie(title="The Godfather")
+        actor1 = Actor.objects.create(
+            first_name="Leonardo",
+            last_name="DiCaprio",
+        )
+        actor2 = Actor.objects.create(
+            first_name="Al",
+            last_name="Pacino",
+        )
+        genre1 = Genre.objects.create(name="Drama")
+        genre2 = Genre.objects.create(name="Crime")
+
+        movie1.actors.add(actor1)
+        movie2.actors.add(actor2)
+
+        movie1.genres.add(genre1)
+        movie2.genres.add(genre2)
+
+        res = self.client.get(
+            MOVIE_URL,
+            {"genres": f"{genre1.id}", "actors": f"{actor1.id}"},
+        )
+
+        serializer1 = MovieListSerializer(movie1)
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertIn(serializer1.data, res.data)
+
+        res = self.client.get(
+            MOVIE_URL,
+            {"genres": f"{genre2.id}", "actors": f"{actor1.id}"},
+        )
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertNotIn(serializer1.data, res.data)
+
     def test_retrieve_movie_detail(self):
+
         movie = sample_movie(title="Titanic")
         genre = Genre.objects.create(name="Drama")
         actor1 = Actor.objects.create(
@@ -181,6 +222,7 @@ class AuthenticatedMovieApiTests(TestCase):
         self.assertEqual(serializer.data, res.data)
 
     def test_create_movie_forbidden(self):
+
         payload = {
             "title": "Zoo",
             "description": "About animals",
@@ -212,6 +254,7 @@ class AdminMovieApiTest(TestCase):
         )
 
     def test_create_movie(self):
+
         payload = {
             "title": "Earth",
             "description": "About our planet",
@@ -225,6 +268,7 @@ class AdminMovieApiTest(TestCase):
             self.assertEqual(payload[key], getattr(movie, key))
 
     def test_create_movie_with_genres(self):
+
         payload = {
             "title": "Earth",
             "description": "About our planet",
@@ -243,6 +287,7 @@ class AdminMovieApiTest(TestCase):
         self.assertIn(self.genre2, genres)
 
     def test_create_movie_with_actors(self):
+
         payload = {
             "title": "Titanic",
             "description": "About love",
@@ -260,6 +305,7 @@ class AdminMovieApiTest(TestCase):
         self.assertIn(self.actor2, actors)
 
     def test_delete_movie_not_allowed(self):
+
         movie = sample_movie()
         url = detail_url(movie.id)
 
@@ -268,6 +314,7 @@ class AdminMovieApiTest(TestCase):
         self.assertEqual(res.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def test_update_movie_not_allowed(self):
+
         movie = sample_movie()
         url = detail_url(movie.id)
 
