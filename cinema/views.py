@@ -1,7 +1,11 @@
 from datetime import datetime
 
 from django.db.models import F, Count
-from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiExample
+from drf_spectacular.utils import (
+    extend_schema,
+    OpenApiParameter,
+    OpenApiExample,
+)
 from rest_framework import viewsets, mixins, status
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import action
@@ -170,8 +174,8 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
         .select_related("movie", "cinema_hall")
         .annotate(
             tickets_available=(
-                    F("cinema_hall__rows") * F("cinema_hall__seats_in_row")
-                    - Count("tickets")
+                F("cinema_hall__rows") * F("cinema_hall__seats_in_row")
+                - Count("tickets")
             )
         )
     )
@@ -207,7 +211,9 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
             OpenApiParameter(
                 "date",
                 type={"type": "str"},
-                description="Filter movie sessions by date (format: 2023-04-12).",
+                description=(
+                    "Filter movie sessions by date (format: 2023-04-12)."
+                ),
                 examples=[
                     OpenApiExample("Empty date", value=""),
                     OpenApiExample("Filled date", value="2024-10-12"),
