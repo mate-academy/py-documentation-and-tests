@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from django.db.models import F, Count
+from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiExample
 from rest_framework import viewsets, mixins, status
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import action
@@ -124,6 +125,44 @@ class MovieViewSet(
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                "genres",
+                type={"type": "list", "items": {"type": "number"}},
+                description="Filter movies by genre IDs (comma-separated).",
+                examples=[
+                    OpenApiExample("Empty genre list", value=""),
+                    OpenApiExample("Multy elem genre list", value="1,2"),
+                    OpenApiExample("Single elem genre list", value="1"),
+                ],
+            ),
+            OpenApiParameter(
+                "actors",
+                type={"type": "list", "items": {"type": "number"}},
+                description="Filter movies by actor IDs (comma-separated).",
+                examples=[
+                    OpenApiExample("Empty actor list", value=""),
+                    OpenApiExample("Multy elem actor list", value="1,2"),
+                    OpenApiExample("Single elem actor list", value="1"),
+                ],
+            ),
+            OpenApiParameter(
+                "title",
+                type={"type": "str"},
+                description="Filter movies by title (case-insensitive).",
+                examples=[
+                    OpenApiExample("Empty title", value=""),
+                    OpenApiExample("Lowercase title", value="the"),
+                    OpenApiExample("Uppercase title", value="DEPAR"),
+                    OpenApiExample("Mixcase title", value="Looper"),
+                ],
+            ),
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
 
 class MovieSessionViewSet(viewsets.ModelViewSet):
     queryset = (
@@ -131,8 +170,8 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
         .select_related("movie", "cinema_hall")
         .annotate(
             tickets_available=(
-                F("cinema_hall__rows") * F("cinema_hall__seats_in_row")
-                - Count("tickets")
+                    F("cinema_hall__rows") * F("cinema_hall__seats_in_row")
+                    - Count("tickets")
             )
         )
     )
@@ -162,6 +201,31 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
             return MovieSessionDetailSerializer
 
         return MovieSessionSerializer
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                "date",
+                type={"type": "str"},
+                description="Filter movie sessions by date (format: 2023-04-12).",
+                examples=[
+                    OpenApiExample("Empty date", value=""),
+                    OpenApiExample("Filled date", value="2024-10-12"),
+                ],
+            ),
+            OpenApiParameter(
+                "movie",
+                type={"type": "number"},
+                description="Filter movie session by movie ID.",
+                examples=[
+                    OpenApiExample("Empty movie list", value=""),
+                    OpenApiExample("Filled movie id", value="1"),
+                ],
+            ),
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
 
 
 class OrderPagination(PageNumberPagination):
