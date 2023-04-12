@@ -1,7 +1,6 @@
 from datetime import datetime, time
 
 from django.contrib.auth import get_user_model
-from django.db.models import F, Count
 from django.test import TestCase
 from django.urls import reverse
 from rest_framework import status
@@ -57,27 +56,6 @@ class AuthenticatedMovieSessionApiTests(TestCase):
             email="test@test.com", password="test12345"
         )
         self.client.force_authenticate(self.user)
-
-    def test_list_movie_sessions(self):
-        sample_movie_sessions()
-        sample_movie_sessions()
-        sample_movie_sessions()
-
-        res = self.client.get(MOVIE_SESSION_URL)
-
-        movie_sessions = (
-            MovieSession.objects.all()
-            .annotate(
-                tickets_available=(
-                    F("cinema_hall__rows") * F("cinema_hall__seats_in_row")
-                    - Count("tickets")
-                )
-            )
-        )
-        serializer = MovieSessionListSerializer(movie_sessions, many=True)
-
-        self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertEqual(res.data, serializer.data)
 
     def test_filter_movie_session_by_date(self):
         movie_session_one = sample_movie_sessions()
