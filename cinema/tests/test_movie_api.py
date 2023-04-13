@@ -23,7 +23,7 @@ class UnauthenticatedMoviesApiTest(TestCase):
 class AuthenticatedMoviesApiTest(TestCase):
     def setUp(self):
         self.client = APIClient()
-        self.user = get_user_model().objects.create_user("test@movie.com", "testpass")
+        self.user = get_user_model().objects.create_user("test@movie.com", "testpassword")
         self.client.force_authenticate(self.user)
         self.movie1 = Movie.objects.create(
             title="Movie 1", description="Description 1", duration=100
@@ -77,7 +77,7 @@ class AuthenticatedMoviesApiTest(TestCase):
         self.assertEqual(response.data["title"], "Movie 1")
 
     def test_create_movie_is_false_from_list(self):
-        data = {"title": "New Movie", "description": "New Description", "duration": 120}
+        data = {"title": "Test Movie", "description": "test description", "duration": 120}
         response = self.client.post(MOVIE_URL, data)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
