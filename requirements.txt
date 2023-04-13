@@ -7,5 +7,3 @@ django-debug-toolbar==3.4.0
 djangorestframework==3.13.1
 djangorestframework-simplejwt==5.2.0
 drf-spectacular==0.22.1
-Pillow==9.1.1
-
