@@ -124,24 +124,24 @@ class MovieViewSet(
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-# Only for documentation purposes
+    # Only for documentation purposes
     @extend_schema(
         parameters=[
             OpenApiParameter(
                 "title",
                 type={"type": "string"},
-                description="Filter by title movie (ex. ?title=des)"
+                description="Filter by title movie (ex. ?title=des)",
             ),
             OpenApiParameter(
                 "genres",
                 type={"type": "list", "items": {"type": "number"}},
-                description="Filter movies by genres id (ex. ?genres=7,1)"
+                description="Filter movies by genres id (ex. ?genres=7,1)",
             ),
             OpenApiParameter(
                 "actors",
                 type={"type": "list", "items": {"type": "number"}},
-                description="Filter movies by actors id (ex. ?actors=1,2)"
-            )
+                description="Filter movies by actors id (ex. ?actors=1,2)",
+            ),
         ]
     )
     def list(self, request, *args, **kwargs):
@@ -186,18 +186,19 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
 
         return MovieSessionSerializer
 
-# Only for documentation purposes
+    # Only for documentation purposes
     @extend_schema(
         parameters=[
             OpenApiParameter(
                 "date",
                 type={"type": "string"},
-                description="Filter by date of movie session (ex. ?date=2024-10-12)"
+                description=("Filter by date of movie session "
+                             "(ex. ?date=2024-10-12)"),
             ),
             OpenApiParameter(
                 "movie",
                 type={"type": "number"},
-                description="Filter by movies id (ex. ?movie=4)"
+                description="Filter by movies id (ex. ?movie=4)",
             ),
         ]
     )
