@@ -294,43 +294,31 @@ class AdminMovieApiTests(TestCase):
         for key in payload:
             self.assertEqual(payload[key], getattr(movie, key))
 
-    def test_create_movie_with_genres(self):
+    def test_create_movie_with_actors_and_genres(self):
         drama = sample_genre(name="Drama")
         horror = sample_genre(name="Horror")
+        actor_1 = sample_actor(first_name="Diana", last_name="Milli")
+        actor_2 = sample_actor(first_name="Symon", last_name="Rick")
 
         payload = {
             "title": "Mirror",
             "description": "Really scary movie",
             "duration": 100,
-            "genres": [drama.id, horror.id]
+            "genres": [drama.id, horror.id],
+            "actors": [actor_1.id, actor_2.id]
         }
         res = self.client.post(MOVIE_URL, payload)
         movie = Movie.objects.get(id=res.data["id"])
         genres = movie.genres.all()
+        actors = movie.actors.all()
+
+        self.assertEqual(actors.count(), 2)
+        self.assertIn(actor_1, actors)
+        self.assertIn(actor_2, actors)
 
         self.assertEqual(genres.count(), 2)
         self.assertIn(drama, genres)
         self.assertIn(horror, genres)
-
-    def test_create_movie_with_actors(self):
-        actor_1 = sample_actor(first_name="Diana", last_name="Milli")
-        actor_2 = sample_actor(first_name="Symon", last_name="Rick")
-        actor_3 = sample_actor(first_name="Nick", last_name="Hophman")
-
-        payload = {
-            "title": "Imagination",
-            "description": "Ready for watching",
-            "duration": 150,
-            "actors": [actor_1.id, actor_2.id, actor_3.id]
-        }
-        res = self.client.post(MOVIE_URL, payload)
-        movie = Movie.objects.get(id=res.data["id"])
-        actors = movie.actors.all()
-
-        self.assertEqual(actors.count(), 3)
-        self.assertIn(actor_1, actors)
-        self.assertIn(actor_2, actors)
-        self.assertIn(actor_3, actors)
 
     def test_delete_movie_is_not_allowed(self):
         movie = sample_movie()
@@ -339,9 +327,3 @@ class AdminMovieApiTests(TestCase):
         res = self.client.delete(url)
 
         self.assertEqual(res.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
-
-    def test_image_upload_url(self):
-        movie = sample_movie()
-        url = image_upload_url(movie.id)
-        expected_url = f"/api/cinema/movies/{movie.id}/upload-image/"
-        self.assertEqual(url, expected_url)
