@@ -23,6 +23,25 @@ def sample_movie(**params):
     return Movie.objects.create(**defaults)
 
 
+def sample_genre(**params):
+    defaults = {
+        "name": "Action",
+    }
+    defaults.update(params)
+
+    return Genre.objects.create(**defaults)
+
+
+def sample_actor(**params):
+    defaults = {
+        "first_name": "Steven",
+        "last_name": "Stifmeister",
+    }
+    defaults.update(params)
+
+    return Actor.objects.create(**defaults)
+
+
 def detail_url(movie_id: int):
     return reverse("cinema:movie-detail", args=[movie_id])
 
@@ -61,13 +80,17 @@ class AuthenticatedMovieApiTests(TestCase):
 
         movie1 = sample_movie(title="Titanic")
         movie2 = sample_movie(title="Game")
-        genre1 = Genre.objects.create(name="Drama")
-        genre2 = Genre.objects.create(name="Action")
+        genre1 = sample_genre(name="Drama")
+        genre2 = sample_genre(name="Action")
         movie1.genres.add(genre1)
         movie2.genres.add(genre2)
+
         res = self.client.get(MOVIE_URL)
-        movies = Movie.objects.all()
-        serializer = MovieListSerializer(movies, many=True)
+        serializer = MovieListSerializer(
+            sorted([movie1, movie2],
+                   key=lambda movie: movie.title),
+            many=True,
+        )
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(res.data, serializer.data)
@@ -76,15 +99,15 @@ class AuthenticatedMovieApiTests(TestCase):
 
         movie1 = sample_movie(title="Titanic")
         movie2 = sample_movie(title="Game")
-        actor1 = Actor.objects.create(
+        actor1 = sample_actor(
             first_name="Leonardo",
             last_name="DiCaprio",
         )
-        actor2 = Actor.objects.create(
+        actor2 = sample_actor(
             first_name="Kate",
             last_name="Winslet",
         )
-        actor3 = Actor.objects.create(
+        actor3 = sample_actor(
             first_name="Billy",
             last_name="Zane",
         )
@@ -92,8 +115,11 @@ class AuthenticatedMovieApiTests(TestCase):
         movie2.actors.add(actor1, actor3)
         res = self.client.get(MOVIE_URL)
 
-        movies = Movie.objects.all()
-        serializer = MovieListSerializer(movies, many=True)
+        serializer = MovieListSerializer(
+            sorted([movie1, movie2],
+                   key=lambda movie: movie.title),
+            many=True,
+        )
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(res.data, serializer.data)
@@ -111,9 +137,9 @@ class AuthenticatedMovieApiTests(TestCase):
         movie2 = sample_movie(title="The Godfather")
         movie3 = sample_movie(title="Avatar")
 
-        genre1 = Genre.objects.create(name="Action")
-        genre2 = Genre.objects.create(name="Crime")
-        genre3 = Genre.objects.create(name="Sci-Fi")
+        genre1 = sample_genre(name="Action")
+        genre2 = sample_genre(name="Crime")
+        genre3 = sample_genre(name="Sci-Fi")
 
         movie1.genres.add(genre1)
         movie2.genres.add(genre2)
@@ -139,11 +165,11 @@ class AuthenticatedMovieApiTests(TestCase):
 
         movie1 = sample_movie(title="Titanic")
         movie2 = sample_movie(title="The Godfather")
-        actor1 = Actor.objects.create(
+        actor1 = sample_actor(
             first_name="Leonardo",
             last_name="DiCaprio",
         )
-        actor2 = Actor.objects.create(
+        actor2 = sample_actor(
             first_name="Kate",
             last_name="Winslet",
         )
@@ -164,16 +190,16 @@ class AuthenticatedMovieApiTests(TestCase):
 
         movie1 = sample_movie(title="Titanic")
         movie2 = sample_movie(title="The Godfather")
-        actor1 = Actor.objects.create(
+        actor1 = sample_actor(
             first_name="Leonardo",
             last_name="DiCaprio",
         )
-        actor2 = Actor.objects.create(
+        actor2 = sample_actor(
             first_name="Al",
             last_name="Pacino",
         )
-        genre1 = Genre.objects.create(name="Drama")
-        genre2 = Genre.objects.create(name="Crime")
+        genre1 = sample_genre(name="Drama")
+        genre2 = sample_genre(name="Crime")
 
         movie1.actors.add(actor1)
         movie2.actors.add(actor2)
@@ -202,12 +228,12 @@ class AuthenticatedMovieApiTests(TestCase):
     def test_retrieve_movie_detail(self):
 
         movie = sample_movie(title="Titanic")
-        genre = Genre.objects.create(name="Drama")
-        actor1 = Actor.objects.create(
+        genre = sample_genre(name="Drama")
+        actor1 = sample_actor(
             first_name="Leonardo",
             last_name="DiCaprio",
         )
-        actor2 = Actor.objects.create(
+        actor2 = sample_actor(
             first_name="Kate",
             last_name="Winslet",
         )
@@ -242,13 +268,13 @@ class AdminMovieApiTest(TestCase):
             is_staff=True,
         )
         self.client.force_authenticate(self.user)
-        self.genre1 = Genre.objects.create(name="Documental")
-        self.genre2 = Genre.objects.create(name="Adventure")
-        self.actor1 = Actor.objects.create(
+        self.genre1 = sample_genre(name="Documental")
+        self.genre2 = sample_genre(name="Adventure")
+        self.actor1 = sample_actor(
             first_name="Leonardo",
             last_name="DiCaprio",
         )
-        self.actor2 = Actor.objects.create(
+        self.actor2 = sample_actor(
             first_name="Kate",
             last_name="Winslet",
         )
@@ -267,39 +293,25 @@ class AdminMovieApiTest(TestCase):
         for key in payload:
             self.assertEqual(payload[key], getattr(movie, key))
 
-    def test_create_movie_with_genres(self):
-
+    def test_create_movie_with_actors_and_genres(self):
         payload = {
             "title": "Earth",
             "description": "About our planet",
             "duration": 99,
-            "genres": [self.genre1.id, self.genre2.id]
+            "genres": [self.genre1.id, self.genre2.id],
+            "actors": [self.actor1.id, self.actor2.id]
         }
 
         res = self.client.post(MOVIE_URL, payload)
 
         movie = Movie.objects.get(id=res.data["id"])
         genres = movie.genres.all()
+        actors = movie.actors.all()
 
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
         self.assertEqual(genres.count(), 2)
         self.assertIn(self.genre1, genres)
         self.assertIn(self.genre2, genres)
-
-    def test_create_movie_with_actors(self):
-
-        payload = {
-            "title": "Titanic",
-            "description": "About love",
-            "duration": 123,
-            "actors": [self.actor1.id, self.actor2.id]
-        }
-
-        res = self.client.post(MOVIE_URL, payload)
-        movie = Movie.objects.get(id=res.data["id"])
-        actors = movie.actors.all()
-
-        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
         self.assertEqual(actors.count(), 2)
         self.assertIn(self.actor1, actors)
         self.assertIn(self.actor2, actors)
