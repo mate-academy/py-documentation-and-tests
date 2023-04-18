@@ -12,7 +12,6 @@ from rest_framework import status
 from cinema.models import Movie, MovieSession, CinemaHall, Genre, Actor
 from cinema.serializers import (
     MovieListSerializer,
-    MovieSerializer,
     MovieDetailSerializer,
 )
 
