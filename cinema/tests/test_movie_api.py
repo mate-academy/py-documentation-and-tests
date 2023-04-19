@@ -288,11 +288,15 @@ class AdminMovieApiTests(TestCase):
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
 
         for key in payload:
-            if key == "genres":
-                pass
-                self.assertEqual([genre], list(movie.genres.all()))
-            elif key == "actors":
-                pass
-                self.assertEqual([actor], list(movie.actors.all()))
-            else:
+            if key != "genres" and key != "actors":
                 self.assertEqual(payload[key], getattr(movie, key))
+        self.assertEqual(len(res.data["genres"]), 1)
+        self.assertEqual(len(res.data["actors"]), 1)
+
+    def test_delete_movie_is_not_allowed(self):
+        movie = sample_movie()
+        url = detail_url(movie.id)
+
+        res = self.client.delete(url)
+
+        self.assertEqual(res.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
