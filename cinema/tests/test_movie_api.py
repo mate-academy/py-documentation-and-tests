@@ -2,14 +2,20 @@ import tempfile
 import os
 
 from PIL import Image
+from cinema.models import Movie, MovieSession, CinemaHall, Genre, Actor
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
-
-from rest_framework.test import APIClient
 from rest_framework import status
-
-from cinema.models import Movie, MovieSession, CinemaHall, Genre, Actor
+from rest_framework.test import APIClient
+from cinema.models import Movie, Genre, Actor
+from cinema.serializers import (
+    MovieListSerializer,
+    MovieDetailSerializer,
+    MovieImageSerializer,
+    MovieSerializer,
+)
+from cinema.views import MovieViewSet
 
 MOVIE_URL = reverse("cinema:movie-list")
 MOVIE_SESSION_URL = reverse("cinema:moviesession-list")
@@ -157,3 +163,139 @@ class MovieImageUploadTests(TestCase):
         res = self.client.get(MOVIE_SESSION_URL)
 
         self.assertIn("movie_image", res.data[0].keys())
+
+
+class MovieViewSetPermissionTestCase(TestCase):
+    def setUp(self) -> None:
+        self.client = APIClient()
+        self.user = get_user_model().objects.create_user(
+            email="test@user.com", password="13flrmkgse"
+        )
+        self.super_user = get_user_model().objects.create_superuser(
+            email="test@super_user.com", password="13flrmkgse"
+        )
+
+    def test_unauthenticated_user_get_request(self):
+        result = self.client.get(reverse("cinema:movie-list"))
+        self.assertEqual(result.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_authenticated_user_get_request(self):
+        self.client.force_authenticate(self.user)
+        result = self.client.get(reverse("cinema:movie-list"))
+        self.assertEqual(result.status_code, status.HTTP_200_OK)
+
+    def test_authenticated_user_post_request_forbidden(self):
+        self.client.force_authenticate(self.user)
+        result = self.client.post(reverse("cinema:movie-list"))
+        self.assertEqual(result.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_authenticated_superuser_post_request_allowed(self):
+        self.client.force_authenticate(self.super_user)
+        path = reverse("cinema:movie-list")
+        data = {
+            "title": "Sample movie",
+            "description": "Sample description",
+            "duration": 90,
+            "genres": [sample_genre().id],
+            "actors": [sample_actor().id],
+        }
+        result = self.client.post(path=path, data=data)
+        self.assertEqual(result.status_code, status.HTTP_201_CREATED)
+
+
+class MovieViewSetGetQuerySetTestCase(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.user = get_user_model().objects.create_user(
+            email="test@user.com", password="13flrmkgse"
+        )
+        self.client.force_authenticate(self.user)
+
+        self.top_gun = sample_movie(title="Top Gun")
+        self.snatch = sample_movie(title="Snatch")
+
+        self.action = sample_genre(name="Action")
+        self.comedy = sample_genre(name="Comedy")
+
+        self.tom_cruise = sample_actor(first_name="Tom", last_name="Cruise")
+        self.brad_pitt = sample_actor(first_name="Brad", last_name="Pitt")
+
+        self.top_gun.genres.add(self.action)
+        self.top_gun.actors.add(self.tom_cruise)
+
+        self.snatch.genres.add(self.comedy)
+        self.snatch.actors.add(self.brad_pitt)
+
+    def test_get_queryset_title_filter(self):
+        url = reverse("cinema:movie-list")
+        query_params = {"title": "Top Gun"}
+        response = self.client.get(url, query_params)
+        serializer_top_gun = MovieListSerializer(self.top_gun)
+        serializer_all_movie = MovieListSerializer(
+            Movie.objects.all(), many=True
+        )
+
+        self.assertIn(serializer_top_gun.data, response.data)
+        self.assertNotEqual(serializer_all_movie.data, serializer_top_gun)
+
+    def test_get_queryset_actors_filter(self):
+        url = reverse("cinema:movie-list")
+        response_all_actors = self.client.get(url, {"actors": "1,2"})
+        response_one_actor = self.client.get(url, {"actors": "2"})
+        serializer_snatch = MovieListSerializer(self.snatch)
+        serializer_all_movie = MovieListSerializer(
+            Movie.objects.all(), many=True
+        )
+
+        self.assertEqual(serializer_all_movie.data, response_all_actors.data)
+        self.assertIn(serializer_snatch.data, response_one_actor.data)
+        self.assertNotEqual(serializer_snatch.data, serializer_all_movie.data)
+
+    def test_get_queryset_genres_filter(self):
+        url = reverse("cinema:movie-list")
+        response_all_genres = self.client.get(url, {"genres": "1,2"})
+        response_one_genre = self.client.get(url, {"genres": "2"})
+        serializer_snatch = MovieListSerializer(self.snatch)
+        serializer_all_genres = MovieListSerializer(
+            Movie.objects.all(), many=True
+        )
+
+        self.assertEqual(serializer_all_genres.data, response_all_genres.data)
+        self.assertIn(serializer_snatch.data, response_one_genre.data)
+        self.assertNotEqual(serializer_snatch.data, serializer_all_genres.data)
+
+    def test_movie_detail(self):
+        response = self.client.get(detail_url(self.top_gun.id))
+        serializer = MovieDetailSerializer(self.top_gun)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(serializer.data, response.data)
+
+
+class MovieViewSetGetSerializerTestCase(TestCase):
+    def setUp(self):
+        self.client = APIClient
+        self.movies_url = reverse("cinema:movie-list")
+
+    def test_get_serializer_list_action(self):
+        view = MovieViewSet()
+        view.action = "list"
+        serializer_class = view.get_serializer_class()
+        self.assertEqual(serializer_class, MovieListSerializer)
+
+    def test_get_serializer_retrieve_action(self):
+        view = MovieViewSet()
+        view.action = "retrieve"
+        serializer_class = view.get_serializer_class()
+        self.assertEqual(serializer_class, MovieDetailSerializer)
+
+    def test_get_serializer_upload_image_action(self):
+        view = MovieViewSet()
+        view.action = "upload_image"
+        serializer_class = view.get_serializer_class()
+        self.assertEqual(serializer_class, MovieImageSerializer)
+
+    def test_get_serializer_default_action(self):
+        view = MovieViewSet()
+        view.action = "create"
+        serializer_class = view.get_serializer_class()
+        self.assertEqual(serializer_class, MovieSerializer)
