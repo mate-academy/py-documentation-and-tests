@@ -82,7 +82,8 @@ class AuthenticatedMovieApiTests(TestCase):
         self.assertEqual(res.data, serializer.data)
         self.assertEqual(res.status_code, status.HTTP_200_OK)
 
-    def test_filter_movie_by_title(self):
+
+    def test_filter_movie_by_title_or_genre_or_actor(self):
         movie1 = sample_movie(title="Movie 1")
         movie2 = sample_movie(title="Movie 2")
         movie3 = sample_movie(title="Movie 3")
@@ -95,14 +96,26 @@ class AuthenticatedMovieApiTests(TestCase):
 
         res1 = self.client.get(MOVIE_URL, {"actors": f"{actor.id}"})
         res2 = self.client.get(MOVIE_URL, {"genres": f"{genre.id}"})
+
+        res3 = self.client.get(MOVIE_URL, {"title": f"{movie1.title}"})
+        res4 = self.client.get(MOVIE_URL, {"title": f"{movie2.title}"})
+
         serializer1 = MovieListSerializer(movie1)
         serializer2 = MovieListSerializer(movie2)
         serializer3 = MovieListSerializer(movie3)
 
-        self.assertIn(serializer1.data, res1.data)
-        self.assertIn(serializer2.data, res2.data)
-        self.assertNotIn(serializer3.data, res1.data)
-        self.assertNotIn(serializer3.data, res2.data)
+        message1 = "filter movies by actor's id doesn`t work properly"
+        message2 = "filter movies by genre's id doesn`t work properly"
+        message3 = "filter movies by title str doesn`t work properly"
+
+        self.assertIn(serializer1.data, res1.data, message1)
+        self.assertIn(serializer2.data, res2.data, message2)
+        self.assertIn(serializer1.data, res3.data, message3)
+        self.assertIn(serializer2.data, res4.data, message3)
+        self.assertNotIn(serializer3.data, res3.data, message3)
+        self.assertNotIn(serializer3.data, res4.data, message3)
+        self.assertNotIn(serializer3.data, res1.data, message1)
+        self.assertNotIn(serializer3.data, res2.data, message2)
 
     def test_retrieve_movie_detail(self):
         movie = sample_movie()
