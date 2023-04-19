@@ -144,7 +144,7 @@ class MovieViewSet(
             OpenApiParameter(
                 "genres",
                 type={"type": "list", "items": {"type": "number"}},
-                description="Filter movies by genres ... ",
+                description="Filter movies by genres id... ",
                 examples=[
                     OpenApiExample(
                         "genres",
