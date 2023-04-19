@@ -193,32 +193,39 @@ class MovieAuthorizedTests(TestCase):
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(res.data, serializer.data)
 
-    def test_list_movies_with_filter(self):
-        """Test retrieving a list of movies with filter"""
+    def test_list_movies_with_genres_filter(self):
+        """Test retrieving a list of movies with genres filter"""
         sample_movie()
         movie = sample_movie()
 
         movie.genres.add(sample_genre())
-        movie.actors.add(sample_actor())
 
-        res = self.client.get(MOVIE_URL, {"title": "Title"})
-
-        movies = Movie.objects.filter(title="Title")
+        res = self.client.get(MOVIE_URL, {"genres": 1})
+        movies = Movie.objects.filter(genres=1)
         serializer = MovieListSerializer(movies, many=True)
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(res.data, serializer.data)
 
-    def test_list_movies_with_filters(self):
-        """Test retrieving a list of movies with filters"""
+    def test_list_movies_with_actors_filter(self):
+        """Test retrieving a list of movies with actors filter"""
         sample_movie()
         movie = sample_movie()
 
-        movie.genres.add(sample_genre())
         movie.actors.add(sample_actor())
 
-        res = self.client.get(MOVIE_URL, {"title": "Title", "genres": 1})
+        res = self.client.get(MOVIE_URL, {"actors": 1})
+        movies = Movie.objects.filter(actors=1)
+        serializer = MovieListSerializer(movies, many=True)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data, serializer.data)
 
-        movies = Movie.objects.filter(title="Title", genres=1)
+    def test_list_movies_with_title_filter(self):
+        """Test retrieving a list of movies with title filter"""
+        sample_movie()
+        movie = sample_movie()
+
+        res = self.client.get(MOVIE_URL, {"title": movie.title})
+        movies = Movie.objects.filter(title=movie.title)
         serializer = MovieListSerializer(movies, many=True)
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(res.data, serializer.data)
@@ -226,13 +233,12 @@ class MovieAuthorizedTests(TestCase):
     def test_movie_retrieve(self):
         """Test retrieving a movie"""
         movie = sample_movie()
-        movie.genres.add(sample_genre())
-        movie.actors.add(sample_actor())
+        movie.genres.add(sample_genre(name="test genre"))
+        movie.actors.add(sample_actor(first_name="test actor", last_name="test"))
 
-        url = detail_url(movie.id)
-        res = self.client.get(url)
-
+        res = self.client.get(detail_url(movie.id))
         serializer = MovieDetailSerializer(movie)
+
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(res.data, serializer.data)
 
