@@ -267,6 +267,12 @@ class AuthenticatedMovieApiTests(TestCase):
         self.assertIn(serializer3.data, response.data)
         self.assertNotIn(serializer2.data, response.data)
 
+    def test_delete_movie(self):
+        url = detail_url(self.movie1.id)
+        response = self.client.delete(url)
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
 
 class AdminMovieApiTests(TestCase):
     def setUp(self) -> None:
@@ -309,3 +315,10 @@ class AdminMovieApiTests(TestCase):
         self.assertIn(genre2, genres)
         self.assertIn(actor1, actors)
         self.assertIn(actor2, actors)
+
+    def test_delete_movie(self):
+        movie = sample_movie()
+        url = detail_url(movie.id)
+        response = self.client.delete(url)
+
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
