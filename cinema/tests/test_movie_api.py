@@ -251,6 +251,19 @@ class MovieViewSetGetQuerySetTestCase(TestCase):
         self.assertIn(serializer_snatch.data, response_one_actor.data)
         self.assertNotEqual(serializer_snatch.data, serializer_all_movie.data)
 
+    def test_get_queryset_genres_filter(self):
+        url = reverse("cinema:movie-list")
+        response_all_genres = self.client.get(url, {"genres": "1,2"})
+        response_one_genre = self.client.get(url, {"genres": "2"})
+        serializer_snatch = MovieListSerializer(self.snatch)
+        serializer_all_genres = MovieListSerializer(
+            Movie.objects.all(), many=True
+        )
+
+        self.assertEqual(serializer_all_genres.data, response_all_genres.data)
+        self.assertIn(serializer_snatch.data, response_one_genre.data)
+        self.assertNotEqual(serializer_snatch.data, serializer_all_genres.data)
+
     def test_movie_detail(self):
         response = self.client.get(detail_url(self.top_gun.id))
         serializer = MovieDetailSerializer(self.top_gun)
