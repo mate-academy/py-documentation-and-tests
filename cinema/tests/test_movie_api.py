@@ -219,7 +219,7 @@ class AuthenticatedMovieApiTest(TestCase):
         self.assertIn(self.serializer2.data, res.data)
         self.assertNotIn(self.serializer3.data, res.data)
 
-    def test_filter_movies_by_action(self):
+    def test_filter_movies_by_actor(self):
         actor1 = sample_actor(first_name="Bob", last_name="Ross")
         actor2 = sample_actor(first_name="Anne", last_name="Boleyn")
         actor3 = sample_actor()
