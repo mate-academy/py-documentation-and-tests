@@ -188,6 +188,19 @@ class AuthenticatedMovieApiTests(TestCase):
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(res.data, serializer.data)
 
+    def test_filter_movies_by_title(self):
+        movie1 = sample_movie(title="movie1")
+        movie2 = sample_movie(title="movie2")
+
+        res = self.client.get(MOVIE_URL, {"title": "movie1"})
+
+        serializer1 = MovieListSerializer(movie1)
+        serializer2 = MovieListSerializer(movie2)
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertIn(serializer1.data, res.data)
+        self.assertNotIn(serializer2.data, res.data)
+
     def test_filter_movies_by_genres(self):
         movie1 = sample_movie()
         movie2 = sample_movie()
