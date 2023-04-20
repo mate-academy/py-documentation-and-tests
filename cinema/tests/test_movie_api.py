@@ -10,6 +10,7 @@ from rest_framework.test import APIClient
 from rest_framework import status
 
 from cinema.models import Movie, MovieSession, CinemaHall, Genre, Actor
+from cinema.serializers import MovieListSerializer, MovieDetailSerializer
 
 MOVIE_URL = reverse("cinema:movie-list")
 MOVIE_SESSION_URL = reverse("cinema:moviesession-list")
@@ -43,9 +44,7 @@ def sample_actor(**params):
 
 
 def sample_movie_session(**params):
-    cinema_hall = CinemaHall.objects.create(
-        name="Blue", rows=20, seats_in_row=20
-    )
+    cinema_hall = CinemaHall.objects.create(name="Blue", rows=20, seats_in_row=20)
 
     defaults = {
         "show_time": "2022-06-02 14:00:00",
@@ -157,3 +156,82 @@ class MovieImageUploadTests(TestCase):
         res = self.client.get(MOVIE_SESSION_URL)
 
         self.assertIn("movie_image", res.data[0].keys())
+
+
+class UnauthenticatedMovieApiTest(TestCase):
+    def setUp(self) -> None:
+        self.client = APIClient()
+
+    def test_auth_required(self):
+        response = self.client.get(MOVIE_URL)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+
+class AuthenticatedMovieApiTest(TestCase):
+    def setUp(self) -> None:
+        self.client = APIClient()
+        self.user = get_user_model().objects.create_user("test@test.com", "test_test")
+        self.client.force_authenticate(self.user)
+
+        self.first_movie = sample_movie(title="first movie")
+        self.second_movie = sample_movie(title="second movie")
+        self.third_movie = sample_movie(title="third movie")
+
+        self.first_actor = sample_actor(first_name="First")
+        self.second_actor = sample_actor(first_name="Second")
+        self.third_actor = sample_actor(first_name="Third")
+
+        self.first_movie.actors.add(self.first_actor)
+        self.second_movie.actors.add(self.second_actor)
+        self.third_movie.actors.add(self.third_actor)
+
+        self.first_genre = sample_genre(name="first")
+        self.second_genre = sample_genre(name="second")
+        self.third_genre = sample_genre(name="third")
+
+        self.first_movie.genres.add(self.first_genre)
+        self.second_movie.genres.add(self.second_genre)
+        self.third_movie.genres.add(self.third_genre)
+
+        self.first_serializer = MovieListSerializer(self.first_movie)
+        self.second_serializer = MovieListSerializer(self.second_movie)
+        self.third_serializer = MovieListSerializer(self.third_movie)
+
+    def _call_assert(self, response):
+        self.assertIn(self.first_serializer.data, response.data)
+        self.assertIn(self.second_serializer.data, response.data)
+        self.assertNotIn(self.third_serializer.data, response.data)
+
+    def test_list_movies(self) -> None:
+        response = self.client.get(MOVIE_URL)
+        movies = Movie.objects.all()
+        serializer = MovieListSerializer(movies, many=True)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, serializer.data)
+
+    def test_movie_list_filter_title(self) -> None:
+        response = self.client.get(MOVIE_URL, {"title": "first"})
+
+        self.assertIn(self.first_serializer.data, response.data)
+        self.assertNotIn(self.second_serializer.data, response.data)
+
+    def test_movie_list_filter_genres(self) -> None:
+        response = self.client.get(
+            MOVIE_URL, {"genres": f"{self.first_genre.id}, {self.second_genre.id}"}
+        )
+        self._call_assert(response=response)
+
+    def test_movie_list_filter_actors(self) -> None:
+        response = self.client.get(
+            MOVIE_URL, {"actors": f"{self.first_actor.id}, {self.second_actor.id}"}
+        )
+        self._call_assert(response=response)
+
+    def test_retrieve_movies_detail(self) -> None:
+        url = detail_url(self.first_movie.id)
+        response = self.client.get(url)
+        serializer = MovieDetailSerializer(self.first_movie)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, serializer.data)
