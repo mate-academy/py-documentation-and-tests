@@ -14,15 +14,8 @@ class CreateUserView(generics.CreateAPIView):
 
 
 @extend_schema(tags=["user"])
-class CreateTokenView(ObtainAuthToken):
-    renderer_classes = api_settings.DEFAULT_RENDERER_CLASSES
-    serializer_class = AuthTokenSerializer
-
-
-@extend_schema(tags=["user"])
 class ManageUserView(generics.RetrieveUpdateAPIView):
     serializer_class = UserSerializer
-    authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAuthenticated,)
 
     def get_object(self):
