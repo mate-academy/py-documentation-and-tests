@@ -8,7 +8,7 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet, ReadOnlyModelViewSet
-
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 from cinema.models import Genre, Actor, CinemaHall, Movie, MovieSession, Order
 from cinema.permissions import IsAdminOrIfAuthenticatedReadOnly
 
@@ -126,6 +126,28 @@ class MovieViewSet(
             return Response(serializer.data, status=status.HTTP_200_OK)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                "title",
+                type=str,
+                description="Filter movies by title (ex. ?title=title)"
+            ),
+            OpenApiParameter(
+                "genres",
+                type={"type": "list", "items": {"type": "number"}},
+                description="Filter movies by genre ids (ex. ?genres=1,2)",
+            ),
+            OpenApiParameter(
+                "actors",
+                type={"type": "list", "items": {"type": "number"}},
+                description="Filter movies by actors ids (ex. ?actors=1,2)"
+            )
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, args, kwargs)
 
 
 class MovieSessionViewSet(viewsets.ModelViewSet):
