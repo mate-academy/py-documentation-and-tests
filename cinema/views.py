@@ -156,8 +156,8 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
         .select_related("movie", "cinema_hall")
         .annotate(
             tickets_available=(
-                F("cinema_hall__rows") * F("cinema_hall__seats_in_row")
-                - Count("tickets")
+                    F("cinema_hall__rows") * F("cinema_hall__seats_in_row")
+                    - Count("tickets")
             )
         )
     )
@@ -188,6 +188,23 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
             return MovieSessionDetailSerializer
 
         return MovieSessionSerializer
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                "date",
+                type=date,
+                description="Filter movies by date (ex. ?date=2023-04-08)"
+            ),
+            OpenApiParameter(
+                "movie",
+                type=int,
+                description="Filter movie session by movie id (ex. ?movie=1)",
+            )
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, args, kwargs)
 
 
 class OrderPagination(PageNumberPagination):
