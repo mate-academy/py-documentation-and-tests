@@ -219,6 +219,45 @@ class AuthenticatedMovieApiTests(TestCase):
         self.assertIn(serializer2.data, res.data)
         self.assertNotIn(serializer3.data, res.data)
 
+    def test_filter_movies_by_title(self):
+        movie1 = sample_movie(title="Kill Bill")
+        movie2 = sample_movie(title="Django Unchained")
+        movie3 = sample_movie(title="Pulp Fiction")
+
+        res = self.client.get(
+            MOVIE_URL, {"title": "kill"}
+        )
+
+        serializer1 = MovieListSerializer(movie1)
+        serializer2 = MovieListSerializer(movie3)
+
+        self.assertIn(serializer1.data, res.data)
+        self.assertNotIn(serializer2.data, res.data)
+
+    def test_filter_movies_by_genre(self):
+        genre1 = Genre.objects.create(name="Action")
+        genre2 = Genre.objects.create(name="Drama")
+        genre3 = Genre.objects.create(name="Comedy")
+
+        movie1 = sample_movie(title="Kill Bill")
+        movie2 = sample_movie(title="Django Unchained")
+        movie3 = sample_movie(title="Pulp Fiction")
+
+        movie1.genres.add(genre1)
+        movie2.genres.add(genre2)
+        movie3.genres.add(genre3)
+
+        res = self.client.get(
+            MOVIE_URL, {"genres": f"{genre1.id},{genre2.id}"}
+        )
+        serializer1 = MovieListSerializer(movie1)
+        serializer2 = MovieListSerializer(movie2)
+        serializer3 = MovieListSerializer(movie3)
+
+        self.assertIn(serializer1.data, res.data)
+        self.assertIn(serializer2.data, res.data)
+        self.assertNotIn(serializer3.data, res.data)
+
     def test_retrieve_movie_detail(self):
         movie = sample_movie(title="Reservoir Dogs")
         movie.genres.add(sample_genre(name="Sci-Fi"))
