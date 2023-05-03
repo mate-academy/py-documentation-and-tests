@@ -196,7 +196,7 @@ class AuthenticatedMovieApiTests(TestCase):
         serializer1 = MovieListSerializer(movie1)
         serializer2 = MovieListSerializer(movie2)
 
-        response = self.client.get(MOVIE_URL, {"title": "acti"})
+        response = self.client.get(MOVIE_URL, {"title": f"{movie1.title}"})
 
         self.assertIn(serializer1.data, response.data)
         self.assertNotIn(serializer2.data, response.data)
