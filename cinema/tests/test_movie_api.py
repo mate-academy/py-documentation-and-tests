@@ -160,8 +160,6 @@ class MovieImageUploadTests(TestCase):
         self.assertIn("movie_image", res.data[0].keys())
 
 
-
-
 class UnauthenticatedMovieApiTest(TestCase):
     def setUp(self):
         self.client = APIClient()
@@ -210,6 +208,43 @@ class AuthenticatedMovieApiTest(TestCase):
         movie3 = sample_movie()
 
         res = self.client.get(MOVIE_URL, {"genres": f"{genre1.id},{genre2.id}"})
+
+        serializer1 = MovieListSerializer(movie1)
+        serializer2 = MovieListSerializer(movie2)
+        serializer3 = MovieListSerializer(movie3)
+
+        self.assertIn(serializer1.data, res.data)
+        self.assertIn(serializer2.data, res.data)
+        self.assertNotIn(serializer3.data, res.data)
+
+    def test_filter_movies_by_actor(self):
+        actor1 = Actor.objects.create(first_name='Test Actor 1')
+        actor2 = Actor.objects.create(first_name='Test Actor 2')
+        actor3 = Actor.objects.create(first_name='Test Actor 3')
+
+        movie1 = sample_movie(title="Test Movie 1")
+        movie2 = sample_movie(title="Test Movie 2")
+        movie3 = sample_movie(title="Test Movie 3")
+
+        movie1.actors.add(actor1)
+        movie2.actors.add(actor2)
+
+        res = self.client.get(MOVIE_URL, {"actors": f"{actor1.id},{actor3.id}"})
+
+        serializer1 = MovieListSerializer(movie1)
+        serializer2 = MovieListSerializer(movie2)
+        serializer3 = MovieListSerializer(movie3)
+
+        self.assertIn(serializer1.data, res.data)
+        self.assertNotIn(serializer2.data, res.data)
+        self.assertNotIn(serializer3.data, res.data)
+
+    def test_filter_movies_by_title(self):
+        movie1 = sample_movie(title="Test Movie 1")
+        movie2 = sample_movie(title="Test Movie 2")
+        movie3 = sample_movie(title="Another Movie")
+
+        res = self.client.get(MOVIE_URL, {"title": "test movie"})
 
         serializer1 = MovieListSerializer(movie1)
         serializer2 = MovieListSerializer(movie2)
