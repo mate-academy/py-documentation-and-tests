@@ -189,17 +189,17 @@ class AuthenticatedMovieApiTests(TestCase):
         self.first_movie = sample_movie(title="first_movie")
         self.first_movie.actors.add(self.first_actor)
         self.first_movie.genres.add(self.first_genre)
-        self.first_movie_serializer = MovieSerializer(self.first_movie)
+        self.first_movie_serializer = MovieListSerializer(self.first_movie)
 
         self.second_movie = sample_movie(title="second_movie")
         self.second_movie.actors.add(self.second_actor)
         self.second_movie.genres.add(self.second_genre)
-        self.second_movie_serializer = MovieSerializer(self.second_movie)
+        self.second_movie_serializer = MovieListSerializer(self.second_movie)
 
         self.third_movie = sample_movie(title="third_movie")
         self.third_movie.actors.add(self.third_actor)
         self.third_movie.genres.add(self.third_genre)
-        self.third_movie_serializer = MovieSerializer(self.third_movie)
+        self.third_movie_serializer = MovieListSerializer(self.third_movie)
 
     def test_list_movies(self) -> None:
         res = self.client.get(MOVIE_URL)
@@ -259,21 +259,19 @@ class AdminMovieApiTests(TestCase):
         )
         self.client.force_authenticate(self.user)
 
-        self.first_actor = sample_actor(first_name="first_actor")
-        self.first_genre = sample_genre(name="first_genre")
-
     def test_create_movie(self):
         payload = {
-            "title": "Sample movie",
-            "description": "Sample description",
-            "duration": 90,
+            "title": "first_movie",
+            "description": "description",
+            "duration": 90
         }
 
         res = self.client.post(MOVIE_URL, payload)
         movie = Movie.objects.get(id=res.data["id"])
 
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
-        for key in payload:
+
+        for key in payload.keys():
             self.assertEqual(payload[key], getattr(movie, key))
 
     def test_delete_movie_not_allowed(self):
