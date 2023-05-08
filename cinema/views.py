@@ -184,6 +184,25 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
 
         return queryset
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                "date",
+                type=str,
+                description="Filter by date (eg. '?date=2023-05-08')",
+                required=False,
+            ),
+            OpenApiParameter(
+                "movie",
+                type=int,
+                description="Filter by movie id (eg. '?movie=1')",
+                required=False,
+            )
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
     def get_serializer_class(self):
         if self.action == "list":
             return MovieSessionListSerializer
