@@ -323,3 +323,30 @@ class AdminMovieApiTest(TestCase):
 
         for key in payload:
             self.assertEqual(payload[key], getattr(movie, key))
+
+    def test_create_movie_with_actors(self):
+        actor1 = Actor.objects.create(
+            first_name="TestFirstName1",
+            last_name="TestLastName1"
+        )
+
+        actor2 = Actor.objects.create(
+            first_name="TestFirstName2",
+            last_name="TestLastName2"
+        )
+
+        payload = {
+            "title": "Sample movie",
+            "description": "Sample description",
+            "duration": 90,
+            "actors": [actor1.id, actor2.id]
+        }
+
+        response = self.client.post(MOVIE_URL, payload)
+        movie = Movie.objects.get(id=response.data["id"])
+        actors = movie.actors.all()
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(actors.count(), 2)
+        self.assertIn(actor1, actors)
+        self.assertIn(actor2, actors)
