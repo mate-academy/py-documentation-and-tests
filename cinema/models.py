@@ -23,6 +23,9 @@ class CinemaHall(models.Model):
 class Genre(models.Model):
     name = models.CharField(max_length=255, unique=True)
 
+    class Meta:
+        verbose_name_plural = "genres"
+
     def __str__(self):
         return self.name
 
@@ -30,6 +33,9 @@ class Genre(models.Model):
 class Actor(models.Model):
     first_name = models.CharField(max_length=255)
     last_name = models.CharField(max_length=255)
+
+    class Meta:
+        verbose_name_plural = "actors"
 
     def __str__(self):
         return self.first_name + " " + self.last_name
