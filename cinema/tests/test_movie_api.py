@@ -307,10 +307,3 @@ class AdminCinemaServiceApiTest(TestCase):
                 self.assertEqual(payload[key], [obj.pk for obj in getattr(movie, key).all()])
             else:
                 self.assertEqual(payload[key], getattr(movie, key))
-
-
-
-
-
-
-
