@@ -1,12 +1,12 @@
 from unittest import TestCase
 from cinema.models import Movie, Actor, Genre
 from cinema.serializers import MovieListSerializer, MovieDetailSerializer
-from django.urls import reverse
+from django.urls import reverse, reverse_lazy
 from rest_framework import status
 from rest_framework.test import APIClient
 from django.contrib.auth import get_user_model
 
-MOVIE_LIST_URL = reverse("cinema:movie-list")
+MOVIE_LIST_URL = reverse_lazy("cinema:movie-list")
 
 
 def sample_movie(**params):
