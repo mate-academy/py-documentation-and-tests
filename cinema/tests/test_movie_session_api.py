@@ -19,21 +19,29 @@ def detail_url(movie_session_id: int):
     return reverse_lazy("cinema:moviesession-detail", args=[movie_session_id])
 
 
-def test_movie_session(**params) -> MovieSession:
-    movie = Movie.objects.create(
-        title="Test movie",
-        description="Test description",
-        duration=90,
-    )
-    cinema_hall = CinemaHall.objects.create(
+def test_movie(**params) -> Movie:
+    defaults = {
+        "title": "Test movie",
+        "description": "Description",
+        "duration": 90
+    }
+    defaults.update(**params)
+    return Movie.objects.create(**defaults)
+
+
+def test_cinema_hall(**params) -> CinemaHall:
+    return CinemaHall.objects.create(
         name="Test hall",
         rows=20,
         seats_in_row=20
     )
+
+
+def test_movie_session(**params) -> MovieSession:
     defaults = {
         "show_time": "2023-06-01T13:00:00",
-        "movie": movie,
-        "cinema_hall": cinema_hall
+        "movie": test_movie(),
+        "cinema_hall": test_cinema_hall()
     }
     defaults.update(**params)
     return MovieSession.objects.create(**defaults)
@@ -92,18 +100,9 @@ class AuthenticatedMovieSessionApiTest(TestCase):
         self.assertNotIn(serializer2.data, response.data)
 
     def test_filter_movie_session_by_movie_id(self) -> None:
-        movie1 = Movie.objects.create(
-            title="Test movie 1",
-            description="Test description",
-            duration=90,
-        )
-        movie2 = Movie.objects.create(
-            title="Test movie 2",
-            description="Test description",
-            duration=100,
-        )
+        movie1 = test_movie(title="Test movie 1")
         test_movie_session(movie=movie1)
-        test_movie_session(movie=movie2)
+        test_movie_session()
         annotated_moviesessions = MovieSession.objects.annotate(
             tickets_available=(
                     F("cinema_hall__rows") * F("cinema_hall__seats_in_row")
@@ -129,20 +128,10 @@ class AuthenticatedMovieSessionApiTest(TestCase):
         self.assertEqual(response.data, serializer.data)
 
     def test_create_movie_session_forbidden(self) -> None:
-        movie = Movie.objects.create(
-            title="Test movie",
-            description="Test description",
-            duration=90,
-        )
-        cinema_hall = CinemaHall.objects.create(
-            name="Test hall",
-            rows=20,
-            seats_in_row=20
-        )
         payload = {
             "show_time": "2023-06-01T13:00:00",
-            "movie": movie,
-            "cinema_hall": cinema_hall
+            "movie": test_movie(),
+            "cinema_hall": test_cinema_hall()
         }
         response = self.client.post(MOVIE_SESSION_URL, payload)
 
@@ -160,16 +149,8 @@ class AdminMovieSessionApiTest(TestCase):
         self.client.force_authenticate(self.user)
 
     def test_create_movie_session(self) -> None:
-        movie = Movie.objects.create(
-            title="Test movie",
-            description="Test description",
-            duration=90,
-        )
-        cinema_hall = CinemaHall.objects.create(
-            name="Test hall",
-            rows=20,
-            seats_in_row=20
-        )
+        movie = test_movie()
+        cinema_hall = test_cinema_hall()
         payload = {
             "show_time": "2023-08-01T13:00:00",
             "movie": movie.id,
