@@ -1,4 +1,5 @@
 from django.db import transaction
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
@@ -23,6 +24,10 @@ class ActorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Actor
         fields = ("id", "first_name", "last_name", "full_name")
+
+    @extend_schema_field(serializers.CharField())
+    def full_name(self):
+        return f'{Actor.first_name} {Actor.last_name}'
 
 
 class CinemaHallSerializer(serializers.ModelSerializer):
