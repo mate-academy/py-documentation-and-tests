@@ -116,7 +116,7 @@ class MovieViewSet(
                 name="actors",
                 type={"type": "list", "items": {"type": "numbers"}},
                 description="Filter by actors id (ex. ?actors=1,3)",
-            )
+            ),
         ]
     )
     def get_serializer_class(self):
@@ -193,12 +193,12 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
             OpenApiParameter(
                 "date",
                 type=OpenApiTypes.DATE,
-                description="Filter by date (ex. ?date=2024-10-08)"
+                description="Filter by date (ex. ?date=2024-10-08)",
             ),
             OpenApiParameter(
                 "movie",
                 type=OpenApiTypes.INT,
-                description="Filter by movie id (ex. ?movie=1)"
+                description="Filter by movie id (ex. ?movie=1)",
             ),
         ]
     )
