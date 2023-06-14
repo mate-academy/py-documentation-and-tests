@@ -193,7 +193,7 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
             ),
             OpenApiParameter(
                 "movie",
-                type={"type": int},
+                type=int,
                 description="Filter by movie id (ex. ?movie=3)"
             ),
         ]
