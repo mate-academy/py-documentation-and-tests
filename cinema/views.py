@@ -186,7 +186,7 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
     @extend_schema(
         parameters=[
             OpenApiParameter(
-                "data", type=OpenApiTypes.DATE, description="Filter by data"
+                "date", type=OpenApiTypes.DATE, description="Filter by date"
             ),
             OpenApiParameter(
                 "movie",
