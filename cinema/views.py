@@ -201,7 +201,7 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
             OpenApiParameter(
                 "movie",
                 type=int,
-                description="Filter by movie id (ex. ?movie=1,2)",
+                description="Filter by movie id (ex. ?movie=1)",
                 required=False,
             )
         ]
