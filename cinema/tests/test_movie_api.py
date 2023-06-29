@@ -173,20 +173,20 @@ class AuthenticatedMovieApiTests(TestCase):
     def setUp(self) -> None:
         self.client = APIClient()
         self.user = get_user_model().objects.create_user(
-            "test.user@cinema.com", "user12345"
+            "admin.user@cinema.com", "1qazcde3"
         )
         self.client.force_authenticate(self.user)
 
-        self.movie1 = sample_movie(title="The Hobbit: An Unexpected Journey")
-        self.movie2 = sample_movie(title="The Dark Knight")
-        self.movie3 = sample_movie(title="Harry Potter and the Philosopher's Stone")
-        self.movie4 = sample_movie(title="Harry Potter and the Chamber of Secrets")
+        self.movie1 = sample_movie(title="sample_movie1")
+        self.movie2 = sample_movie(title="sample_movie2")
+        self.movie3 = sample_movie(title="sample_movie3")
+        self.movie4 = sample_movie(title="sample_movie4")
 
-        self.genre1 = sample_genre(name="action")
-        self.genre2 = sample_genre(name="fantasy")
+        self.genre1 = sample_genre(name="fantasy")
+        self.genre2 = sample_genre(name="history")
 
-        self.actor1 = sample_actor(first_name="Christian", last_name="Bale")
-        self.actor2 = sample_actor(first_name="Daniel", last_name="Radcliffe")
+        self.actor1 = sample_actor(first_name="test_name1", last_name="test_last1")
+        self.actor2 = sample_actor(first_name="test_name2", last_name="test_last2")
 
         self.movie3.genres.add(self.genre1)
         self.movie4.genres.add(self.genre2)
@@ -209,12 +209,12 @@ class AuthenticatedMovieApiTests(TestCase):
         self.assertEqual(res.data, serializer.data)
 
     def test_filter_movies_by_title(self):
-        res = self.client.get(MOVIE_URL, {"title": "harry"})
+        res = self.client.get(MOVIE_URL, {"title": "movie1"})
 
-        self.assertNotIn(self.serializer1.data, res.data)
+        self.assertIn(self.serializer1.data, res.data)
         self.assertNotIn(self.serializer2.data, res.data)
-        self.assertIn(self.serializer3.data, res.data)
-        self.assertIn(self.serializer4.data, res.data)
+        self.assertNotIn(self.serializer3.data, res.data)
+        self.assertNotIn(self.serializer4.data, res.data)
 
     def test_filter_movies_by_genre(self):
         res = self.client.get(MOVIE_URL, {"genres": "1,2"})
@@ -253,7 +253,7 @@ class AuthenticatedMovieApiTests(TestCase):
 
     def test_update_movie_forbidden(self):
         payload = {
-            "title": "Harry Potter 1",
+            "title": "sample_movie1 1",
         }
 
         url = reverse("cinema:movie-detail", args=[self.movie3.id])
