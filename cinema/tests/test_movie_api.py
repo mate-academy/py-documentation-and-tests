@@ -1,10 +1,9 @@
-import shutil
 import tempfile
 import os
 
 from PIL import Image
 from django.contrib.auth import get_user_model
-from django.test import TestCase, override_settings
+from django.test import TestCase
 from django.urls import reverse
 
 from rest_framework.test import APIClient
@@ -15,8 +14,6 @@ from cinema.serializers import MovieDetailSerializer, MovieListSerializer
 
 MOVIE_URL = reverse("cinema:movie-list")
 MOVIE_SESSION_URL = reverse("cinema:moviesession-list")
-
-TEST_DIR = 'test_data'
 
 
 def sample_movie(**params):
@@ -83,10 +80,9 @@ class MovieImageUploadTests(TestCase):
         self.movie_session = sample_movie_session(movie=self.movie)
 
     def tearDown(self):
+        self.movie.refresh_from_db()
         self.movie.image.delete()
-        shutil.rmtree(TEST_DIR, ignore_errors=True)
 
-    @override_settings(MEDIA_ROOT=(TEST_DIR + '/media'))
     def test_upload_image_to_movie(self):
         """Test uploading an image to movie"""
         url = image_upload_url(self.movie.id)
@@ -108,7 +104,6 @@ class MovieImageUploadTests(TestCase):
 
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
 
-    @override_settings(MEDIA_ROOT=(TEST_DIR + '/media'))
     def test_post_image_to_movie_list(self):
         url = MOVIE_URL
         with tempfile.NamedTemporaryFile(suffix=".jpg") as ntf:
@@ -132,7 +127,6 @@ class MovieImageUploadTests(TestCase):
         movie = Movie.objects.get(title="Title")
         self.assertFalse(movie.image)
 
-    @override_settings(MEDIA_ROOT=(TEST_DIR + '/media'))
     def test_image_url_is_shown_on_movie_detail(self):
         url = image_upload_url(self.movie.id)
         with tempfile.NamedTemporaryFile(suffix=".jpg") as ntf:
@@ -144,7 +138,6 @@ class MovieImageUploadTests(TestCase):
 
         self.assertIn("image", res.data)
 
-    @override_settings(MEDIA_ROOT=(TEST_DIR + '/media'))
     def test_image_url_is_shown_on_movie_list(self):
         url = image_upload_url(self.movie.id)
         with tempfile.NamedTemporaryFile(suffix=".jpg") as ntf:
@@ -156,7 +149,6 @@ class MovieImageUploadTests(TestCase):
 
         self.assertIn("image", res.data[0].keys())
 
-    @override_settings(MEDIA_ROOT=(TEST_DIR + '/media'))
     def test_image_url_is_shown_on_movie_session_detail(self):
         url = image_upload_url(self.movie.id)
         with tempfile.NamedTemporaryFile(suffix=".jpg") as ntf:
