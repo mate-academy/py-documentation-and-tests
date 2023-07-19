@@ -18,7 +18,7 @@ class UserSerializer(serializers.ModelSerializer):
         """Update a user, set the password correctly and return it"""
         password = validated_data.pop("password", None)
         user = super().update(instance, validated_data)
-        if password:
+        if password is not None:
             user.set_password(password)
             user.save()
 
@@ -35,14 +35,15 @@ class AuthTokenSerializer(serializers.Serializer):
         email = attrs.get("email")
         password = attrs.get("password")
 
-        if email and password:
+        if (email and password) is not None:
             user = authenticate(email=email, password=password)
 
-            if user:
+            if user is not None:
                 if not user.is_active:
                     msg = _("User account is disabled.")
                     raise serializers.ValidationError(
-                        msg, code="authorization"
+                        msg,
+                        code="authorization"
                     )
             else:
                 msg = _("Unable to log in with provided credentials.")
