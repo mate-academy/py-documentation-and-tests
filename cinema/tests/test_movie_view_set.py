@@ -126,6 +126,7 @@ class AdminMovieTests(TestCase):
 
     def test_create_movie(self):
         payload = {
+            "id": 1,
             "title": "Movie",
             "description": "Info about movie",
             "duration": 2,
@@ -143,6 +144,7 @@ class AdminMovieTests(TestCase):
         actor = Actor.objects.create(first_name="Frank", last_name="Riz")
 
         payload = {
+            "id": 1,
             "title": "Movie",
             "description": "Info about movie",
             "duration": 2,
