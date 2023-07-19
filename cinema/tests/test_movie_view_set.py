@@ -126,16 +126,15 @@ class AdminMovieTests(TestCase):
 
     def test_create_movie(self):
         payload = {
-            "id": 1,
             "title": "Movie",
             "description": "Info about movie",
             "duration": 2,
         }
 
-        res = self.client.post(MOVIE_URL, payload)
-        movie = Movie.objects.get(id=res.data["id"])
+        response = self.client.post(MOVIE_URL, payload)
+        movie = Movie.objects.get(id=response.data["id"])
 
-        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         for key in payload:
             self.assertEqual(payload[key], getattr(movie, key))
 
@@ -144,7 +143,6 @@ class AdminMovieTests(TestCase):
         actor = Actor.objects.create(first_name="Frank", last_name="Riz")
 
         payload = {
-            "id": 1,
             "title": "Movie",
             "description": "Info about movie",
             "duration": 2,
