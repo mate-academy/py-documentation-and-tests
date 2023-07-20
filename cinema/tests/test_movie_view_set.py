@@ -20,7 +20,7 @@ def detail_url(movie_id: int):
 def sample_movie(**params):
     default = {
         "title": "Sample movie",
-        "duration": 120,
+        "duration": 20,
     }
     default.update(params)
 
@@ -50,7 +50,7 @@ class AuthenticatedMovieApiTest(TestCase):
         movie_with_genres = sample_movie()
 
         genre1 = Genre.objects.create(name="Drama")
-        genre2 = Genre.objects.create(name="Action")
+        genre2 = Genre.objects.create(name="Poetry")
 
         movie_with_genres.genres.add(genre1, genre2)
 
@@ -67,10 +67,12 @@ class AuthenticatedMovieApiTest(TestCase):
         movie2 = sample_movie(title="Movie 2")
 
         genre1 = Genre.objects.create(name="Drama")
-        genre2 = Genre.objects.create(name="Action")
+        genre2 = Genre.objects.create(name="Poetry")
 
         movie1.genres.add(genre1)
         movie2.genres.add(genre2)
+
+        movie3 = sample_movie(title="Movie 3")
 
         res = self.client.get(MOVIE_URL, {
             "genres": f"{genre1.id},"
@@ -79,9 +81,11 @@ class AuthenticatedMovieApiTest(TestCase):
 
         serializer1 = MovieListSerializer(movie1)
         serializer2 = MovieListSerializer(movie2)
+        serializer3 = MovieListSerializer(movie3)
 
         self.assertIn(serializer1.data, res.data)
         self.assertIn(serializer2.data, res.data)
+        self.assertNotIn(serializer3.data, res.data)
 
     def test_retrieve_movie_detail(self):
         movie = sample_movie()
