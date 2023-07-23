@@ -186,6 +186,23 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
 
         return MovieSessionSerializer
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="date",
+                type={"type": "date"},
+                description="Filter by date (ex. ?date=2020-01-01)",
+            ),
+            OpenApiParameter(
+                name="movie",
+                type={"type": "number"},
+                description="Filter by movie ID (ex. ?movie=1)",
+            ),
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
 
 class OrderPagination(PageNumberPagination):
     page_size = 10
