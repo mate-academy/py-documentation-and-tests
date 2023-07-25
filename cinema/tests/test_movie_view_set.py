@@ -5,9 +5,13 @@ from rest_framework import status
 from rest_framework.test import APIClient
 
 from cinema.models import Movie, Actor, Genre, CinemaHall, MovieSession
-from cinema.serializers import MovieListSerializer
+from cinema.serializers import MovieListSerializer, MovieDetailSerializer
 
 MOVIE_URL = reverse("cinema:movie-list")
+
+
+def detail_url(movie_id: int):
+    return reverse("cinema:movie-detail", args=[movie_id])
 
 
 def sample_movie(**params):
@@ -148,3 +152,23 @@ class AuthenticateMovieApiTests(TestCase):
         self.assertIn(serializer1.data, res.data)
         self.assertIn(serializer2.data, res.data)
         self.assertNotIn(serializer3.data, res.data)
+
+    def test_retrieve_movie_details(self):
+        movie = sample_movie()
+        actor = sample_actor()
+        movie.actors.add(actor)
+        serializers = MovieDetailSerializer(movie)
+        url = detail_url(movie.id)
+        res = self.client.get(url)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(serializers.data, res.data)
+
+    def test_create_movie_forbidden(self):
+        payload = {
+            "title": "test movie",
+            "description": "test description",
+            "duration": 120,
+        }
+        res = self.client.post(MOVIE_URL, payload)
+
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
