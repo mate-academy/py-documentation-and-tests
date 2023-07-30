@@ -162,5 +162,4 @@ class AdminMovieSessionTest(TestCase):
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
-        # for key in payload:
-        #     self.assertEqual(payload[key], getattr(movie_session, key))
+        self.assertEqual(payload["show_time"], getattr(movie_session, "show_time"))
