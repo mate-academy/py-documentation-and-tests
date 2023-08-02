@@ -40,8 +40,12 @@ class MovieSerializer(serializers.ModelSerializer):
             "description",
             "duration",
             "genres",
-            "actors",
+            "actors"
         )
+        extra_kwargs = {
+            "genres": {"required": False, "allow_empty": True},
+            "actors": {"required": False, "allow_empty": True}
+        }
 
 
 class MovieListSerializer(serializers.ModelSerializer):
@@ -125,9 +129,9 @@ class TicketSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         data = super(TicketSerializer, self).validate(attrs=attrs)
         Ticket.validate_ticket(
-            attrs["row"], 
-            attrs["seat"], 
-            attrs["movie_session"].cinema_hall, 
+            attrs["row"],
+            attrs["seat"],
+            attrs["movie_session"].cinema_hall,
             ValidationError
         )
         return data
