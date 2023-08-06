@@ -10,8 +10,7 @@ from rest_framework.test import APIClient
 from rest_framework import status
 
 from cinema.models import Movie, MovieSession, CinemaHall, Genre, Actor
-from cinema.serializers import MovieListSerializer, MovieSerializer, \
-    MovieDetailSerializer
+from cinema.serializers import MovieListSerializer, MovieDetailSerializer
 
 MOVIE_URL = reverse("cinema:movie-list")
 MOVIE_SESSION_URL = reverse("cinema:moviesession-list")
@@ -244,14 +243,15 @@ class AuthenticatedMovieApiTests(TestCase):
             f"{self.genre_fantastic.id}"
         )
 
-        serializer = MovieListSerializer(self.movies.get(
+        serializer = MovieListSerializer(self.movies.filter(
             genres__in=[self.genre_fantastic.id]
-            )
+            ),
+            many=True
         )
         response = self.client.get(MOVIE_URL, query_params)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertIn(serializer.data, response.data)
+        self.assertEqual(serializer.data, response.data)
 
     def test_search_movie_by_actors(self):
         serializer = MovieListSerializer(self.movies, many=True)
@@ -273,14 +273,15 @@ class AuthenticatedMovieApiTests(TestCase):
             f"{self.actor_schwarzenegger.id}"
         )
 
-        serializer = MovieListSerializer(self.movies.get(
+        serializer = MovieListSerializer(self.movies.filter(
             actors__in=[self.actor_schwarzenegger.id]
-            )
+            ),
+            many=True
         )
         response = self.client.get(MOVIE_URL, query_params)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertIn(serializer.data, response.data)
+        self.assertEqual(serializer.data, response.data)
 
     def test_search_movie_by_title(self):
         serializer = MovieListSerializer(self.movies, many=True)
@@ -300,8 +301,8 @@ class AuthenticatedMovieApiTests(TestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, serializer.data)
-        query_params["title"] = "kindergarden_cop"
 
+        query_params["title"] = "kindergarden_cop"
         response = self.client.get(MOVIE_URL, query_params)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
