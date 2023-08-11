@@ -2,6 +2,7 @@ from datetime import datetime
 
 from django.db.models import F, Count
 from drf_spectacular.utils import extend_schema, OpenApiParameter
+from drf_spectacular.types import OpenApiTypes
 from rest_framework import viewsets, mixins, status
 from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
@@ -188,7 +189,7 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
         parameters=[
             OpenApiParameter(
                 "date",
-                type=OpenApiParameter.DATE,
+                type=OpenApiTypes.DATE,
                 description="Filtering by date (ex. ?date=2024-11-10)"
             ),
             OpenApiParameter(
