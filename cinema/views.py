@@ -134,7 +134,7 @@ class MovieViewSet(
             OpenApiParameter(
                 "title",
                 type=str,
-                description="Filtering by title id (ex. ?title=The Witcher)"
+                description="Filtering by title (ex. ?title=The Witcher)"
             ),
             OpenApiParameter(
                 "genres",
