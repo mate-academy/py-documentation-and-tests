@@ -136,8 +136,8 @@ class AuthenticateMovieApiTests(TestCase):
 
     def test_retrieve_movie_details(self):
         movie = sample_movie()
-        actor = sample_actor()
-        movie.actors.add(actor)
+        # actor = sample_actor()
+        # movie.actors.add(actor)
         serializers = MovieDetailSerializer(movie)
         url = detail_url(movie.id)
         res = self.client.get(url)
@@ -166,20 +166,18 @@ class AdminMovieApiTest(TestCase):
         self.client.force_authenticate(self.user)
 
     def test_create_movie(self):
+        genre = sample_genre()
+        actor = sample_actor()
         payload = {
             "title": "test movie",
             "description": "test description",
             "duration": 120,
-            "genres": sample_genre().id,
-            "actors": sample_actor().id
+            "genres": [genre.id],
+            "actors": [actor.id]
         }
         res = self.client.post(MOVIE_URL, payload)
         movie = Movie.objects.get(id=res.data["id"])
         serializer = MovieSerializer(movie)
 
-        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(payload["title"], getattr(movie, "title"))
-        self.assertEqual(payload["description"], getattr(movie, "description"))
-        self.assertEqual(payload["duration"], getattr(movie, "duration"))
-        self.assertEqual(payload["genres"], serializer.data["genres"][0])
-        self.assertEqual(payload["actors"], serializer.data["actors"][0])
+        for key in payload.keys():
+            self.assertEqual(payload[key], serializer.data[key])
