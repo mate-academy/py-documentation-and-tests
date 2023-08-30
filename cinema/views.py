@@ -199,7 +199,7 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
                 name="date",
                 description=(
                     "Filtered by date model - "
-                    "year-mount-date {ex. ?genres=2021-02-15}"
+                    "year-month-day {ex. ?date=2021-02-15}"
                 ),
                 required=False,
                 type={"type": "string", "format": "date"},
