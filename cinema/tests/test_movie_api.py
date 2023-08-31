@@ -176,9 +176,9 @@ class AuthenticatedMovieApiTests(TestCase):
     def test_create_movie_forbidden(self):
 
         payload = {
-        "title": "Infinity",
-        "description": "Sample Infinity description",
-        "duration": 190,
+            "title": "Infinity",
+            "description": "Sample Infinity description",
+            "duration": 190,
         }
 
         res = self.client.post(MOVIE_URL, payload)
@@ -197,9 +197,9 @@ class AdminMovieApiTest(TestCase):
     def test_create_movie_admin(self):
 
         payload = {
-        "title": "Infinity",
-        "description": "Sample Infinity description",
-        "duration": 190,
+            "title": "Infinity",
+            "description": "Sample Infinity description",
+            "duration": 190,
         }
 
         res = self.client.post(MOVIE_URL, payload)
@@ -214,11 +214,11 @@ class AdminMovieApiTest(TestCase):
         actor1 = sample_actor()
         actor2 = sample_actor(first_name = "Megan", last_name= "Fox")
         payload = {
-        "title": "Infinity",
-        "description": "Sample Infinity description",
-        "duration": 190,
-        "genres": [genre1.id, genre2.id],
-        "actors": [actor1.id, actor2.id],
+            "title": "Infinity",
+            "description": "Sample Infinity description",
+            "duration": 190,
+            "genres": [genre1.id, genre2.id],
+            "actors": [actor1.id, actor2.id],
         }
 
         res = self.client.post(MOVIE_URL, payload)
