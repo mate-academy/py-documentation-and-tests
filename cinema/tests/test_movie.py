@@ -4,7 +4,7 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient
 
-from cinema.models import Movie
+from cinema.models import Movie, Actor, Genre
 from cinema.serializers import (
     MovieSerializer,
     MovieListSerializer,
@@ -56,6 +56,8 @@ class AuthenticatedMovieApiTests(TestCase):
 
     def test_retreive_movie_detail(self):
         movie = sample_movie()
+        movie.actors.add(Actor.objects.create(first_name="Jon", last_name="Smith"))
+        movie.genres.add(Genre.objects.create(name="Action"))
         url = detail_url(movie.id)
         res = self.client.get(url)
         serializer = MovieDetailSerializer(movie)
