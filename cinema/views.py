@@ -129,18 +129,18 @@ class MovieViewSet(
         parameters=[
             OpenApiParameter(
                 "title",
-                type={"type": "list", "items": {"type": "number"}},
-                description="Filter by title id (ex. ?title=2,5)",
+                type={"type": "string", "items": {"type": "number"}},
+                description="Filter by title (ex. ?title='Inception')",
             ),
             OpenApiParameter(
                 "genres",
-                type={"type": "list", "items": {"type": "string"}},
-                description="Filter by title id (ex. ?genres=action,comedy)",
+                type={"type": "list", "items": {"type": "number"}},
+                description="Filter by title id (ex. ?genres=1,2)",
             ),
             OpenApiParameter(
                 "actors",
-                type={"type": "list", "items": {"type": "string"}},
-                description="Filter by title id (ex. ?actors=actor1,actor2)",
+                type={"type": "list", "items": {"type": "number"}},
+                description="Filter by title id (ex. ?actors=1,2)",
             ),
         ]
     )
@@ -190,14 +190,14 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
         parameters=[
             OpenApiParameter(
                 "date",
-                type={"type": "list", "items": {"type": "number"}},
-                description=("Filter by title id "
-                             "(ex. ?date=2023-09-06,2023-09-07))"),
+                type={"type": "datetime.date", "items": {"type": "number"}},
+                description=("Filter by date"
+                             "(ex. ?date=2023-09-06))"),
             ),
             OpenApiParameter(
                 "movie",
-                type={"type": "list", "items": {"type": "number"}},
-                description="Filter by title id (ex. ?movie=2,5)",
+                type={"type": "string", "items": {"type": "number"}},
+                description="Filter by title (ex. ?movie='Inception')",
             ),
         ]
     )
