@@ -1,12 +1,16 @@
 from datetime import datetime
 
 from django.db.models import F, Count
+
+
+from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiTypes
 from rest_framework import viewsets, mixins, status
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
+from rest_framework.schemas import openapi
 from rest_framework.viewsets import GenericViewSet, ReadOnlyModelViewSet
 
 from cinema.models import Genre, Actor, CinemaHall, Movie, MovieSession, Order
@@ -97,6 +101,32 @@ class MovieViewSet(
             queryset = queryset.filter(actors__id__in=actors_ids)
 
         return queryset.distinct()
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="title",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
+                description="filtering by title",
+            ),
+
+            OpenApiParameter(
+                "genres",
+                type=OpenApiTypes.ANY,
+                description="filtering by genres"
+            ),
+            OpenApiParameter(
+                "actors",
+                type=OpenApiTypes.ANY,
+                description="filtering by actors"
+            ),
+         ]
+    )
+
+
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
 
     def get_serializer_class(self):
         if self.action == "list":
