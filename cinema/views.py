@@ -101,17 +101,16 @@ class MovieViewSet(
             OpenApiParameter(
                 name="title",
                 type=OpenApiTypes.STR,
-                location=OpenApiParameter.QUERY,
                 description="filtering by title",
             ),
             OpenApiParameter(
                 "genres",
-                type=OpenApiTypes.ANY,
+                type={"type": "list", "items": {"type": "number"}},
                 description="filtering by genres"
             ),
             OpenApiParameter(
                 "actors",
-                type=OpenApiTypes.ANY,
+                type={"type": "list", "items": {"type": "number"}},
                 description="filtering by actors"
             ),
         ]
