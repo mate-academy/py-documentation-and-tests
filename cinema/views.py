@@ -148,13 +148,13 @@ class MovieViewSet(
                     "type": "list",
                     "items": {"type": "number"}
                 },
-                description="Filter movies by title",
+                description="Filter movies by actor ids",
                 required=False,
                 examples=[
                     OpenApiExample(
                         "Example",
-                        description="List of actors ids",
-                        value=[1, 3, 2]
+                        description="List of actor ids",
+                        value=[2, 5]
                     )
                 ]
             ),
@@ -164,13 +164,13 @@ class MovieViewSet(
                     "type": "list",
                     "items": {"type": "number"}
                 },
-                description="Filter movies by title",
+                description="Filter movies by genre ids",
                 required=False,
                 examples=[
                     OpenApiExample(
                         "Example",
                         description="List of movies ids",
-                        value=[1, 3, 2]
+                        value=[4, 5, 6]
                     )
                 ]
             ),
