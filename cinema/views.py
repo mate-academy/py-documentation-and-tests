@@ -230,20 +230,20 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
                     OpenApiExample(
                         "Example",
                         description="Enter date in this format year-month-day",
-                        value="2023-08-15",
+                        value="2024-10-15",
                     )
                 ]
             ),
             OpenApiParameter(
                 name="movie",
-                type="number",
-                description="Filter movie sessions by movie id it's shows",
+                type=int,
+                description="Filter movie sessions by movie id",
                 required=False,
                 examples=[
                     OpenApiExample(
                         "Example",
                         description="Set movie id",
-                        value=1,
+                        value=2,
                     )
                 ]
             ),
