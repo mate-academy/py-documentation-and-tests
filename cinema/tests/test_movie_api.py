@@ -194,7 +194,6 @@ class AuthenticatedMovieApiTest(TestCase):
         self.movie = sample_movie()
         self.actor = sample_actor()
         self.genre = sample_genre()
-        self.movie_session = sample_movie_session()
 
     def tearDown(self):
         self.movie.image.delete()
@@ -296,3 +295,16 @@ class AuthenticatedMovieApiTest(TestCase):
         res = self.client.post(MOVIE_URL, payload)
 
         self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+
+
+class AdminMovieApiTest(TestCase):
+    def setUp(self) -> None:
+        self.client = APIClient()
+        self.user = get_user_model().objects.create_superuser(
+            "admin@myproject.com", "password"
+        )
+        self.client.force_authenticate(self.user)
+        self.movie = sample_movie()
+        self.genre = sample_genre()
+        self.actor = sample_actor()
+
