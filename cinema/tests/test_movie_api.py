@@ -343,3 +343,9 @@ class AdminMovieApiTest(TestCase):
         self.assertIn(self.genre, genres)
         self.assertIn(self.actor, actors)
 
+    def test_delete_movie_forbidden(self):
+        url = detail_url(self.movie)
+
+        res = self.client.delete(url)
+
+        self.assertEqual(res.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
