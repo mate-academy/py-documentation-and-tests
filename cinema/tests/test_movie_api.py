@@ -349,3 +349,17 @@ class AdminMovieApiTest(TestCase):
         res = self.client.delete(url)
 
         self.assertEqual(res.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def test_patch_not_allowed(self):
+        payload = {
+            "title": "Interstellar",
+            "description": "Find new planed for living",
+            "duration": 169,
+        }
+
+        url = detail_url(self.movie.id)
+
+        res = self.client.patch(url, payload)
+
+        self.assertEqual(res.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
