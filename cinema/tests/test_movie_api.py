@@ -270,3 +270,18 @@ class AuthenticatedMovieApiTest(TestCase):
         self.assertIn(serializer1.data, res.data)
         self.assertNotIn(serializer2.data, res.data)
         self.assertNotIn(serializer3.data, res.data)
+
+    def test_movie_retrieve(self):
+        movie = Movie.objects.create(
+            title="Interstellar",
+            description="Find new planed for humans",
+            duration=169,
+        )
+        url = detail_url(movie.id)
+
+        res = self.client.get(url)
+
+        serializer = MovieDetailSerializer(movie)
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data, serializer.data)
