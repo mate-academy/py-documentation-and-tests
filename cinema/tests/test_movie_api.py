@@ -248,3 +248,25 @@ class AuthenticatedMovieApiTest(TestCase):
         self.assertIn(serializer1.data, res.data)
         self.assertNotIn(serializer2.data, res.data)
         self.assertNotIn(serializer3.data, res.data)
+
+    def test_list_movies_filter_by_actors(self):
+        movie1 = sample_movie()
+        movie2 = sample_movie()
+        matthew_movie = sample_movie()
+
+        actor = Actor.objects.create(
+            first_name="Matthew",
+            last_name="McConaughey"
+        )
+        matthew_movie.actors.add(self.actor.id, actor.id)
+
+        res = self.client.get(MOVIE_URL, {"actors": [self.actor.id, actor.id]})
+
+        serializer1 = MovieListSerializer(matthew_movie)
+        serializer2 = MovieListSerializer(movie1)
+        serializer3 = MovieListSerializer(movie2)
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertIn(serializer1.data, res.data)
+        self.assertNotIn(serializer2.data, res.data)
+        self.assertNotIn(serializer3.data, res.data)
