@@ -308,3 +308,17 @@ class AdminMovieApiTest(TestCase):
         self.genre = sample_genre()
         self.actor = sample_actor()
 
+    def test_create_movie(self):
+        payload = {
+            "title": "Interstellar",
+            "description": "Find new planed for living",
+            "duration": 169,
+        }
+
+        res = self.client.post(MOVIE_URL, payload)
+
+        movie = Movie.objects.get(id=res.data["id"])
+
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        for key in payload:
+            self.assertEqual(payload[key], getattr(movie, key))
