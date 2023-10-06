@@ -171,3 +171,10 @@ class UnauthenticatedMovieApiTest(TestCase):
         res = self.client.post(MOVIE_URL)
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
 
+    def test_retrieve_movie_auth_required(self):
+        url = detail_url(1)
+
+        res = self.client.get(url)
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+
