@@ -5,7 +5,7 @@ from rest_framework_simplejwt.views import (
     TokenRefreshView,
 )
 
-from user.views import CreateUserView, CreateTokenView, ManageUserView
+from user.views import CreateUserView, ManageUserView
 
 app_name = "user"
 
