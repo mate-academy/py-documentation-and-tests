@@ -10,6 +10,11 @@ from rest_framework.test import APIClient
 from rest_framework import status
 
 from cinema.models import Movie, MovieSession, CinemaHall, Genre, Actor
+from cinema.serializers import (
+    MovieSerializer,
+    MovieListSerializer,
+    MovieDetailSerializer,
+)
 
 MOVIE_URL = reverse("cinema:movie-list")
 MOVIE_SESSION_URL = reverse("cinema:moviesession-list")
@@ -46,10 +51,11 @@ def sample_movie_session(**params):
     cinema_hall = CinemaHall.objects.create(
         name="Blue", rows=20, seats_in_row=20
     )
+    movie = sample_movie()
 
     defaults = {
         "show_time": "2022-06-02 14:00:00",
-        "movie": None,
+        "movie": movie,
         "cinema_hall": cinema_hall,
     }
     defaults.update(params)
@@ -190,4 +196,20 @@ class AuthenticatedMovieApiTest(TestCase):
         self.genre = sample_genre()
         self.movie_session = sample_movie_session()
 
+    def tearDown(self):
+        self.movie.image.delete()
 
+    def test_list_movies(self):
+        sample_movie()
+        sample_movie()
+
+        res = self.client.get(MOVIE_URL)
+
+        movies = Movie.objects.all()
+        serializer = MovieListSerializer(movies, many=True)
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            res.data,
+            serializer.data,
+        )
