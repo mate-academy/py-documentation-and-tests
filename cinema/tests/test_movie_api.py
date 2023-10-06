@@ -187,7 +187,7 @@ class UnauthenticatedMovieApiTest(TestCase):
 class AuthenticatedMovieApiTest(TestCase):
     def setUp(self) -> None:
         self.client = APIClient()
-        self.user = get_user_model().objects.create_superuser(
+        self.user = get_user_model().objects.create_user(
             "admin@myproject.com", "password"
         )
         self.client.force_authenticate(self.user)
