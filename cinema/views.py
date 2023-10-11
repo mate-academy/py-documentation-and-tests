@@ -1,6 +1,8 @@
 from datetime import datetime
 
 from django.db.models import F, Count
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import viewsets, mixins, status
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import action
@@ -127,6 +129,29 @@ class MovieViewSet(
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    # for documentation purpose only
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="title",
+                type=str,
+                description="Filter movies by title (ex. ?movies=looper)",
+            ),
+            OpenApiParameter(
+                name="actors",
+                type={"type": "list", "items": {"type": "number"}},
+                description="Filter movies by  actors  id's (ex. ?actors=1,2)"
+            ),
+            OpenApiParameter(
+                name="genres",
+                type={"type": "list", "items": {"type": "number"}},
+                description="Filter movies by  actors  id's (ex. ?genres=1,2)"
+            ),
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
 
 class MovieSessionViewSet(viewsets.ModelViewSet):
     queryset = (
@@ -134,8 +159,8 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
         .select_related("movie", "cinema_hall")
         .annotate(
             tickets_available=(
-                F("cinema_hall__rows") * F("cinema_hall__seats_in_row")
-                - Count("tickets")
+                    F("cinema_hall__rows") * F("cinema_hall__seats_in_row")
+                    - Count("tickets")
             )
         )
     )
@@ -166,6 +191,24 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
             return MovieSessionDetailSerializer
 
         return MovieSessionSerializer
+
+    # for documentation purpose only
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="movie",
+                type=int,
+                description="Filter movie sessions by movie id (ex. ?movie=2)",
+            ),
+            OpenApiParameter(
+                name="date",
+                type=OpenApiTypes.DATE,
+                description="Filter movie sessions by date (ex. ?date=2022-10-10)"
+            )
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
 
 
 class OrderPagination(PageNumberPagination):
