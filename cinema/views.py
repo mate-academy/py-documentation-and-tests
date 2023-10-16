@@ -69,7 +69,7 @@ class MovieViewSet(
     queryset = Movie.objects.prefetch_related("genres", "actors")
     serializer_class = MovieSerializer
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
-    
+
     @staticmethod
     def _params_to_ints(qs):
         """Converts a list of string IDs to a list of integers"""
@@ -136,19 +136,19 @@ class MovieViewSet(
             OpenApiParameter(
                 "genres",
                 type={"type": "list", "items": {"type": "number"}},
-                description="Search by genres ids"
+                description="Search by genres ids",
             ),
             OpenApiParameter(
                 "actors",
                 type={"type": "list", "items": {"type": "number"}},
-                description="Search by actors ids"
-            )
+                description="Search by actors ids",
+            ),
         ]
     )
     def list(self, request, *args, **kwargs):
         return super().list(request, *args, **kwargs)
-    
-    
+
+
 class MovieSessionViewSet(viewsets.ModelViewSet):
     queryset = (
         MovieSession.objects.all()
@@ -186,7 +186,7 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
             return MovieSessionDetailSerializer
 
         return MovieSessionSerializer
-    
+
     @extend_schema(
         parameters=[
             OpenApiParameter(
@@ -196,17 +196,17 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
                 required=False,
             ),
             OpenApiParameter(
-                name='date',
+                name="date",
                 type=OpenApiTypes.DATE,
                 location=OpenApiParameter.QUERY,
                 description='Filter by show time date "%Y-%m-%d"',
-            )
+            ),
         ]
     )
     def list(self, request, *args, **kwargs):
         return super().list(request, *args, **kwargs)
-    
-    
+
+
 class OrderPagination(PageNumberPagination):
     page_size = 10
     max_page_size = 100
