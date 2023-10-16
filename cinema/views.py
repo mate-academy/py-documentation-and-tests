@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from django.db.models import F, Count
+from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import viewsets, mixins, status
 from rest_framework.authentication import TokenAuthentication
@@ -98,20 +99,22 @@ class MovieViewSet(
     @extend_schema(
         parameters=[
             OpenApiParameter(
-                "title",
-                type=str,
+                name="title",
+                type=OpenApiTypes.STR,
                 description="Filter by title (ex. ?title=Unbreakable)",
                 required=False,
             ),
             OpenApiParameter(
-                "genres",
+                name="genres",
                 type={"type": "list", "items": {"type": "number"}},
-                description="Filter by genres id (ex. ?genres=1,2)"
+                description="Filter by genres id (ex. ?genres=1,2)",
+                required=False
             ),
             OpenApiParameter(
-                "actors",
+                name="actors",
                 type={"type": "list", "items": {"type": "number"}},
-                description="Filter by actors id (ex. ?actors=1,2)"
+                description="Filter by actors id (ex. ?actors=1,2)",
+                required=False
             )
         ]
     )
@@ -180,15 +183,16 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
     @extend_schema(
         parameters=[
             OpenApiParameter(
-                "movie",
-                type=str,
+                name="movie",
+                type=OpenApiTypes.NUMBER,
                 description="Filter by movie id (ex. ?movie=1)",
                 required=False,
             ),
             OpenApiParameter(
-                "date",
-                type={"type": "list", "items": {"type": "datetime"}},
-                description="Filter by date (ex. ?date=2012-12-02)"
+                name="date",
+                type=OpenApiTypes.DATE,
+                description="Filter by date (ex. ?date=2012-12-02)",
+                required=False
             ),
         ]
     )
