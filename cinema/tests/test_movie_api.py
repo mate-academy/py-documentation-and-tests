@@ -285,7 +285,9 @@ class AdminMovieApiTests(TestCase):
     def setUp(self):
         self.client = APIClient()
         self.user = get_user_model().objects.create_superuser(
-            "test@testik.com", "fasdffewxv", is_staff=True,
+            "test@testik.com",
+            "fasdffewxv",
+            is_staff=True,
         )
         self.client.force_authenticate(self.user)
 
