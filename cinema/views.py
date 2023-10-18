@@ -2,7 +2,7 @@ from datetime import datetime
 
 from django.db.models import F, Count
 from drf_spectacular.utils import extend_schema, OpenApiParameter
-from rest_framework import viewsets, mixins, status 
+from rest_framework import viewsets, mixins, status
 from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
@@ -128,18 +128,18 @@ class MovieViewSet(
             OpenApiParameter(
                 "title",
                 type={"type": "string"},
-                description="Filter by title (ex. ?title=Inception)"
+                description="Filter by title (ex. ?title=Inception)",
             ),
             OpenApiParameter(
                 "genres",
                 type={"type": "list", "items": {"type": "number"}},
-                description="Filter by genres (ex. ?genres=[1,2,3])"
+                description="Filter by genres (ex. ?genres=[1,2,3])",
             ),
             OpenApiParameter(
                 "actors",
                 type={"type": "list", "items": {"type": "number"}},
-                description="Filter by actors (ex. ?actors=[1,2,3])"
-            )
+                description="Filter by actors (ex. ?actors=[1,2,3])",
+            ),
         ]
     )
     def list(self, request, *args, **kwargs):
@@ -189,13 +189,13 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
             OpenApiParameter(
                 "date",
                 type={"type": "string"},
-                description="Filter by date (ex. ?date=2022-12-12)"
+                description="Filter by date (ex. ?date=2022-12-12)",
             ),
             OpenApiParameter(
                 "movie_id_str",
                 type={"type": "int"},
-                description="Filter by movie_id_str (ex. ?movie=1)"
-            )
+                description="Filter by movie_id_str (ex. ?movie=1)",
+            ),
         ]
     )
     def list(self, request, *args, **kwargs):

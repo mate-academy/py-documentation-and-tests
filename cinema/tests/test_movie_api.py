@@ -86,8 +86,7 @@ class AuthenticatedMovieApiTest(TestCase):
         self.genre1 = Genre.objects.create(name="test genre")
         self.genre2 = Genre.objects.create(name="another test genre")
         self.actor = Actor.objects.create(
-            first_name="Ivan",
-            last_name="Tester"
+            first_name="Ivan", last_name="Tester"
         )
         self.movie = Movie.objects.create(
             title="Test1",
@@ -138,8 +137,12 @@ class AuthenticatedMovieApiTest(TestCase):
         self.assertEqual(response.data, serializer.data)
 
     def test_filter_by_multiple_criteria(self):
-        response = self.client.get(MOVIE_URL, {"title": "Test Movie", "genres": self.genre1.id})
-        movies = Movie.objects.filter(title__icontains="Test Movie", genres=self.genre1)
+        response = self.client.get(
+            MOVIE_URL, {"title": "Test Movie", "genres": self.genre1.id}
+        )
+        movies = Movie.objects.filter(
+            title__icontains="Test Movie", genres=self.genre1
+        )
         serializer = MovieListSerializer(movies, many=True)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -167,11 +170,11 @@ class AuthenticatedMovieApiTest(TestCase):
 
     def test_create_movie_forbidden(self):
         movie_data = {
-            'title': 'Test Movie',
-            'description': 'Test Description',
-            'duration': 120,
-            'genres': [],
-            'actors': [],
+            "title": "Test Movie",
+            "description": "Test Description",
+            "duration": 120,
+            "genres": [],
+            "actors": [],
         }
 
         response = self.client.post(MOVIE_URL, movie_data)
@@ -182,7 +185,9 @@ class AdminMovieApiTest(TestCase):
     def setUp(self) -> None:
         self.client = APIClient()
         self.user = get_user_model().objects.create_user(
-            "test@test.com", "testpass", is_staff=True,
+            "test@test.com",
+            "testpass",
+            is_staff=True,
         )
         self.client.force_authenticate(self.user)
         self.movie = Movie.objects.create(
@@ -200,11 +205,11 @@ class AdminMovieApiTest(TestCase):
         actor2 = Actor.objects.create(first_name="Jane", last_name="Doe")
 
         movie_data = {
-            'title': 'Test Movie',
-            'description': 'Test Description',
-            'duration': 120,
-            'genres': [genre1.id, genre2.id],
-            'actors': [actor1.id, actor2.id],
+            "title": "Test Movie",
+            "description": "Test Description",
+            "duration": 120,
+            "genres": [genre1.id, genre2.id],
+            "actors": [actor1.id, actor2.id],
         }
 
         response = self.client.post(MOVIE_URL, movie_data)
@@ -214,22 +219,28 @@ class AdminMovieApiTest(TestCase):
         movie_id = self.movie.id
 
         updated_data = {
-            'title': 'Updated Test Movie',
-            'description': 'Updated Test Description',
-            'duration': 150,
+            "title": "Updated Test Movie",
+            "description": "Updated Test Description",
+            "duration": 150,
         }
         url = detail_url(movie_id)
-        response_update = self.client.put(url, updated_data, format='json')
-        self.assertEqual(response_update.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
-        response_update = self.client.patch(url, updated_data, format='json')
-        self.assertEqual(response_update.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+        response_update = self.client.put(url, updated_data, format="json")
+        self.assertEqual(
+            response_update.status_code, status.HTTP_405_METHOD_NOT_ALLOWED
+        )
+        response_update = self.client.patch(url, updated_data, format="json")
+        self.assertEqual(
+            response_update.status_code, status.HTTP_405_METHOD_NOT_ALLOWED
+        )
 
     def test_delete_movie(self):
         movie_id = self.movie.id
 
         url = detail_url(movie_id)
         response_delete = self.client.delete(url)
-        self.assertEqual(response_delete.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.assertEqual(
+            response_delete.status_code, status.HTTP_405_METHOD_NOT_ALLOWED
+        )
 
 
 class MovieImageUploadTests(TestCase):
