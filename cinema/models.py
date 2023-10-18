@@ -32,7 +32,7 @@ class Actor(models.Model):
     last_name = models.CharField(max_length=255)
 
     def __str__(self):
-        return self.first_name + " " + self.last_name
+        return self.full_name
 
     @property
     def full_name(self):
