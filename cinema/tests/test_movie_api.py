@@ -197,7 +197,9 @@ class AuthenticatedMovieApiTests(TestCase):
     def test_filter_movies_by_genres(self):
         self.movie1.genres.add(self.genre1)
         self.movie2.genres.add(self.genre2)
-        response = self.client.get(MOVIE_URL, {"genres": f"{self.genre1.id},{self.genre2.id}"})
+        response = self.client.get(MOVIE_URL, {
+            "genres": f"{self.genre1.id},{self.genre2.id}"}
+                                   )
 
         serializer1 = MovieListSerializer(self.movie1)
         serializer2 = MovieListSerializer(self.movie2)
@@ -210,7 +212,9 @@ class AuthenticatedMovieApiTests(TestCase):
     def test_filter_movies_by_actors(self):
         self.movie1.actors.add(self.actor1)
         self.movie2.actors.add(self.actor2)
-        response = self.client.get(MOVIE_URL, {"actors": f"{self.actor1.id},{self.actor2.id}"})
+        response = self.client.get(MOVIE_URL, {
+            "actors": f"{self.actor1.id},{self.actor2.id}"}
+                                   )
 
         serializer1 = MovieListSerializer(self.movie1)
         serializer2 = MovieListSerializer(self.movie2)
@@ -301,4 +305,6 @@ class AdminMovieApiTests(TestCase):
         url = detail_url(movie.id)
         response = self.client.delete(url)
 
-        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.assertEqual(
+            response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED
+        )
