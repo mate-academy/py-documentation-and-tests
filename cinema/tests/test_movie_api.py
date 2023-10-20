@@ -284,21 +284,14 @@ class AdminMovieApiTests(TestCase):
         )
         self.client.force_authenticate(self.user)
 
-    def test_create_movie(self):
+    def test_create_movie_forbidden(self) -> None:
         payload = {
-            "title": "Test",
-            "description": "Test info",
+            "title": "Test movie",
+            "description": "Test description",
             "duration": 100,
         }
-
         res = self.client.post(MOVIE_URL, payload)
-        movie = Movie.objects.get(id=res.data["id"])
-
-        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
-
-        for key in payload:
-            if key not in ("actors", "genres"):
-                self.assertEqual(payload[key], getattr(movie, key))
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_delete_movie_not_allowed(self):
         movie = sample_movie()
@@ -313,3 +306,4 @@ class AdminMovieApiTests(TestCase):
         url = detail_url(movie.id)
         res = self.client.put(url)
         self.assertEqual(res.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
