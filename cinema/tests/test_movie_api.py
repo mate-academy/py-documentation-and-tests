@@ -291,10 +291,14 @@ class AdminMovieApiTests(TestCase):
         self.client.force_authenticate(self.user)
 
     def test_create_movie(self):
+        genre = sample_genre()
+        actor = sample_actor()
         payload = {
             "title": "Sample movie",
             "description": "Sample description",
             "duration": 90,
+            "genres": genre.id,
+            "actors": actor.id
         }
 
         res = self.client.post(MOVIE_URL, payload)
@@ -303,6 +307,8 @@ class AdminMovieApiTests(TestCase):
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
 
         for key in payload:
+            if key in ("genres", "actors"):
+                continue
             self.assertEqual(payload[key], getattr(movie, key))
 
     def test_create_movie_with_actors_and_genres(self):
@@ -320,8 +326,8 @@ class AdminMovieApiTests(TestCase):
         }
         res = self.client.post(MOVIE_URL, payload)
         movie = Movie.objects.get(id=res.data["id"])
-        genres = Genre.objects.all()
-        actors = Actor.objects.all()
+        genres = movie.genres.all()
+        actors = movie.actors.all()
 
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
         self.assertEqual(genres.count(), 2)
