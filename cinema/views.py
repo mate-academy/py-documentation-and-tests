@@ -130,7 +130,7 @@ class MovieViewSet(
             OpenApiParameter(
                 "title",
                 type=OpenApiTypes.STR,
-                description="Filter by title"
+                description="Filter by title (example ?title=title)"
             ),
             OpenApiParameter(
                 "genres",
@@ -191,12 +191,12 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
             OpenApiParameter(
                 "movie",
                 type=OpenApiTypes.INT,
-                description="Filter by movie id"
+                description="Filter by movie id (example ?movie=1)"
             ),
             OpenApiParameter(
                 "date",
                 type=OpenApiTypes.DATE,
-                description="Filter by date"
+                description="Filter by date (example ?date=%Y-%m-%d)"
             )
         ]
     )
