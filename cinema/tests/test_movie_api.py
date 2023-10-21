@@ -298,50 +298,34 @@ class AdminMovieAPITest(TestCase):
         self.client.force_authenticate(self.user)
 
     def test_create_movie(self):
-        payload = {
-            "title": "Interstellar",
-            "duration": 180,
-            "description": "Perfect movie."
-        }
-
-        res = self.client.post(MOVIE_URL, payload)
-        movie = Movie.objects.get(id=res.data["id"])
-
-        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
-        for key in payload:
-            self.assertEqual(payload[key], getattr(movie, key))
-
-    def test_create_movie_with_genres(self):
         genre1 = sample_genre(name="Genre 1")
         genre2 = sample_genre(name="Genre 2")
-        payload = {
-            "title": "Interstellar",
-            "duration": 180,
-            "description": "Perfect movie.",
-            "genres": [genre1.id, genre2.id]
-        }
-
-        res = self.client.post(MOVIE_URL, payload)
-        movie = Movie.objects.get(id=res.data["id"])
-        genres = movie.genres.all()
-
-        self.assertEqual(genres.count(), 2)
-        self.assertIn(genre1, genres)
-        self.assertIn(genre2, genres)
-
-    def test_create_movie_with_actors(self):
         actor1 = sample_actor(first_name="Anne", last_name="Hathaway")
         actor2 = sample_actor(first_name="Matthew", last_name="McConaughey")
         payload = {
             "title": "Interstellar",
             "duration": 180,
             "description": "Perfect movie.",
+            "genres": [genre1.id, genre2.id],
             "actors": [actor1.id, actor2.id]
         }
 
         res = self.client.post(MOVIE_URL, payload)
         movie = Movie.objects.get(id=res.data["id"])
+
+        genres = movie.genres.all()
+        del payload["genres"]
+
         actors = movie.actors.all()
+        del payload["actors"]
+
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        for key in payload:
+            self.assertEqual(payload[key], getattr(movie, key))
+
+        self.assertEqual(genres.count(), 2)
+        self.assertIn(genre1, genres)
+        self.assertIn(genre2, genres)
 
         self.assertEqual(actors.count(), 2)
         self.assertIn(actor1, actors)
