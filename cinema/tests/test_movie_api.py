@@ -164,14 +164,13 @@ class MovieViewSetTests(TestCase):
     def setUp(self):
         self.client = APIClient()
         self.admin_user = get_user_model().objects.create_superuser(
-            "admin@myproject.com", "password"
+            "admin@test.com", "password12345"
         )
         self.user = get_user_model().objects.create_user(
             "user@myproject.com", "password"
         )
         self.movie = sample_movie()
 
-    # List tests
     def test_authenticated_user_can_list_movies(self):
         self.client.force_authenticate(self.user)
         res = self.client.get(MOVIE_URL)
@@ -181,13 +180,18 @@ class MovieViewSetTests(TestCase):
         res = self.client.get(MOVIE_URL)
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
 
-    # Create tests
     def test_admin_can_create_movie_with_valid_data(self):
         self.client.force_authenticate(self.admin_user)
+        test_actor1 = Actor.objects.create(first_name="Sasha", last_name="Moroz")
+        test_actor2 = Actor.objects.create(first_name="Anna", last_name="Hudz")
+        test_genre1 = Genre.objects.create(name="Comedy")
+        test_genre2 = Genre.objects.create(name="Romantic")
         payload = {
-            "title": "New Movie",
-            "description": "New Description",
-            "duration": 120
+            "title": "title",
+            "description": "description",
+            "duration": 120,
+            "actors": [test_actor1.id, test_actor2.id],
+            "genres": [test_genre1.id, test_genre2.id]
         }
         res = self.client.post(MOVIE_URL, payload)
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
@@ -221,7 +225,6 @@ class MovieViewSetTests(TestCase):
         res = self.client.post(MOVIE_URL, payload)
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
 
-    # Retrieve tests
     def test_authenticated_user_can_retrieve_movie(self):
         self.client.force_authenticate(self.user)
         res = self.client.get(detail_url(self.movie.id))
