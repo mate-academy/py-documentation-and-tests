@@ -183,8 +183,14 @@ class AuthenticatedMovieApiTests(TestCase):
         self.client.force_authenticate(self.user)
 
     def test_list_movies(self):
-        sample_movie()
-        sample_movie()
+        drama = sample_genre(name="Drama")
+        thriller = sample_genre(name="Thriller")
+
+        forrest_gump = sample_movie(title="Forrest Gump")
+        shine = sample_movie(title="Shine")
+
+        forrest_gump.genres.add(drama)
+        shine.genres.add(thriller)
 
         result = self.client.get(MOVIE_URL)
         movies = Movie.objects.all()
