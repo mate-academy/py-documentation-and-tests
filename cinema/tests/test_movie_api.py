@@ -185,9 +185,9 @@ class AuthenticatedMovieApiTests(TestCase):
         self.client.force_authenticate(self.user)
 
     def test_list_movies(self):
-        sample_movie()
-        sample_movie()
-        movie_with_genre = sample_movie()
+        sample_movie(title="first movie")
+        sample_movie(title="second movie")
+        movie_with_genre = sample_movie(title="third movie")
         genre_test = sample_genre()
 
         movie_with_genre.genres.add(genre_test)
