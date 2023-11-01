@@ -33,3 +33,4 @@ sqlparse==0.4.3
 toml==0.10.2
 tomli==2.0.1
 virtualenv==20.23.0
+drf-spectacular==0.22.1
