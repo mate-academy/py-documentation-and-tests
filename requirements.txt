@@ -34,3 +34,4 @@ toml==0.10.2
 tomli==2.0.1
 virtualenv==20.23.0
 drf-spectacular==0.22.1
+rest_framework_simplejwt==5.2.0
