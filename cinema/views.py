@@ -219,7 +219,7 @@ class OrderViewSet(
     permission_classes = (IsAuthenticated,)
 
     def get_queryset(self):
-        """Retrieve the orders with current authenticated user"""
+        """Retrieve the orders with currently authenticated user"""
         return Order.objects.filter(user=self.request.user)
 
     def get_serializer_class(self):
@@ -229,4 +229,5 @@ class OrderViewSet(
         return OrderSerializer
 
     def perform_create(self, serializer):
+        """Create the orders with currently authenticated user"""
         serializer.save(user=self.request.user)
