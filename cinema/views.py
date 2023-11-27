@@ -125,23 +125,22 @@ class MovieViewSet(
         parameters=[
             OpenApiParameter(
                 name="title",
-                type={"type": "list", "items": {"type": "number"}},
+                type=str,
                 description="filtering by title for movie",
             ),
             OpenApiParameter(
                 name="genres",
                 type={"type": "list", "items": {"type": "number"}},
-                description="filtering by genres for movie",
+                description="Genre filtering for movies by their id",
             ),
             OpenApiParameter(
                 name="actor",
                 type={"type": "list", "items": {"type": "number"}},
-                description="filtering by actor for movie",
+                description="filtering by actor for movie by their id",
             ),
         ]
     )
     def list(self, request, *args, **kwargs):
-        # your non-standard behaviour
         return super().list(request, *args, **kwargs)
 
 
@@ -187,13 +186,13 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
         parameters=[
             OpenApiParameter(
                 name="date",
-                type={"type": "list", "items": {"type": "number"}},
+                type=str,
                 description="filtering by date for movie session",
             ),
             OpenApiParameter(
                 name="movie",
-                type={"type": "list", "items": {"type": "number"}},
-                description="filtering by movie for movie session",
+                type=int,
+                description="filtering by movie by their id for movie session",
             ),
         ]
     )
