@@ -129,18 +129,18 @@ class MovieViewSet(
             OpenApiParameter(
                 "title",
                 type={"type": "list", "items": {"type": "string"}},
-                description="Filter by full title or its part (ex. ?title=Loo)"
+                description="Filter by title or its part (ex. ?title=Loo)",
             ),
             OpenApiParameter(
                 "genres",
                 type={"type": "list", "items": {"type": "number"}},
-                description="Filter by genre id in mentioned numbers (ex. ?genres=2,5)"
+                description="Filter by genre id (ex. ?genres=2,5)",
             ),
             OpenApiParameter(
                 "actors",
                 type={"type": "list", "items": {"type": "number"}},
-                description="Filter by actor id in mentioned numbers (ex. ?actors=3,4)"
-            )
+                description="Filter by actor id (ex. ?actors=3,4)",
+            ),
         ]
     )
     def list(self, request, *args, **kwargs):
@@ -190,13 +190,13 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
             OpenApiParameter(
                 "date",
                 type=OpenApiTypes.DATE,
-                description="Filter by movie session date (ex. ?date=2024-10-09)"
+                description="Filter by movie session date "
+                            "(ex. ?date=2024-10-09)",
             ),
             OpenApiParameter(
-                "movie",
-                type=int,
-                description="Filter by movie id (ex. ?movie=2)"
-            )
+                "movie", type=int, description="Filter by movie id "
+                                               "(ex. ?movie=2)"
+            ),
         ]
     )
     def list(self, request, *args, **kwargs):
