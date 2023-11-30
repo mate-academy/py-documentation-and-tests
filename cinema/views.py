@@ -128,7 +128,7 @@ class MovieViewSet(
         parameters=[
             OpenApiParameter(
                 "title",
-                type={"type": "list", "items": {"type": "string"}},
+                type=str,
                 description="Filter by title or its part (ex. ?title=Loo)",
             ),
             OpenApiParameter(
