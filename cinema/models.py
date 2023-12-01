@@ -43,15 +43,15 @@ def movie_image_file_path(instance, filename):
     _, extension = os.path.splitext(filename)
     filename = f"{slugify(instance.title)}-{uuid.uuid4()}{extension}"
 
-    return os.path.join("uploads/movies/", filename)
+    return os.path.join("uploads", "movies", filename)
 
 
 class Movie(models.Model):
     title = models.CharField(max_length=255)
     description = models.TextField()
     duration = models.IntegerField()
-    genres = models.ManyToManyField(Genre)
-    actors = models.ManyToManyField(Actor)
+    genres = models.ManyToManyField(to=Genre, related_name="movies")
+    actors = models.ManyToManyField(to=Actor, related_name="movies")
     image = models.ImageField(null=True, upload_to=movie_image_file_path)
 
     class Meta:
