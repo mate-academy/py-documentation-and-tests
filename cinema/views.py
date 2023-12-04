@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, date
 
 from django.db.models import F, Count
 from drf_spectacular.utils import OpenApiParameter, extend_schema
@@ -189,7 +189,7 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
         parameters=[
             OpenApiParameter(
                 "date",
-                type=datetime,
+                type=date,
                 description="Filter by date (ex. ?date=2008-07-03)",
                 required=False,
             ),
