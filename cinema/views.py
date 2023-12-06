@@ -57,7 +57,6 @@ class CinemaHallViewSet(
 ):
     queryset = CinemaHall.objects.all()
     serializer_class = CinemaHallSerializer
-    authentication_classes = (JWTAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
 
