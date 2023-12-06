@@ -303,6 +303,8 @@ class AdminMovieApiTests(TestCase):
             "description": "So shine",
             "duration": 24,
         }
+        genre = sample_genre()
+        actor = sample_actor()
 
         response = self.client.post(MOVIE_URL, payload)
         movie = Movie.objects.get(id=response.data["id"])
@@ -310,6 +312,12 @@ class AdminMovieApiTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         for key in payload:
             self.assertEqual(payload[key], getattr(movie, key))
+
+        movie.genres.add(genre)
+        movie.actors.add(actor)
+
+        self.assertIn(genre, movie.genres.all())
+        self.assertIn(actor, movie.actors.all())
 
     def test_movie_list_create_with_actor_and_genre(self):
         genre = sample_genre()
