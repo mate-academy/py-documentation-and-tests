@@ -95,19 +95,19 @@ DATABASES = {
 AUTH_PASSWORD_VALIDATORS = [
     {
         "NAME": "django.contrib.auth.password_validation."
-                "UserAttributeSimilarityValidator",
+        "UserAttributeSimilarityValidator",
     },
     {
         "NAME": "django.contrib.auth.password_validation."
-                "MinimumLengthValidator",
+        "MinimumLengthValidator",
     },
     {
         "NAME": "django.contrib.auth.password_validation."
-                "CommonPasswordValidator",
+        "CommonPasswordValidator",
     },
     {
         "NAME": "django.contrib.auth.password_validation."
-                "NumericPasswordValidator",
+        "NumericPasswordValidator",
     },
 ]
 
@@ -150,4 +150,17 @@ REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     )
+}
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Cinema Service API",
+    "DESCRIPTION": "Look at the movie information and order ticket",
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
+    "SWAGGER_UI_SETTINGS": {
+        "deepLinking": True,
+        "defaultModelRendering": "model",
+        "defaultModelsExpandDepth": 2,
+        "defaultModelExpandDepth": 2,
+    },
 }
