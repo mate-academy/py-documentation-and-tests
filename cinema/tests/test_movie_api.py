@@ -251,3 +251,35 @@ class AuthenticatedMovieApiTests(TestCase):
 
         self.assertIn(serializer1.data, res.data)
         self.assertNotIn(serializer2.data, res.data)
+
+
+class AdminMovieApiTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.user = get_user_model().objects.create_user(
+            "test@test.com",
+            "test_password",
+            is_staff=True,
+        )
+        self.client.force_authenticate(self.user)
+
+    def test_movie_list_create_with_actor_and_genre(self):
+        genre = sample_genre()
+        actor = sample_actor()
+        payload = {
+            "title": "Titanic",
+            "description": "Titanic description",
+            "duration": 80,
+            "genres": [genre.id],
+            "actors": [actor.id]
+        }
+
+        response = self.client.post(MOVIE_URL, payload)
+        movie = Movie.objects.get(id=response.data["id"])
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(payload["title"], getattr(movie, "title"))
+        self.assertEqual(payload["description"], getattr(movie, "description"))
+        self.assertEqual(payload["duration"], getattr(movie, "duration"))
+        self.assertIn(genre, movie.genres.all())
+        self.assertIn(actor, movie.actors.all())

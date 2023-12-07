@@ -156,6 +156,12 @@ REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
+    "SPECTACULAR_SETTINGS": {
+        "TITLE": "Cinema API",
+        "DESCRIPTION": "API for Cinema Service",
+        "VERSION": "1.0.0",
+        "SCHEMA_PATH_PREFIX": "/api",
+    }
 }
 
 SIMPLE_JWT = {
