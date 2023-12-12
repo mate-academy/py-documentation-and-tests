@@ -122,6 +122,3 @@ class TestMovieUserAuthenticated(TestCase):
 
         res = self.client.post(MOVIE_URL, payload)
         self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
-
-class MovieImageUploadTests(TestCase):
-    pass
