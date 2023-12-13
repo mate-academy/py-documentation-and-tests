@@ -142,7 +142,7 @@ class MovieViewSet(
                 type={"type": "list", "items": {"type": "number"}},
                 description="Filter by actors (ex. ?actors=2,3)",
                 required=False,
-            )
+            ),
         ]
     )
     def list(self, request, *args, **kwargs):
@@ -200,7 +200,7 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
                 type=str,
                 description="Filter by date (ex. ?date=2023-12-08)",
                 required=False,
-            )
+            ),
         ]
     )
     def list(self, request, *args, **kwargs):
