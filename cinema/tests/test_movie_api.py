@@ -10,6 +10,7 @@ from rest_framework.test import APIClient
 from rest_framework import status
 
 from cinema.models import Movie, MovieSession, CinemaHall, Genre, Actor
+from cinema.serializers import MovieSerializer, MovieListSerializer, MovieDetailSerializer
 
 MOVIE_URL = reverse("cinema:movie-list")
 MOVIE_SESSION_URL = reverse("cinema:moviesession-list")
@@ -157,3 +158,107 @@ class MovieImageUploadTests(TestCase):
         res = self.client.get(MOVIE_SESSION_URL)
 
         self.assertIn("movie_image", res.data[0].keys())
+
+
+class UnauthenticatedMovieApiTests(TestCase):
+    def setUp(self) -> None:
+        self.client = APIClient()
+
+    def test_authentication_required(self) -> None:
+        resp = self.client.get(MOVIE_URL)
+
+        self.assertEqual(resp.status_code, status.HTTP_401_UNAUTHORIZED)
+
+
+class AuthenticatedMovieApiTests(TestCase):
+    def setUp(self) -> None:
+        self.client = APIClient()
+        user = get_user_model().objects.create_user(
+            email="user@cinema.com", password="test_password"
+        )
+        self.client.force_authenticate(user)
+
+    def test_movie_list(self) -> None:
+        for _ in range(3):
+            sample_movie()
+
+        movies = Movie.objects.all()
+        serializer = MovieListSerializer(movies, many=True)
+
+        resp = self.client.get(MOVIE_URL)
+
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(resp.data, serializer.data)
+
+    def test_filter_movies_by_title(self) -> None:
+        sample_movie(title="test")
+        sample_movie(title="test_2")
+        sample_movie(title="test_3")
+
+        movies = Movie.objects.filter(title__icontains="test")
+        serializer = MovieListSerializer(movies, many=True)
+
+        response = self.client.get(MOVIE_URL, {"title": "test"})
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, serializer.data)
+
+    def test_filter_movies_by_genres(self) -> None:
+        for genre_id in range(3):
+            sample_genre(name=f"genre_{genre_id}")
+
+        sample_movie().genres.set([1, 2])
+        sample_movie().genres.set([2])
+        sample_movie().genres.set([3])
+
+        movies = Movie.objects.filter(genres__id__in=[1, 2]).distinct()
+        serializer = MovieListSerializer(movies, many=True)
+
+        resp = self.client.get(MOVIE_URL, {"genres": "1,2"})
+
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(resp.data, serializer.data)
+
+    def test_filter_movies_by_actors(self) -> None:
+        for _ in range(3):
+            sample_actor()
+
+        sample_movie().actors.set([1, 2])
+        sample_movie().actors.set([2])
+        sample_movie().actors.set([3])
+
+        movies = Movie.objects.filter(actors__id__in=[1, 2]).distinct()
+        serializer = MovieListSerializer(movies, many=True)
+
+        resp = self.client.get(MOVIE_URL, {"actors": "1,2"})
+
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(resp.data, serializer.data)
+
+    def test_movie_detail(self) -> None:
+        for genre_id in range(3):
+            sample_genre(name=f"genre_{genre_id}")
+
+        for _ in range(3):
+            sample_actor()
+
+        movie = sample_movie()
+        movie.actors.set([1, 2, 3])
+        movie.genres.set([1, 2, 3])
+        serializer = MovieDetailSerializer(movie)
+
+        resp = self.client.get(detail_url(movie.id))
+
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertEqual(resp.data, serializer.data)
+
+    def test_movie_create_forbidden(self) -> None:
+        payload = {
+            "title": "Sample movie",
+            "description": "Sample description",
+            "duration": 90,
+        }
+
+        resp = self.client.post(MOVIE_URL, payload)
+
+        self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
