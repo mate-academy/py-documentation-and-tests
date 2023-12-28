@@ -10,5 +10,9 @@ urlpatterns = [
     path("api/user/", include("user.urls", namespace="user")),
     path("__debug__/", include("debug_toolbar.urls")),
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
-    path("api/doc/swagger/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger"),
+    path(
+        "api/doc/swagger/",
+        SpectacularSwaggerView.as_view(url_name="schema"),
+        name="swagger"
+    ),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
