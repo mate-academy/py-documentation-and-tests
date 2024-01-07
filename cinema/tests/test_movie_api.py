@@ -11,7 +11,6 @@ from rest_framework import status
 
 from cinema.models import Movie, MovieSession, CinemaHall, Genre, Actor
 from cinema.serializers import (
-    MovieSerializer,
     MovieListSerializer,
     MovieDetailSerializer
 )
@@ -220,6 +219,16 @@ class AuthenticatedMovieApiTests(TestCase):
         self.assertIn(serializer1.data, res2.data)
         self.assertNotIn(serializer2.data, res2.data)
 
+    def test_create_movie_forbidden(self):
+        payload = {
+            "title": "Sample movie",
+            "description": "Sample description",
+            "duration": 90,
+        }
+
+        res = self.client.post(MOVIE_URL, payload)
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+
 
 class AdminMovieTests(TestCase):
     def setUp(self) -> None:
@@ -250,3 +259,15 @@ class AdminMovieTests(TestCase):
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
         self.assertIn(genre, genres)
         self.assertIn(actor, actors)
+
+    def test_create_movie_invalid_payload(self):
+        payload = {
+            "title": "",
+            "description": "Sample description",
+            "duration": "ninety",
+            "genres": "Drama",
+            "actors": "George Clooney",
+        }
+
+        res = self.client.post(MOVIE_URL, payload)
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
