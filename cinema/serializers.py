@@ -10,7 +10,15 @@ from cinema.models import (
     MovieSession,
     Ticket,
     Order,
+    MyModel,
 )
+
+
+class MyModelSerializer(serializers.ModelSerializer):
+    boolean_field = serializers.BooleanField(allow_null=True)
+
+    class Meta:
+        model = MyModel
 
 
 class GenreSerializer(serializers.ModelSerializer):
