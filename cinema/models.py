@@ -7,6 +7,10 @@ from django.conf import settings
 from django.utils.text import slugify
 
 
+class MyModel(models.Model):
+    boolean_field = models.BooleanField(default=True)
+
+
 class CinemaHall(models.Model):
     name = models.CharField(max_length=255)
     rows = models.IntegerField()
