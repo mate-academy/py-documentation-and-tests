@@ -54,7 +54,7 @@ class AuthenticatedMovieApiTests(TestCase):
     def test_filter_movies_by_title(self):
         movie1 = sample_movie(title="Test 1")
         movie2 = sample_movie(title="Test 2: Return of the test")
-        movie3 = sample_movie(title="Test 3: Revenge of the API")
+        movie3 = sample_movie(title="REST 3: Revenge of the API")
 
         res = self.client.get(MOVIE_URL, {"title": "test"})
 
@@ -63,8 +63,8 @@ class AuthenticatedMovieApiTests(TestCase):
         serializer3 = MovieListSerializer(movie3)
 
         self.assertIn(serializer1.data, res.data)
-        self.assertIn(serializer3.data, res.data)
-        self.assertNotIn(serializer2.data, res.data)
+        self.assertIn(serializer2.data, res.data)
+        self.assertNotIn(serializer3.data, res.data)
 
     def test_filter_movies_by_genres(self):
         movie1 = sample_movie(title="Test 1")
