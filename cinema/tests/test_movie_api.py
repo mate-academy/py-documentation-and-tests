@@ -168,7 +168,7 @@ class UnAuthenticatedUserToMovie(TestCase):
     def test_trying_to_get_any_information(self):
         res = self.client.get(reverse("cinema:movie-list"))
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
-        res = self.client.get(reverse("cinema:movie-detail", args=[""]))
+        res = self.client.get(reverse("cinema:movie-detail", args=["1"]))
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
