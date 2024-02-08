@@ -48,8 +48,8 @@ def movie_image_file_path(instance, filename):
 
 class Movie(models.Model):
     title = models.CharField(max_length=255)
-    description = models.TextField()
-    duration = models.IntegerField()
+    description = models.TextField(null=True, blank=True)
+    duration = models.IntegerField(null=True, blank=True)
     genres = models.ManyToManyField(Genre)
     actors = models.ManyToManyField(Actor)
     image = models.ImageField(null=True, upload_to=movie_image_file_path)
