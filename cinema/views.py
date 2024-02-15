@@ -1,17 +1,17 @@
 from datetime import datetime
 
 from django.db.models import F, Count
+from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import viewsets, mixins, status
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
-from rest_framework.viewsets import GenericViewSet, ReadOnlyModelViewSet
+from rest_framework.viewsets import GenericViewSet
 
 from cinema.models import Genre, Actor, CinemaHall, Movie, MovieSession, Order
 from cinema.permissions import IsAdminOrIfAuthenticatedReadOnly
-
 from cinema.serializers import (
     GenreSerializer,
     ActorSerializer,
@@ -61,6 +61,31 @@ class CinemaHallViewSet(
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
 
+@extend_schema(
+    parameters=[
+        OpenApiParameter(
+            name="title",
+            type=str,
+            description="Filter by movie title (case-insensitive)",
+            required=False,
+            location="query"
+        ),
+        OpenApiParameter(
+            name="genres",
+            type=str,
+            description="Filter by genre IDs (comma-separated)",
+            required=False,
+            location="query"
+        ),
+        OpenApiParameter(
+            name="actors",
+            type=str,
+            description="Filter by actor IDs (comma-separated)",
+            required=False,
+            location="query"
+        )
+    ]
+)
 class MovieViewSet(
     mixins.ListModelMixin,
     mixins.CreateModelMixin,
@@ -128,14 +153,32 @@ class MovieViewSet(
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+@extend_schema(
+    parameters=[
+        OpenApiParameter(
+            name="date",
+            type=str,
+            description="Filter by date (format: YYYY-MM-DD)",
+            required=False,
+            location="query"
+        ),
+        OpenApiParameter(
+            name="movie",
+            type=int,
+            description="Filter by movie ID",
+            required=False,
+            location="query"
+        )
+    ]
+)
 class MovieSessionViewSet(viewsets.ModelViewSet):
     queryset = (
         MovieSession.objects.all()
         .select_related("movie", "cinema_hall")
         .annotate(
             tickets_available=(
-                F("cinema_hall__rows") * F("cinema_hall__seats_in_row")
-                - Count("tickets")
+                    F("cinema_hall__rows") * F("cinema_hall__seats_in_row")
+                    - Count("tickets")
             )
         )
     )
