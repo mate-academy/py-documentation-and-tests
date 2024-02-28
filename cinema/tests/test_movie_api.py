@@ -326,3 +326,14 @@ class AdminMovieApiTests(TestCase):
         res = self.client.delete(url)
 
         self.assertEqual(res.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def test_put_movie_not_allowed(self):
+        movie = sample_movie()
+        url = detail_url(movie)
+        updated = {
+            "title": "test2"
+        }
+
+        res = self.client.put(url, data=updated)
+
+        self.assertEqual(res.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
