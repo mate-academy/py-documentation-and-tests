@@ -45,7 +45,9 @@ def sample_actor(**params):
 
 def sample_movie_session(**params):
     cinema_hall = CinemaHall.objects.create(
-        name="Blue", rows=20, seats_in_row=20
+        name="Blue",
+        rows=20,
+        seats_in_row=20
     )
 
     defaults = {
@@ -218,7 +220,10 @@ class AuthenticatedMovieApiTests(TestCase):
         self.movie.genres.add(self.genre)
         movie.genres.add(genre)
 
-        res = self.client.get(MOVIE_URL, {"genres": f"{self.genre.id}, {genre.id}"})
+        res = self.client.get(
+            MOVIE_URL,
+            {"genres": f"{self.genre.id}, {genre.id}"}
+        )
 
         serializer1 = MovieListSerializer(movie)
         serializer2 = MovieListSerializer(movie_without_genres)
@@ -236,7 +241,10 @@ class AuthenticatedMovieApiTests(TestCase):
         self.movie.actors.add(self.actor)
         movie.actors.add(actor)
 
-        res = self.client.get(MOVIE_URL, {"actors": f"{self.actor.id}, {actor.id}"})
+        res = self.client.get(
+            MOVIE_URL,
+            {"actors": f"{self.actor.id}, {actor.id}"}
+        )
 
         serializer1 = MovieListSerializer(movie)
         serializer2 = MovieListSerializer(movie_without_actors)
@@ -261,10 +269,7 @@ class AuthenticatedMovieApiTests(TestCase):
         self.assertEqual(res.data, serializer.data)
 
     def test_create_movie_forbidden(self):
-        payload = {
-            "title": "Test Title",
-            "description": "Test description"
-        }
+        payload = {"title": "Test Title", "description": "Test description"}
 
         res = self.client.post(MOVIE_URL, payload)
         self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
@@ -274,9 +279,7 @@ class AdminMovieApiTest(TestCase):
     def setUp(self) -> None:
         self.client = APIClient()
         self.user = get_user_model().objects.create_user(
-            "admin@admin.com",
-            "admin",
-            is_staff=True
+            "admin@admin.com", "admin", is_staff=True
         )
         self.client.force_authenticate(self.user)
         self.movie = sample_movie()
@@ -293,7 +296,7 @@ class AdminMovieApiTest(TestCase):
             "description": "Description about movie",
             "duration": 30,
             "actors": [actor.id],
-            "genres": [genre.id]
+            "genres": [genre.id],
         }
 
         res = self.client.post(MOVIE_URL, payload)
