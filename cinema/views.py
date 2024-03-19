@@ -132,17 +132,17 @@ class MovieViewSet(
         parameters=[
             OpenApiParameter(
                 "genres",
-                type={"type": "list", "items": {"type": "number"}},
+                type={"items": {"type": "number"}},
                 description="Filter by genre id (ex. ?genre=1,4)",
             ),
             OpenApiParameter(
                 "actors",
-                type={"type": "list", "items": {"type": "number"}},
+                type={"items": {"type": "number"}},
                 description="Filter by actor id (ex. ?genre=1,4)",
             ),
             OpenApiParameter(
                 "title",
-                type={"type": "list", "items": {"type": "string"}},
+                type={"items": {"type": "string"}},
                 description="Filter by title (ex. ?title=Incept)",
             ),
         ]
@@ -189,7 +189,7 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
         parameters=[
             OpenApiParameter(
                 "date",
-                type={"type": "list", "items": {"type": "date"}},
+                type={"items": {"type": "date"}},
                 description="Filter by date id (ex. ?date=2022-04-01)",
             ),
             OpenApiParameter(
