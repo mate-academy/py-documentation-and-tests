@@ -161,7 +161,6 @@ SPECTACULAR_SETTINGS = {
     "DESCRIPTION": "Api for Cinema service",
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
-    # OTHER SETTINGS
 }
 
 SIMPLE_JWT = {"ACCESS_TOKEN_LIFETIME": timedelta(days=1)}
