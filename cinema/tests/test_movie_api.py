@@ -19,6 +19,18 @@ from cinema.serializers import (
 MOVIE_URL = reverse("cinema:movie-list")
 MOVIE_SESSION_URL = reverse("cinema:moviesession-list")
 
+MOVIE_PAYLOAD = {
+    "title": "Dune: Part Two",
+    "description": (
+        "Paul Atreides unites with "
+        "Chani and the Fremen while "
+        "seeking revenge against "
+        "the conspirators who destroyed "
+        "his family."
+    ),
+    "duration": "120",
+}
+
 
 def sample_movie(**params):
     defaults = {
@@ -86,9 +98,24 @@ class AuthenticatedMovieTestCase(APITestCase):
         self.admin_user = get_user_model().objects.create_superuser(
             email="admin@example.com", password="password123"
         )
-        self.client.force_authenticate(user=self.admin_user)
+        self.user = get_user_model().objects.create_user(
+            email="test@mail.com",
+            password="Test"
+        )
+        # self.movie = Movie.objects.create(
+        #     title="Dune: Part Two",
+        #     description=(
+        #         "Paul Atreides unites with "
+        #         "Chani and the Fremen while "
+        #         "seeking revenge against "
+        #         "the conspirators who destroyed "
+        #         "his family."
+        #     ),
+        #     duration="120",
+        # )
 
     def test_authenticated_movie(self):
+        self.client.force_authenticate(user=self.user)
         response = self.client.get(MOVIE_URL)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
@@ -102,6 +129,7 @@ class AuthenticatedMovieTestCase(APITestCase):
         movie_with_genres.genres.add(genre1, genre2)
         movie_with_genres.save()
 
+        self.client.force_authenticate(user=self.user)
         response = self.client.get(MOVIE_URL)
         movies = Movie.objects.all()
         serializer = MovieListSerializer(movies, many=True)
@@ -109,13 +137,28 @@ class AuthenticatedMovieTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["results"], serializer.data)
 
+    def test_create_movie_admin_user(self):
+        """Test creating a new movie"""
+        self.client.force_authenticate(user=self.admin_user)
+        response = self.client.post(MOVIE_URL, MOVIE_PAYLOAD)
+
+        self.assertEqual(response.data["title"], MOVIE_PAYLOAD["title"])
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(Movie.objects.count(), 1)
+
+    def test_create_movie_authenticated_user(self):
+        """Test creating a new movie by an authenticated user"""
+        self.client.force_authenticate(user=self.user)
+
+        response = self.client.post(MOVIE_URL, MOVIE_PAYLOAD)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
     def test_movie_detail(self):
         """Test retrieving a movie detail"""
-        movie = Movie.objects.create(
-            title="Test Movie", description="Test Description", duration=120
-        )
+        movie = sample_movie()
         url = detail_url(movie.id)
 
+        self.client.force_authenticate(user=self.user)
         response = self.client.get(url)
         serializer = MovieDetailSerializer(movie)
 
@@ -134,6 +177,7 @@ class AuthenticatedMovieTestCase(APITestCase):
         movie_with_genre_sci_fi.genres.add(genre_sci_fi)
         movie_with_genres_adventure.genres.add(genre_adventure)
 
+        self.client.force_authenticate(user=self.user)
         response = self.client.get(
             MOVIE_URL,
             {
@@ -166,6 +210,7 @@ class AuthenticatedMovieTestCase(APITestCase):
         movie_with_actor_dicaprio.actors.add(actor_dicaprio)
         movie_with_actress_winslet.actors.add(actress_winslet)
 
+        self.client.force_authenticate(user=self.user)
         response = self.client.get(
             MOVIE_URL,
             {
@@ -196,6 +241,7 @@ class AuthenticatedMovieTestCase(APITestCase):
         )
         the_revenant = sample_movie(title="The Revenant")
 
+        self.client.force_authenticate(user=self.user)
         response = self.client.get(
             MOVIE_URL,
             {
@@ -212,6 +258,7 @@ class AuthenticatedMovieTestCase(APITestCase):
 
 
 class MovieImageUploadTests(TestCase):
+
     def setUp(self):
         self.client = APIClient()
         self.user = get_user_model().objects.create_superuser(
