@@ -102,22 +102,6 @@ class AuthenticatedMovieTestCase(APITestCase):
             email="test@mail.com",
             password="Test"
         )
-        # self.movie = Movie.objects.create(
-        #     title="Dune: Part Two",
-        #     description=(
-        #         "Paul Atreides unites with "
-        #         "Chani and the Fremen while "
-        #         "seeking revenge against "
-        #         "the conspirators who destroyed "
-        #         "his family."
-        #     ),
-        #     duration="120",
-        # )
-
-    def test_authenticated_movie(self):
-        self.client.force_authenticate(user=self.user)
-        response = self.client.get(MOVIE_URL)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_movies_list(self):
         """Test retrieving a movie list"""
@@ -138,7 +122,7 @@ class AuthenticatedMovieTestCase(APITestCase):
         self.assertEqual(response.data["results"], serializer.data)
 
     def test_create_movie_admin_user(self):
-        """Test creating a new movie"""
+        """Test creating a new movie by an admin user"""
         self.client.force_authenticate(user=self.admin_user)
         response = self.client.post(MOVIE_URL, MOVIE_PAYLOAD)
 
@@ -166,6 +150,7 @@ class AuthenticatedMovieTestCase(APITestCase):
         self.assertEqual(response.data, serializer.data)
 
     def test_filter_movie_by_genres(self):
+        """Test filtering by genres"""
         movie_without_genres = sample_movie()
 
         genre_sci_fi = sample_genre(name="Sci-Fi")
@@ -199,6 +184,7 @@ class AuthenticatedMovieTestCase(APITestCase):
         self.assertNotIn(serializer_movie_without_genres, response.data["results"])
 
     def test_filter_movies_by_actors(self):
+        """Test filtering by actors"""
         movie_without_actors = sample_movie()
         movie_with_actor_dicaprio = sample_movie(title="Titanic")
         movie_with_actress_winslet = sample_movie(
@@ -236,6 +222,7 @@ class AuthenticatedMovieTestCase(APITestCase):
         )
 
     def test_filter_movie_by_title(self):
+        """Test filtering by title"""
         lord_of_the_rings_movie = sample_movie(
             title="The Lord of the Rings: The Return of the King"
         )
