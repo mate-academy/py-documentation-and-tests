@@ -1,13 +1,14 @@
 from datetime import datetime
 
 from django.db.models import F, Count
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import viewsets, mixins, status
-from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
-from rest_framework.viewsets import GenericViewSet, ReadOnlyModelViewSet
+from rest_framework.viewsets import GenericViewSet
 
 from cinema.models import Genre, Actor, CinemaHall, Movie, MovieSession, Order
 from cinema.permissions import IsAdminOrIfAuthenticatedReadOnly
@@ -35,7 +36,6 @@ class GenreViewSet(
 ):
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
-    authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
 
@@ -44,9 +44,10 @@ class ActorViewSet(
     mixins.ListModelMixin,
     GenericViewSet,
 ):
+    """Actor endpoint to interact with actor instances"""
+
     queryset = Actor.objects.all()
     serializer_class = ActorSerializer
-    authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
 
@@ -55,9 +56,10 @@ class CinemaHallViewSet(
     mixins.ListModelMixin,
     GenericViewSet,
 ):
+    """CinemaHall endpoint to interact with instances of cinema halls"""
+
     queryset = CinemaHall.objects.all()
     serializer_class = CinemaHallSerializer
-    authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
 
@@ -67,9 +69,10 @@ class MovieViewSet(
     mixins.RetrieveModelMixin,
     viewsets.GenericViewSet,
 ):
+    """Movie endpoint to interact with movie instances"""
+
     queryset = Movie.objects.prefetch_related("genres", "actors")
     serializer_class = MovieSerializer
-    authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
     @staticmethod
@@ -97,6 +100,31 @@ class MovieViewSet(
             queryset = queryset.filter(actors__id__in=actors_ids)
 
         return queryset.distinct()
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                "title",
+                type=str,
+                description="Filter by title (ex. ?title=Inception)",
+                required=False
+            ),
+            OpenApiParameter(
+                "genres",
+                type={"type": "list", "items": {"type": "number"}},
+                description="Filter by genres ids (ex. ?genres=1,2)",
+                required=False
+            ),
+            OpenApiParameter(
+                "actors",
+                type={"type": "list", "items": {"type": "number"}},
+                description="Filter by actors ids (ex. ?actors=1,2)",
+                required=False
+            )
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
 
     def get_serializer_class(self):
         if self.action == "list":
@@ -129,6 +157,8 @@ class MovieViewSet(
 
 
 class MovieSessionViewSet(viewsets.ModelViewSet):
+    """MovieSession endpoint to interact with instances of movie sessions"""
+
     queryset = (
         MovieSession.objects.all()
         .select_related("movie", "cinema_hall")
@@ -140,7 +170,6 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
         )
     )
     serializer_class = MovieSessionSerializer
-    authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
     def get_queryset(self):
@@ -157,6 +186,25 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(movie_id=int(movie_id_str))
 
         return queryset
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                "movie",
+                type=int,
+                description="Filter by movie id (ex. ?movie=1)",
+                required=False,
+            ),
+            OpenApiParameter(
+                "date",
+                type=OpenApiTypes.DATE,
+                description="Filter by session date (ex. ?date=1993-08-23)",
+                required=False
+            )
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
 
     def get_serializer_class(self):
         if self.action == "list":
@@ -178,12 +226,13 @@ class OrderViewSet(
     mixins.CreateModelMixin,
     GenericViewSet,
 ):
+    """Order endpoint to interact with order instances"""
+
     queryset = Order.objects.prefetch_related(
         "tickets__movie_session__movie", "tickets__movie_session__cinema_hall"
     )
     serializer_class = OrderSerializer
     pagination_class = OrderPagination
-    authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAuthenticated,)
 
     def get_queryset(self):
