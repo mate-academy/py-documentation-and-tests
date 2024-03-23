@@ -214,12 +214,12 @@ class AuthenticatedMovieApiTests(TestCase):
                 "title": "Movie"
             }
         )
-        serializer_without_filters = MovieListSerializer(self.movie)
-        serializer_with_genres = MovieListSerializer(movie_with_genres_filter)
+        serializer_movie_without_genres = MovieListSerializer(self.movie)
+        serializer_movie_with_genres = MovieListSerializer(movie_with_genres_filter)
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertIn(serializer_with_genres.data, res.data)
-        self.assertNotIn(serializer_without_filters, res.data)
+        self.assertIn(serializer_movie_with_genres.data, res.data)
+        self.assertNotIn(serializer_movie_without_genres, res.data)
 
     def test_movie_list_actors(self):
         movie_with_actors_filter = sample_movie(title="Movie 2")
@@ -236,12 +236,12 @@ class AuthenticatedMovieApiTests(TestCase):
                 "title": "Movie"
             }
         )
-        serializer_without_filters = MovieListSerializer(self.movie)
-        serializer_with_actors = MovieListSerializer(movie_with_actors_filter)
+        serializer_movie_without_actors = MovieListSerializer(self.movie)
+        serializer_movie_with_actors = MovieListSerializer(movie_with_actors_filter)
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertIn(serializer_with_actors.data, res.data)
-        self.assertNotIn(serializer_without_filters, res.data)
+        self.assertIn(serializer_movie_with_actors.data, res.data)
+        self.assertNotIn(serializer_movie_without_actors, res.data)
 
     def test_movie_create_forbidden(self):
         res = self.client.post(
