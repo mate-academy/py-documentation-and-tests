@@ -121,7 +121,6 @@ class MovieViewSet(
         serializer.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-
     @extend_schema(
         parameters=[
             OpenApiParameter(
