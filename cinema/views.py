@@ -149,7 +149,9 @@ class MovieViewSet(
     )
     def list(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         """
-        Returns a list of movies. Supports filtering by genres, actors and movies"""
+        Returns a list of movies.
+        Supports filtering by genres, actors and movies
+        """
         return super().list(request, *args, **kwargs)
 
 
@@ -159,8 +161,9 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
         .select_related("movie", "cinema_hall")
         .annotate(
             tickets_available=(
-                    F("cinema_hall__rows") * F("cinema_hall__seats_in_row")
-                    - Count("tickets")
+                F("cinema_hall__rows")
+                * F("cinema_hall__seats_in_row")
+                - Count("tickets")
             )
         )
     )
@@ -196,7 +199,10 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
             OpenApiParameter(
                 name="date",
                 type=OpenApiTypes.DATE,
-                description="Filter by date. Date should be provided in year-month-day format"
+                description=(
+                    "Filter by date. Date should be "
+                    "provided in year-month-day format"
+                )
             ),
             OpenApiParameter(
                 name="movie",
@@ -206,7 +212,10 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
         ]
     )
     def list(self, request: Request, *args: Any, **kwargs: Any) -> Response:
-        """ Returns a list of movie sessions. Supports filtering by date and movie id """
+        """
+        Returns a list of movie sessions.
+        Supports filtering by date and movie id
+        """
         return super().list(request, *args, **kwargs)
 
 
