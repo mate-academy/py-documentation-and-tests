@@ -11,7 +11,6 @@ from rest_framework import status
 
 from cinema.models import Movie, MovieSession, CinemaHall, Genre, Actor
 from cinema.serializers import (
-    MovieSerializer,
     MovieListSerializer,
     MovieDetailSerializer,
 )
@@ -99,8 +98,7 @@ class AuthenticatedMovieTestCase(APITestCase):
             email="admin@example.com", password="password123"
         )
         self.user = get_user_model().objects.create_user(
-            email="test@mail.com",
-            password="Test"
+            email="test@mail.com", password="Test"
         )
 
     def test_movies_list(self):
