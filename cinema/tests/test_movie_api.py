@@ -289,7 +289,7 @@ class AdminMovieTests(TestCase):
         self.assertIn(actor2, actors)
         self.assertEqual(actors.count(), 2)
 
-    def test_delete_bus_not_allowed(self):
+    def test_delete_movie_not_allowed(self):
         movie = sample_movie()
 
         url = detail_url(movie.id)
