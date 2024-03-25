@@ -278,8 +278,8 @@ class AdminMovieTests(TestCase):
             self.assertEqual(payload[key], getattr(movie, key))
 
     def test_create_movie_with_actors(self):
-        actor1 = sample_actor(first_name="Actor_name_1", last_name="Actor_last_name_1")
-        actor2 = sample_actor(first_name="Actor_name_2", last_name="Actor_last_name_2")
+        actor1 = sample_actor(first_name="Actor_name1", last_name="Actor_last_name1")
+        actor2 = sample_actor(first_name="Actor_name2", last_name="Actor_last_name2")
         payload = {
             "title": "Test Movie",
             "description": "Great Test Movie",
