@@ -24,13 +24,6 @@ class UserSerializer(serializers.ModelSerializer):
 
         return user
 
-
-class AuthTokenSerializer(serializers.Serializer):
-    email = serializers.CharField(label=_("Email"))
-    password = serializers.CharField(
-        label=_("Password"), style={"input_type": "password"}
-    )
-
     def validate(self, attrs):
         email = attrs.get("email")
         password = attrs.get("password")
@@ -42,7 +35,8 @@ class AuthTokenSerializer(serializers.Serializer):
                 if not user.is_active:
                     msg = _("User account is disabled.")
                     raise serializers.ValidationError(
-                        msg, code="authorization"
+                        msg,
+                        code="authorization"
                     )
             else:
                 msg = _("Unable to log in with provided credentials.")
