@@ -368,6 +368,7 @@ class AuthenticatedMovieAPITest(TestCase):
 class AdminMovieTests(TestCase):
     def setUp(self) -> None:
         self.client = APIClient()
+
         self.user = get_user_model().objects.create_user(
             email="admin@test.com", password="Admin1###", is_staff=True
         )
