@@ -256,6 +256,44 @@ class AuthenticatedMovieAPITest(TestCase):
             serializer_movie_genre_3.data, res_client.data["results"]
         )
 
+    def test_filtering_movies_by_actors(self):
+        default_movie = create_test_movie()
+        movie_with_actor_1 = create_test_movie(title="Test Movie")
+        movie_with_actor_2 = create_test_movie(title="Movie Test")
+        movie_with_actor_3 = create_test_movie(title="Test Movie: Test")
+
+        test_actor_1 = Actor.objects.create(first_name="Test", last_name="Ac")
+        test_actor_2 = Actor.objects.create(first_name="Tes", last_name="tAc")
+        test_actor_3 = Actor.objects.create(first_name="Act", last_name="Tes")
+
+        movie_with_actor_1.actors.set([test_actor_1])
+        movie_with_actor_2.actors.set([test_actor_2])
+        movie_with_actor_3.actors.set([test_actor_3])
+
+        res_client = self.client.get(
+            MOVIE_URL, {
+                "actors": f"{test_actor_1.id},"
+                          f"{test_actor_2.id},"
+                          f"{test_actor_3.id}"
+            }
+        )
+
+        serializer_no_actors = MovieListSerializer(default_movie)
+        serializer_movie_actor_1 = MovieListSerializer(movie_with_actor_1)
+        serializer_movie_actor_2 = MovieListSerializer(movie_with_actor_2)
+        serializer_movie_actor_3 = MovieListSerializer(movie_with_actor_3)
+
+        self.assertIn(serializer_no_actors.data, res_client.data["results"])
+        self.assertIn(
+            serializer_movie_actor_1.data, res_client.data["results"]
+        )
+        self.assertIn(
+            serializer_movie_actor_2.data, res_client.data["results"]
+        )
+        self.assertIn(
+            serializer_movie_actor_3.data, res_client.data["results"]
+        )
+
     def test_movie_detail(self):
         default_movie = create_test_movie()
         url = movie_detail_url(default_movie.id)
