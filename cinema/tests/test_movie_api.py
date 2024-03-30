@@ -171,6 +171,13 @@ class UnauthenticatedMovieAPITest(TestCase):
         self.client = APIClient()
 
     def test_auth_required(self):
+        """
+        Test for checking the authorization.
+
+        return None
+
+        expected HTTP-status: 401 (UNAUTHORIZED)
+        """
         res_client = self.client.get(MOVIE_URL)
         self.assertEqual(
             res_client.status_code, status.HTTP_401_UNAUTHORIZED
@@ -178,6 +185,9 @@ class UnauthenticatedMovieAPITest(TestCase):
 
 
 def create_test_movie(**kwargs):
+    """
+    This function create default movie model for tests.
+    """
     test_data = {
         "title": "Test Movie",
         "description": "Movie for tests",
@@ -202,6 +212,13 @@ class AuthenticatedMovieAPITest(TestCase):
         self.client.force_authenticate(self.user)
 
     def test_movies_list(self):
+        """
+        Test for getting the list of movie.
+
+        return None
+
+        expected HTTP-status: 200 (OK)
+        """
         create_test_movie()
         default_movie = create_test_movie()
 
@@ -219,6 +236,11 @@ class AuthenticatedMovieAPITest(TestCase):
         self.assertEqual(res_client.data["result"], movie_serializer.data)
 
     def test_filtering_movies_by_genres(self):
+        """
+        Test for filtering the list by genres.
+
+        return None
+        """
         default_movie = create_test_movie()
         movie_with_genre_1 = create_test_movie(title="Test Movie")
         movie_with_genre_2 = create_test_movie(title="Movie Test")
@@ -257,6 +279,11 @@ class AuthenticatedMovieAPITest(TestCase):
         )
 
     def test_filtering_movies_by_actors(self):
+        """
+        Test for filtering the list by actors.
+
+        return None
+        """
         default_movie = create_test_movie()
         movie_with_actor_1 = create_test_movie(title="Test Movie")
         movie_with_actor_2 = create_test_movie(title="Movie Test")
@@ -295,6 +322,13 @@ class AuthenticatedMovieAPITest(TestCase):
         )
 
     def test_movie_detail(self):
+        """
+        Test for getting the movie details.
+
+        return None
+
+        expected HTTP-status: 200 (OK)
+        """
         default_movie = create_test_movie()
         url = movie_detail_url(default_movie.id)
         movie_serializer = MovieDetailSerializer(default_movie)
@@ -309,6 +343,13 @@ class AuthenticatedMovieAPITest(TestCase):
         self.assertEqual(res_client.data, movie_serializer.data)
 
     def test_movie_create_403_forbidden(self):
+        """
+        Test for creating the movie, creation should be not available.
+
+        return None
+
+        expected HTTP-status: 403 (FORBIDDEN)
+        """
         test_genre_1 = Genre.objects.create(name="testgenre")
         test_actor_1 = Actor.objects.create(first_name="Test", last_name="Ac")
 
@@ -333,6 +374,13 @@ class AdminMovieTests(TestCase):
         self.client.force_authenticate(self.user)
 
     def test_admin_create_movie_with_genres_and_actors(self):
+        """
+        Test for creating the movie, creation should be available.
+
+        return None
+
+        expected HTTP-status: 201 (CREATED)
+        """
         test_genre_1 = Genre.objects.create(name="testgenre")
         test_genre_2 = Genre.objects.create(name="genretest")
 
@@ -351,6 +399,13 @@ class AdminMovieTests(TestCase):
         self.assertEqual(res_client.status_code, status.HTTP_201_CREATED)
 
     def test_delete_movie_405_not_allowed(self):
+        """
+        Test for deleting the movie, but process should not be available.
+
+        return None
+
+        expected HTTP-status: 405 (METHOD_NOT_ALLOWED)
+        """
         default_movie = create_test_movie()
         url = movie_detail_url(default_movie.id)
 
