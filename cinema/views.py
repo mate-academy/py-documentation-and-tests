@@ -1,6 +1,13 @@
 from datetime import datetime
 
 from django.db.models import F, Count
+
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import (
+    extend_schema,
+    OpenApiParameter,
+    OpenApiExample
+)
 from rest_framework import viewsets, mixins, status
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import action
@@ -127,6 +134,29 @@ class MovieViewSet(
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="title",
+                type={"type": "string"},
+                description="Filter by title",
+            ),
+            OpenApiParameter(
+                name="genres",
+                type={"type": "string"},
+                description="Filter by genres",
+            ),
+            OpenApiParameter(
+                name="actors ",
+                type={"type": "string"},
+                description="Filter by actors",
+            ),
+        ],
+    )
+    def list(self, request, *args, **kwargs):
+        """List of movie"""
+        return super().list(request, *args, **kwargs)
+
 
 class MovieSessionViewSet(viewsets.ModelViewSet):
     queryset = (
@@ -166,6 +196,24 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
             return MovieSessionDetailSerializer
 
         return MovieSessionSerializer
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="show_time",
+                type={"type": "string", "format": "date-time"},
+                description="Filter by show_time",
+            ),
+            OpenApiParameter(
+                name="movie_title",
+                type={"type": "string"},
+                description="Filter by movie title",
+            ),
+        ],
+    )
+    def list(self, request, *args, **kwargs):
+        """List of movie sessions"""
+        return super().list(request, *args, **kwargs)
 
 
 class OrderPagination(PageNumberPagination):
