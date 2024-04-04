@@ -7,8 +7,7 @@ from django.test import TestCase
 from django.urls import reverse
 from rest_framework import status
 
-
-from rest_framework.test import APIClient, APITestCase
+from rest_framework.test import APIClient
 
 from cinema.models import Movie, MovieSession, CinemaHall, Genre, Actor
 from cinema.serializers import MovieDetailSerializer, MovieListSerializer
