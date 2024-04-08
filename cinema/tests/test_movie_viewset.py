@@ -10,10 +10,6 @@ from cinema.serializers import MovieListSerializer
 MOVIE_URL = reverse("cinema:movie-list")
 
 
-def movie_detail_url(movie_id):
-    return reverse("cinema:movie-detail", args=(movie_id,))
-
-
 def sample_movie(**param) -> Movie:
     defaults = {
         "title": "test movie title",
