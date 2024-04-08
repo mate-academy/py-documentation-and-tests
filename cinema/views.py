@@ -129,17 +129,17 @@ class MovieViewSet(
             OpenApiParameter(
                 "genres",
                 type={"type": "array", "items": {"type": "number"}},
-                description="Filter movies list by genres id (ex. ?genres=1,2)",
+                description="Filter movies by genres id (ex. ?genres=1,2)",
             ),
             OpenApiParameter(
                 "actors",
                 type={"type": "array", "items": {"type": "number"}},
-                description="Filter movies list by actors id (ex. ?actors=1,2)",
+                description="Filter movies by actors id (ex. ?actors=1,2)",
             ),
             OpenApiParameter(
                 "title",
                 type={"type": "array", "items": {"type": "str"}},
-                description="Filter movies list by title (ex. ?title=titanic)",
+                description="Filter movies by title (ex. ?title=titanic)",
             ),
         ]
     )
@@ -153,8 +153,9 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
         .select_related("movie", "cinema_hall")
         .annotate(
             tickets_available=(
-                    F("cinema_hall__rows") * F("cinema_hall__seats_in_row")
-                    - Count("tickets")
+                F("cinema_hall__rows")
+                * F("cinema_hall__seats_in_row")
+                - Count("tickets")
             )
         )
     )
@@ -190,12 +191,13 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
             OpenApiParameter(
                 "movie",
                 type={"type": "array", "items": {"type": "number"}},
-                description="Filter movie session list by movie id (ex. ?movie=1)",
+                description="Filter movie sessions by movie id (ex. ?movie=1)",
             ),
             OpenApiParameter(
                 "date",
                 type={"type": "array", "items": {"type": "str"}},
-                description="Filter movie session list by date (ex. ?date=2024-01-01)",
+                description="Filter movie sessions by "
+                            "date (ex. ?date=2024-01-01)",
             ),
         ]
     )
