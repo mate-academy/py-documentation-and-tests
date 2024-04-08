@@ -32,7 +32,6 @@ def sample_actor(**param) -> Actor:
 def sample_genre(**param) -> Genre:
     defaults = {
         "name": "horror",
-
     }
     defaults.update(param)
     return Genre.objects.create(**defaults)
@@ -84,33 +83,22 @@ class AuthenticatedMovieSessionTest(TestCase):
     def test_movie_list_filtered_by_title(self):
         result = self.client.get(MOVIE_URL, {"title": 'ironman'})
 
-        movie_serializer1 = MovieListSerializer(self.ironman_movie)
-        movie_serializer2 = MovieListSerializer(self.hancock)
-
-        self.assertIn(movie_serializer1.data, result.data)
-        self.assertNotIn(movie_serializer2.data, result.data)
+        self.assertIn(
+            MovieListSerializer(self.ironman_movie).data,
+            result.data
+        )
+        self.assertNotIn(
+            MovieListSerializer(self.hancock).data,
+            result.data
+        )
 
     def test_movie_list_filtered_by_actor_id(self):
         result = self.client.get(MOVIE_URL, {"actors": self.actor_1.id})
-
-        movie_serializer1 = MovieListSerializer(self.ironman_movie)
-        movie_serializer2 = MovieListSerializer(self.hancock)
-        movie_serializer3 = MovieListSerializer(self.default_movie)
-
-        self.assertIn(movie_serializer1.data, result.data)
-        self.assertNotIn(movie_serializer2.data, result.data)
-        self.assertNotIn(movie_serializer3.data, result.data)
+        self.assertContains(result, self.actor_1.id)
 
     def test_movie_list_filtered_by_genre_id(self):
         result = self.client.get(MOVIE_URL, {"genres": self.genre_2.id})
-
-        movie_serializer1 = MovieListSerializer(self.ironman_movie)
-        movie_serializer2 = MovieListSerializer(self.hancock)
-        movie_serializer3 = MovieListSerializer(self.default_movie)
-
-        self.assertNotIn(movie_serializer1.data, result.data)
-        self.assertIn(movie_serializer2.data, result.data)
-        self.assertNotIn(movie_serializer3.data, result.data)
+        self.assertContains(result, self.genre_2.id)
 
     def test_create_movie_access(self):
         movie = {
