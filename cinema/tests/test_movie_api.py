@@ -184,7 +184,7 @@ class AnonymousMovieApiTests(TestCase):
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
-class AuthenticatedMovieApiTests(TestCase, TestDataMixin):
+class AuthenticatedMovieApiTests(TestDataMixin, TestCase):
     def setUp(self):
         self.client = APIClient()
         self.user = get_user_model().objects.create_user(
@@ -272,7 +272,7 @@ class AuthenticatedMovieApiTests(TestCase, TestDataMixin):
         self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
 
 
-class AdminMovieApiTests(TestCase, TestDataMixin):
+class AdminMovieApiTests(TestDataMixin, TestCase):
     def setUp(self):
         self.client = APIClient()
         self.user = get_user_model().objects.create_user(
