@@ -160,7 +160,7 @@ class MovieImageUploadTests(TestCase):
         self.assertIn("movie_image", res.data[0].keys())
 
 
-class LoadTestDataMixin():
+class TestDataMixin:
     def load_db(self):
         self.movie1 = sample_movie(title="Title1")
         self.movie2 = sample_movie(title="Second Title testmask2")
@@ -184,7 +184,7 @@ class AnonymousMovieApiTests(TestCase):
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
-class AuthenticatedMovieApiTests(TestCase, LoadTestDataMixin):
+class AuthenticatedMovieApiTests(TestCase, TestDataMixin):
     def setUp(self):
         self.client = APIClient()
         self.user = get_user_model().objects.create_user(
@@ -272,7 +272,7 @@ class AuthenticatedMovieApiTests(TestCase, LoadTestDataMixin):
         self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
 
 
-class AdminMovieApiTests(TestCase, LoadTestDataMixin):
+class AdminMovieApiTests(TestCase, TestDataMixin):
     def setUp(self):
         self.client = APIClient()
         self.user = get_user_model().objects.create_user(
