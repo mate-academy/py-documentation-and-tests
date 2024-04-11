@@ -3,7 +3,6 @@ from django.test import TestCase
 from rest_framework import status
 from rest_framework.reverse import reverse
 from rest_framework.test import APIClient
-
 from cinema.models import Movie, Genre, Actor
 from cinema.serializers import MovieListSerializer, MovieDetailSerializer
 
@@ -55,7 +54,7 @@ class AuthenticatedMovieTest(TestCase):
         serializer = MovieListSerializer(movies, many=True)
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertEqual(res.data["results"], serializer.data)
+        self.assertEqual(res.data, serializer.data)
 
     def test_filter_movies_by_genres(self):
         movie_without_genre = sample_movie()
@@ -72,13 +71,13 @@ class AuthenticatedMovieTest(TestCase):
             MOVIE_URL, {"genres": f"{genre_1.id}, {genre_2.id}"}
         )
 
-        serializer_movie_without_genre = MovieListSerializer(movie_without_genre, many=True)
-        serializer_movie_with_genre_1 = MovieListSerializer(movie_with_genre_1, many=True)
-        serializer_movie_with_genre_2 = MovieListSerializer(movie_with_genre_2, many=True)
+        serializer_movie_without_genre = MovieListSerializer(movie_without_genre, many=False)
+        serializer_movie_with_genre_1 = MovieListSerializer(movie_with_genre_1, many=False)
+        serializer_movie_with_genre_2 = MovieListSerializer(movie_with_genre_2, many=False)
 
-        self.assertIn(serializer_movie_with_genre_1, res.data["result"])
-        self.assertIn(serializer_movie_with_genre_2, res.data["result"])
-        self.assertNotIn(serializer_movie_without_genre, res.data["result"])
+        self.assertIn(serializer_movie_with_genre_1.data, res.data)
+        self.assertIn(serializer_movie_with_genre_2.data, res.data)
+        self.assertNotIn(serializer_movie_without_genre.data, res.data)
 
     def test_retrieve_movie_detail(self):
         movie = sample_movie()
@@ -103,7 +102,7 @@ class AuthenticatedMovieTest(TestCase):
 class AdminMovieTests(TestCase):
     def setUp(self):
         self.client = APIClient()
-        self.user = get_user_model().objects.create_user(
+        self.user = get_user_model().objects.create_superuser(
             email="test@test.@test",
             password="test"
         )
@@ -125,7 +124,7 @@ class AdminMovieTests(TestCase):
         genre_1 = Genre.objects.create(name="genre_1")
         genre_2 = Genre.objects.create(name="genre_2")
 
-        payload = {"title": "test", "description": "test", "duration": 100, "genres": [genre_1, genre_2]}
+        payload = {"title": "test", "description": "test", "duration": 100, "genres": [genre_1.id, genre_2.id]}
 
         res = self.client.post(MOVIE_URL, payload)
 
