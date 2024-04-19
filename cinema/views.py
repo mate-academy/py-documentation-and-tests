@@ -148,14 +148,17 @@ class MovieViewSet(
                 type=str,
                 required=False,
                 location=OpenApiParameter.QUERY,
-                description="Filter by title ex. ?title=partial_or_full_movie_name)"
+                description="Filter by title ex. "
+                            "?title=partial_or_full_movie_name)"
             )
         ]
     )
     def list(self, request, *args, **kwargs):
         """
         Gets list of movies.
-        Can be filtered by id's of genres and actors and by title which matches given str if provided(case-insensitive).
+        Can be filtered by id's
+         of genres and actors and by title which matches
+          given str if provided(case-insensitive).
         """
         return super().list(self, request, *args, **kwargs)
 
@@ -223,7 +226,8 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
                 examples=[
                     OpenApiExample(
                         name="example",
-                        summary="Takes one argument in format 'year-month-date'",
+                        summary="Takes one argument"
+                                " in format 'year-month-date'",
                         value="2024-01-23"
                     )
                 ]
@@ -266,4 +270,3 @@ class OrderViewSet(
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
-
