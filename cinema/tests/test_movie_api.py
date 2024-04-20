@@ -161,7 +161,6 @@ class MovieImageUploadTests(TestCase):
             self.client.post(upload_url, {"image": ntf}, format="multipart")
         movie_session_detail = movie_session_detail_url(movie_session_id=self.movie_session.pk)
         res = self.client.get(movie_session_detail)
-        print(res.data)
 
 
 class MovieTestUnauthorizedUser(APITestCase):
