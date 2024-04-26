@@ -141,12 +141,12 @@ class MovieViewSet(
             ),
             OpenApiParameter(
                 name="genre",
-                type=OpenApiTypes.INT,
+                type={"type": "array", "items": {"type": "number"}},
                 description="Filter by genre IDs (comma-separated list)",
             ),
             OpenApiParameter(
                 name="actor",
-                type=OpenApiTypes.INT,
+                type={"type": "array", "items": {"type": "number"}},
                 description="Filter by actor IDs (comma-separated list)",
             ),
         ]
@@ -162,8 +162,8 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
         .select_related("movie", "cinema_hall")
         .annotate(
             tickets_available=(
-                F("cinema_hall__rows") * F("cinema_hall__seats_in_row")
-                - Count("tickets")
+                    F("cinema_hall__rows") * F("cinema_hall__seats_in_row")
+                    - Count("tickets")
             )
         )
     )
