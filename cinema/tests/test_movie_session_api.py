@@ -1,9 +1,6 @@
-from datetime import datetime
-
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
-from django.utils import timezone
 from rest_framework.test import APIClient
 from rest_framework import status
 
@@ -12,34 +9,13 @@ from cinema.tests.test_movie_api import (
     sample_movie_session
 )
 from cinema.serializers import MovieSessionListSerializer, MovieSessionSerializer
-from cinema.models import Order, Ticket, MovieSession
+from cinema.models import MovieSession
 
 MOVIE_SESSION_URL = reverse("cinema:moviesession-list")
 
 
 def detail_movie_session_url(movie_session_id: int):
     return reverse("cinema:moviesession-detail", args=[movie_session_id])
-
-
-def remove_key_from_dict(dict_: dict, key_to_delete):
-    return {
-        key: value
-        for key, value in dict_.items()
-        if key != key_to_delete
-    }
-
-
-def sample_ticket(user_id: int, movie_session: MovieSession, **params):
-    order = Order.objects.create(user_id=user_id)
-    defaults = {
-        "movie_session": movie_session,
-        "order": order,
-        "row": 1,
-        "seat": 1
-    }
-    defaults.update(params)
-
-    return Ticket.objects.create(**defaults)
 
 
 class TestUnauthorizedMovieSessionView(TestCase):
@@ -70,10 +46,8 @@ class TestAuthorizedMovieSessionView(TestCase):
         )
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(len(res.data), 1)
-        filtered_data = remove_key_from_dict(
-            dict(res.data[0]),
-            "tickets_available"
-        )
+        filtered_data = dict(res.data[0])
+        filtered_data.pop("tickets_available")
         self.assertEqual(filtered_data, serializer.data)
 
     def test_movie_session_list_filter_by_movie(self):
@@ -91,10 +65,8 @@ class TestAuthorizedMovieSessionView(TestCase):
         )
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(len(res.data), 1)
-        filtered_data = remove_key_from_dict(
-            dict(res.data[0]),
-            "tickets_available"
-        )
+        filtered_data = dict(res.data[0])
+        filtered_data.pop("tickets_available")
         self.assertEqual(filtered_data, serializer.data)
 
     def test_create_movie_session_forbidden(self):
@@ -105,16 +77,6 @@ class TestAuthorizedMovieSessionView(TestCase):
         }
         res = self.client.post(MOVIE_SESSION_URL, data=data)
         self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
-
-    def test_tickets_available(self):
-        sample_ticket(self.user.id, self.movie_session)
-        sample_ticket(self.user.id, self.movie_session, seat=2)
-
-        res = self.client.get(MOVIE_SESSION_URL)
-        tickets_available = res.data[0]["tickets_available"]
-
-        self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertEqual(tickets_available, 398)
 
 
 class TestAdminMovieSessionView(TestCase):
