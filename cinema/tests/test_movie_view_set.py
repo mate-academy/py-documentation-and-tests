@@ -80,6 +80,37 @@ class TestAuthorisedMovie(TestCase):
         self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
 
 
+class TestAdminMovieView(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.user = get_user_model().objects.create_superuser(
+            "admin@test.com", "admin123")
+        self.client.force_authenticate(self.user)
+        self.movie = sample_movie()
+        self.genre = sample_genre()
+        self.actor = sample_actor()
+        self.movie.genres.add(self.genre)
+        self.movie.actors.add(self.actor)
+
+    def test_create_movie(self):
+        data = {
+            "title": "Sample movie",
+            "description": "Sample description",
+            "duration": 90,
+            "genres": [self.genre.id],
+            "actors": [self.actor.id]
+        }
+        res = self.client.post(
+            reverse("cinema:movie-list"),
+            data=data
+        )
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+
+        movie = Movie.objects.get(id=res.data["id"])
+        serializer = MovieSerializer(movie)
+        self.assertEqual(res.data, serializer.data)
+
+
 class TestUnauthorizedMovieView(TestCase):
     def test_auth_required(self):
         client = APIClient()
