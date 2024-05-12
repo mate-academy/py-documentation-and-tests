@@ -139,7 +139,7 @@ class MovieViewSet(
         parameters=[
             OpenApiParameter(
                 "title",
-                description="Filtering by title (ex. 'Titanic')",
+                description="Filtering by title (ex. ?title='Titanic')",
                 required=False,
                 type=str,
                 examples=[
@@ -149,8 +149,8 @@ class MovieViewSet(
             ),
             OpenApiParameter(
                 "genres",
-                description="Filtering by genre`s id (ex. 1,2)",
-                type={"type": "list", "items": {"type": "number"}},
+                description="Filtering by genre`s id (ex. ?genres=1,2)",
+                type={"type": "array", "items": {"type": "number"}},
                 examples=[
                     OpenApiExample(name="Example 1", value="1"),
                     OpenApiExample(name="Example 2", value="2"),
@@ -158,8 +158,8 @@ class MovieViewSet(
             ),
             OpenApiParameter(
                 "actors",
-                description="Filtering by actor`s id (ex. 1,2)",
-                type={"type": "list", "items": {"type": "number"}},
+                description="Filtering by actor`s id (ex. ?actors=1,2)",
+                type={"type": "array", "items": {"type": "number"}},
                 examples=[
                     OpenApiExample(name="Example 1", value="3"),
                     OpenApiExample(name="Example 2", value="2"),
