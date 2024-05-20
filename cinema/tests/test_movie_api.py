@@ -180,6 +180,16 @@ class AuthorizedMovieApiTests(TestCase):
 
     def test_movies_list(self):
         sample_movie()
+        genre = sample_genre()
+        actor = sample_actor()
+        movie_with_genre = sample_movie()
+        movie_with_actor = sample_movie()
+        movie_with_genre_and_actor = sample_movie()
+
+        movie_with_genre.genres.add(genre)
+        movie_with_actor.actors.add(actor)
+        movie_with_genre_and_actor.genres.add(genre)
+        movie_with_genre_and_actor.actors.add(actor)
 
         response = self.client.get(MOVIE_URL)
         movies = Movie.objects.all()
@@ -257,6 +267,9 @@ class AuthorizedMovieApiTests(TestCase):
     def test_retrieve_movie_detail(self):
         movie = sample_movie()
 
+        movie.genres.add(sample_genre())
+        movie.actors.add(sample_actor())
+
         url = detail_url(movie.id)
         response = self.client.get(url)
 
@@ -321,3 +334,27 @@ class AdminMovieApiTest(TestCase):
         self.assertIn(actor, actors)
         self.assertEqual(genres.count(), 1)
         self.assertEqual(actors.count(), 1)
+
+    def test_update_movie_forbidden(self):
+        movie = sample_movie()
+        payload = {
+            "title": "Sample movie 1",
+            "description": "Sample description 1",
+            "duration": 120,
+        }
+        response = self.client.put(detail_url(movie.id), payload)
+
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def test_partial_update_movie_forbidden(self):
+        movie = sample_movie()
+        payload = {"duration": 120}
+        response = self.client.put(detail_url(movie.id), payload)
+
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def test_delete_movie_forbidden(self):
+        movie = sample_movie()
+        response = self.client.delete(detail_url(movie.id))
+
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
