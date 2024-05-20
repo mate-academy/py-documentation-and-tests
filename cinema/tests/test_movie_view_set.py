@@ -149,40 +149,35 @@ class AdminMovieTests(TestCase):
             is_staff=True,
         )
         self.client.force_authenticate(self.user)
-
-    def test_movie_creation_accessed(self):
-        genre = Genre.objects.create(name="Test genre")
-        actor = Actor.objects.create(
+        self.genre = Genre.objects.create(name="Test genre")
+        self.actor = Actor.objects.create(
             first_name="Sample first_name",
             last_name="Sample last_name",
         )
+
+    def test_movie_creation_accessed(self):
         payload = {
             "title": "Test title",
             "description": "Test description",
             "duration": 123,
-            "genres": [genre.id],
-            "actors": [actor.id],
+            "genres": [self.genre.id],
+            "actors": [self.actor.id],
         }
         response = self.client.post(MOVIE_URL, payload, format="json")
         movie = Movie.objects.get(id=response.data["id"])
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         for key in ["title", "description", "duration"]:
             self.assertEqual(payload[key], getattr(movie, key))
-        self.assertIn(genre, movie.genres.all())
-        self.assertIn(actor, movie.actors.all())
+        self.assertIn(self.genre, movie.genres.all())
+        self.assertIn(self.actor, movie.actors.all())
 
     def test_movie_delete_accessed(self):
-        genre = Genre.objects.create(name="Test genre")
-        actor = Actor.objects.create(
-            first_name="Sample first_name",
-            last_name="Sample last_name",
-        )
         movie = Movie.objects.create(
             title="Test title",
             description="description",
             duration=123,
         )
-        movie.genres.add(genre)
-        movie.actors.add(actor)
+        movie.genres.add(self.genre)
+        movie.actors.add(self.actor)
         response = self.client.delete(MOVIE_URL, {"id": movie.id})
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
