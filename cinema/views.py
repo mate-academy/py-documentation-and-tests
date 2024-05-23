@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from django.db.models import F, Count
+from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiExample
 from rest_framework import viewsets, mixins, status
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import action
@@ -127,6 +128,29 @@ class MovieViewSet(
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="title",
+                type={"type": "text"},
+                description="Filter by title",
+            ),
+            OpenApiParameter(
+                name="genres",
+                type={"type": "array", "items": {"type": "number"}},
+                description="Filter by genres",
+            ),
+            OpenApiParameter(
+                name="actors",
+                type={"type": "array", "items": {"type": "number"}},
+                description="Filter by actors",
+            ),
+        ]
+    )
+    def list(self, request):
+        """Get list of movies"""
+        return super().list(request)
+
 
 class MovieSessionViewSet(viewsets.ModelViewSet):
     queryset = (
@@ -166,6 +190,24 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
             return MovieSessionDetailSerializer
 
         return MovieSessionSerializer
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="date",
+                type={"type": "date"},
+                description="Filter by date (2024-10-09)",
+            ),
+            OpenApiParameter(
+                name="movie",
+                type={"type": "array", "items": {"type": "number"}},
+                description="Filter by movie",
+            ),
+        ]
+    )
+    def list(self, request):
+        """Get list of movies"""
+        return super().list(request)
 
 
 class OrderPagination(PageNumberPagination):
