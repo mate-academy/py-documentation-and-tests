@@ -273,7 +273,7 @@ class AdminMovieTest(TestCase):
 
     def test_create_movie_with_genres_and_actors(self):
         genre = Genre.objects.create(name="Action")
-        actor = Actor.objects.create(first_name="John", last_name="Doe")
+        actor = Actor.objects.create(full_name="Joe Doe")
         payload = {
             "title": "Sample movie",
             "description": "Sample description",
