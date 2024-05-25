@@ -1,13 +1,12 @@
-import tempfile
 import os
+import tempfile
 
 from PIL import Image
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
-
-from rest_framework.test import APIClient
 from rest_framework import status
+from rest_framework.test import APIClient
 
 from cinema.models import Movie, MovieSession, CinemaHall, Genre, Actor
 from cinema.serializers import (
@@ -114,8 +113,8 @@ class AuthenticatedMovieApiView(TestCase):
         self.assertIn(serializer_2.data, res.data)
 
     def test_filter_movie_by_genres(self):
-        genre_1 = Genre.objects.create(name="drama")
-        genre_2 = Genre.objects.create(name="thriller")
+        genre_1 = sample_genre()
+        genre_2 = sample_genre(name="thriller")
 
         movie_1 = sample_movie()
         movie_2 = sample_movie(description="Bad movie")
@@ -128,9 +127,12 @@ class AuthenticatedMovieApiView(TestCase):
             MOVIE_URL,
             {"genres": f"{genre_2.id}"}
         )
+        serializer_movie_1 = MovieListSerializer(movie_1)
+        serializer_movie_2 = MovieListSerializer(movie_2)
         serializer_movie_3 = MovieListSerializer(movie_3)
-        print(serializer_movie_3.data, '\n\n', res.data)
 
+        self.assertNotIn(serializer_movie_1.data, res.data)
+        self.assertNotIn(serializer_movie_2.data, res.data)
         self.assertIn(serializer_movie_3.data, res.data)
 
     def test_filter_movie_by_actors(self):
@@ -151,7 +153,6 @@ class AuthenticatedMovieApiView(TestCase):
         serializer_without_actor = MovieListSerializer(movie_1)
         serializer_movie_2 = MovieListSerializer(movie_2)
         serializer_movie_3 = MovieListSerializer(movie_3)
-        # print(serializer_movie_3.data, '\n\n', res.data)
 
         self.assertNotIn(serializer_without_actor.data, res.data)
         self.assertIn(serializer_movie_2.data, res.data)
@@ -199,13 +200,12 @@ class AdminMovieApiView(TestCase):
         movie = Movie.objects.get(id=res.data["id"])
 
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
-        # чи створився реально фільм у movie з потрібними параметрами
         for key in payload:
             self.assertEqual(payload[key], getattr(movie, key))
 
-    def create_movie_with_genres_and_actors(self):
-        genre_1 = Genre.objects.create(name="drama")
-        genre_2 = Genre.objects.create(name="horror")
+    def test_create_movie_with_genres_and_actors(self):
+        genre_1 = sample_genre()
+        genre_2 = sample_genre(name="horror")
 
         payload = {
             "title": "Sample movie",
@@ -220,16 +220,20 @@ class AdminMovieApiView(TestCase):
 
         genres = movie.genres.all()
 
-        self.assertEqual(res.data, status.HTTP_201_CREATED)
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
         self.assertIn(genre_1, genres)
         self.assertIn(genre_2, genres)
 
-        self.assertEqual(genres.count(), 3)
+        self.assertEqual(genres.count(), 2)
 
+    def test_delete_movie_not_allowed(self):
+        movie = sample_movie()
 
+        url = detail_url(movie.id)
 
+        res = self.client.delete(url)
 
-
+        self.assertEqual(res.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
 class MovieImageUploadTests(TestCase):
@@ -323,12 +327,3 @@ class MovieImageUploadTests(TestCase):
         res = self.client.get(MOVIE_SESSION_URL)
 
         self.assertIn("movie_image", res.data[0].keys())
-
-    def test_delete_movie_not_allowed(self):
-        movie = sample_movie()
-
-        url = detail_url(movie.id)
-
-        res = self.client.delete(url)
-
-        self.assertEqual(res.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
