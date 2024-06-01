@@ -1,5 +1,6 @@
 import tempfile
 import os
+from datetime import datetime
 
 from PIL import Image
 from django.contrib.auth import get_user_model
@@ -43,9 +44,7 @@ def sample_actor(**params):
 
 
 def sample_movie_session(**params):
-    cinema_hall = CinemaHall.objects.create(
-        name="Blue", rows=20, seats_in_row=20
-    )
+    cinema_hall = CinemaHall.objects.create(name="Blue", rows=20, seats_in_row=20)
 
     defaults = {
         "show_time": "2022-06-02 14:00:00",
@@ -157,3 +156,174 @@ class MovieImageUploadTests(TestCase):
         res = self.client.get(MOVIE_SESSION_URL)
 
         self.assertIn("movie_image", res.data[0].keys())
+
+
+class UnAuthenticatedMovieTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+
+    def test_get_genres_unauthorized(self):
+        url = reverse("cinema:genre-list")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(
+            response.data["detail"], "Authentication credentials were not provided."
+        )
+
+    def test_get_actors_unauthorized(self):
+        url = reverse("cinema:actor-list")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(
+            response.data["detail"], "Authentication credentials were not provided."
+        )
+
+    def test_get_movies_unauthorized(self):
+        url = reverse("cinema:movie-list")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(
+            response.data["detail"], "Authentication credentials were not provided."
+        )
+
+    def test_get_movie_session_unauthorized(self):
+        url = reverse("cinema:moviesession-list")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(
+            response.data["detail"], "Authentication credentials were not provided."
+        )
+
+
+class AuthenticatedMovieTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.user = get_user_model().objects.create_user(
+            email="user@myproject.com", password="password"
+        )
+        self.client.force_authenticate(user=self.user)
+        self.genre = sample_genre()
+        self.actor = sample_actor()
+        self.movie = sample_movie()
+        self.movie_session = sample_movie_session(movie=self.movie)
+
+    def test_get_genres_authorized(self):
+        url = reverse("cinema:genre-list")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_get_actors_authorized(self):
+        url = reverse("cinema:actor-list")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_get_movies_authorized(self):
+        url = reverse("cinema:movie-list")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_get_movie_detail_authorized(self):
+        url = reverse("cinema:movie-detail", kwargs={"pk": self.movie.id})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_get_movie_session_authorized(self):
+        url = reverse("cinema:moviesession-list")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_get_movie_session_detail_authorized(self):
+        url = reverse(
+            "cinema:moviesession-detail",
+            kwargs={"pk": self.movie_session.id},
+        )
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+
+class AdminMovieTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.user = get_user_model().objects.create_superuser(
+            email="admin@myproject.com", password="password"
+        )
+        self.client.force_authenticate(user=self.user)
+        self.genre = sample_genre()
+        self.actor = sample_actor()
+        self.movie = sample_movie()
+        self.show_time = datetime.now()
+        self.movie_session = sample_movie_session(
+            movie=self.movie, show_time=self.show_time
+        )
+
+    def test_add_genre(self):
+        url = reverse("cinema:genre-list")
+        data = {"name": "Test Genre"}
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def test_add_actor(self):
+        url = reverse("cinema:actor-list")
+        data = {"first_name": "Test", "last_name": "Actor"}
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def test_create_movie(self):
+        url = reverse("cinema:movie-list")
+
+        data = {
+            "title": "Test Movie",
+            "description": "Test Description",
+            "duration": 120,
+            "genres": [self.genre.id],
+            "actors": [self.actor.id],
+        }
+        response = self.client.post(url, data)
+
+    def test_add_movie_session(self):
+        url = reverse("cinema:moviesession-list")
+        data = {
+            "movie": self.movie.id,
+            "cinema_hall": 1,
+            "show_time": datetime.now(),
+        }
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def test_filter_movie_by_title(self):
+        url = reverse("cinema:movie-list")
+        response = self.client.get(url, {"title": self.movie.title})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+
+    def test_filter_movie_by_genre(self):
+        self.movie.genres.add(self.genre)
+        url = reverse("cinema:movie-list")
+        response = self.client.get(url, {"genres": self.genre.id})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertIn(self.genre.name, response.data[0]["genres"])
+
+    def test_filter_movie_by_actors(self):
+        self.movie.actors.add(self.actor)
+        url = reverse("cinema:movie-list")
+        response = self.client.get(url, {"actors": self.actor.id})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertIn(
+            f"{self.actor.first_name} {self.actor.last_name}",
+            response.data[0]["actors"],
+        )
+
+    def test_filter_movie_session_by_date(self):
+        url = reverse("cinema:moviesession-list")
+        date = self.show_time.strftime("%Y-%m-%d")
+        response = self.client.get(url, data={"date": date})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+
+    def test_filter_movie_session_by_movie(self):
+        url = reverse("cinema:moviesession-list")
+        response = self.client.get(url, data={"movie": self.movie.id})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
