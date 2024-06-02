@@ -11,6 +11,9 @@ from rest_framework.test import APIClient
 from rest_framework import status
 
 from cinema.models import Movie, MovieSession, CinemaHall, Genre, Actor
+from cinema.serializers import MovieListSerializer, MovieSessionListSerializer, \
+    GenreSerializer, ActorSerializer, MovieDetailSerializer, MovieSerializer, \
+    MovieSessionSerializer
 
 MOVIE_URL = reverse("cinema:movie-list")
 MOVIE_SESSION_URL = reverse("cinema:moviesession-list")
@@ -179,7 +182,7 @@ class UnAuthenticatedMovieTests(TestCase):
         )
 
     def test_get_movies_unauthorized(self):
-        url = reverse("cinema:movie-list")
+        url = MOVIE_URL
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
         self.assertEqual(
@@ -187,7 +190,7 @@ class UnAuthenticatedMovieTests(TestCase):
         )
 
     def test_get_movie_session_unauthorized(self):
-        url = reverse("cinema:moviesession-list")
+        url = MOVIE_SESSION_URL
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
         self.assertEqual(
@@ -205,7 +208,9 @@ class AuthenticatedMovieTests(TestCase):
         self.genre = sample_genre()
         self.actor = sample_actor()
         self.movie = sample_movie()
-        self.movie_session = sample_movie_session(movie=self.movie)
+        self.show_time = datetime.now()
+        self.movie_session = sample_movie_session(movie=self.movie,
+                                                 show_time=self.show_time)
 
     def test_get_genres_authorized(self):
         url = reverse("cinema:genre-list")
@@ -218,9 +223,14 @@ class AuthenticatedMovieTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_get_movies_authorized(self):
-        url = reverse("cinema:movie-list")
+        url = MOVIE_URL
         response = self.client.get(url)
+
+        movies = Movie.objects.all()
+        serializer = MovieListSerializer(movies, many=True)
+
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, serializer.data)
 
     def test_get_movie_detail_authorized(self):
         url = reverse("cinema:movie-detail", kwargs={"pk": self.movie.id})
@@ -228,7 +238,7 @@ class AuthenticatedMovieTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_get_movie_session_authorized(self):
-        url = reverse("cinema:moviesession-list")
+        url = MOVIE_SESSION_URL
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
@@ -239,6 +249,70 @@ class AuthenticatedMovieTests(TestCase):
         )
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_filter_movie_by_title(self):
+        url = MOVIE_URL
+        response = self.client.get(url, {"title": self.movie.title})
+
+        serializer = MovieListSerializer(self.movie)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertIn(serializer.data, response.data)
+
+    def test_filter_movie_by_genre(self):
+        self.movie.genres.add(self.genre)
+        url = MOVIE_URL
+        response = self.client.get(url, {"genres": self.genre.id})
+
+        serializer = MovieListSerializer(self.movie)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertIn(serializer.data, response.data)
+
+    def test_filter_movie_by_actors(self):
+        self.movie.actors.add(self.actor)
+        url = MOVIE_URL
+        response = self.client.get(url, {"actors": self.actor.id})
+
+        serializer = MovieListSerializer(self.movie)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertIn(serializer.data, response.data)
+
+    def test_filter_movie_session_by_date(self):
+        url = MOVIE_SESSION_URL
+        date = self.show_time.strftime("%Y-%m-%d")
+        response = self.client.get(url, data={"date": date})
+
+        movie_sessions = MovieSession.objects.filter(show_time__date=date)
+        serializer = MovieSessionListSerializer(movie_sessions, many=True)
+
+        for session in response.data:
+            session.pop('tickets_available', None)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data, serializer.data)
+
+    def test_filter_movie_session_by_movie(self):
+        url = MOVIE_SESSION_URL
+        response = self.client.get(url, data={"movie": self.movie.id})
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+
+        movie_sessions = MovieSession.objects.filter(movie=self.movie)
+        serializer = MovieSessionListSerializer(movie_sessions, many=True)
+
+        for session in response.data:
+            session.pop('tickets_available', None)
+        for session in serializer.data:
+            session.pop('tickets_available', None)
+
+        self.assertEqual(response.data, serializer.data)
 
 
 class AdminMovieTests(TestCase):
@@ -260,16 +334,24 @@ class AdminMovieTests(TestCase):
         url = reverse("cinema:genre-list")
         data = {"name": "Test Genre"}
         response = self.client.post(url, data)
+
+        serializer = GenreSerializer(Genre.objects.all().last())
+
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data, serializer.data)
 
     def test_add_actor(self):
         url = reverse("cinema:actor-list")
         data = {"first_name": "Test", "last_name": "Actor"}
         response = self.client.post(url, data)
+
+        serializer = ActorSerializer(Actor.objects.all().last())
+
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data, serializer.data)
 
     def test_create_movie(self):
-        url = reverse("cinema:movie-list")
+        url = MOVIE_URL
 
         data = {
             "title": "Test Movie",
@@ -278,52 +360,59 @@ class AdminMovieTests(TestCase):
             "genres": [self.genre.id],
             "actors": [self.actor.id],
         }
-        response = self.client.post(url, data)
+        response = self.client.post(url, data, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        movie = Movie.objects.get(id=response.data["id"])
+
+        response_serializer = MovieSerializer(movie)
+
+        self.assertEqual(response.data['title'],
+                         response_serializer.data['title'])
+        self.assertEqual(response.data['description'],
+                         response_serializer.data['description'])
+        self.assertEqual(response.data['duration'],
+                         response_serializer.data['duration'])
+        self.assertEqual(response.data['genres'],
+                         [genre.id for genre in movie.genres.all()])
+        self.assertEqual(response.data['actors'],
+                         [actor.id for actor in movie.actors.all()])
+
+        detail_serializer = MovieDetailSerializer(movie)
+        detail_data = detail_serializer.data
+
+        self.assertEqual(response.data['title'], detail_data['title'])
+        self.assertEqual(response.data['description'],
+                         detail_data['description'])
+        self.assertEqual(response.data['duration'], detail_data['duration'])
+        self.assertEqual([genre['id'] for genre in detail_data['genres']],
+                         response.data['genres'])
+        self.assertEqual([actor['id'] for actor in detail_data['actors']],
+                         response.data['actors'])
 
     def test_add_movie_session(self):
-        url = reverse("cinema:moviesession-list")
+        url = MOVIE_SESSION_URL
+        show_time = datetime.now().isoformat()
+
         data = {
             "movie": self.movie.id,
             "cinema_hall": 1,
-            "show_time": datetime.now(),
+            "show_time": show_time,
         }
         response = self.client.post(url, data)
+
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
-    def test_filter_movie_by_title(self):
-        url = reverse("cinema:movie-list")
-        response = self.client.get(url, {"title": self.movie.title})
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)
+        movie_session = MovieSession.objects.last()
+        serializer = MovieSessionSerializer(movie_session)
 
-    def test_filter_movie_by_genre(self):
-        self.movie.genres.add(self.genre)
-        url = reverse("cinema:movie-list")
-        response = self.client.get(url, {"genres": self.genre.id})
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)
-        self.assertIn(self.genre.name, response.data[0]["genres"])
+        self.assertEqual(response.data['movie'], serializer.data['movie'])
+        self.assertEqual(response.data['cinema_hall'],
+                         serializer.data['cinema_hall'])
 
-    def test_filter_movie_by_actors(self):
-        self.movie.actors.add(self.actor)
-        url = reverse("cinema:movie-list")
-        response = self.client.get(url, {"actors": self.actor.id})
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)
-        self.assertIn(
-            f"{self.actor.first_name} {self.actor.last_name}",
-            response.data[0]["actors"],
+        self.assertEqual(
+            response.data['show_time'][:19],
+            serializer.data['show_time'][:19]
+
         )
-
-    def test_filter_movie_session_by_date(self):
-        url = reverse("cinema:moviesession-list")
-        date = self.show_time.strftime("%Y-%m-%d")
-        response = self.client.get(url, data={"date": date})
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)
-
-    def test_filter_movie_session_by_movie(self):
-        url = reverse("cinema:moviesession-list")
-        response = self.client.get(url, data={"movie": self.movie.id})
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)
