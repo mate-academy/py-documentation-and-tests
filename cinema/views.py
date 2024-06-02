@@ -1,20 +1,20 @@
 from datetime import datetime
 
 from django.db.models import F, Count
-from drf_spectacular.types import OpenApiTypes
-from drf_spectacular.utils import extend_schema, OpenApiParameter, \
-    OpenApiExample, extend_schema_view
+from drf_spectacular.utils import (
+    extend_schema,
+    OpenApiParameter,
+    extend_schema_view,
+)
 from rest_framework import viewsets, mixins, status
-from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
-from rest_framework.viewsets import GenericViewSet, ReadOnlyModelViewSet
+from rest_framework.viewsets import GenericViewSet
 
 from cinema.models import Genre, Actor, CinemaHall, Movie, MovieSession, Order
 from cinema.permissions import IsAdminOrIfAuthenticatedReadOnly
-
 from cinema.serializers import (
     GenreSerializer,
     ActorSerializer,
@@ -68,19 +68,19 @@ class CinemaHallViewSet(
         parameters=[
             OpenApiParameter(
                 name="title",
-                description='Filter movies by title (?title=Inception)',
+                description="Filter movies by title (?title=Inception)",
                 required=False,
                 type=str,
             ),
             OpenApiParameter(
                 name="genres",
-                description='Filter movies by genres (?genres=1,2)',
+                description="Filter movies by genres (?genres=1,2)",
                 required=False,
                 type={"type": "array", "items": {"type": "number"}},
             ),
             OpenApiParameter(
                 name="actors",
-                description='Filter movies by actors (?actors=1,2)',
+                description="Filter movies by actors (?actors=1,2)",
                 required=False,
                 type={"type": "array", "items": {"type": "number"}},
             ),
@@ -160,7 +160,8 @@ class MovieViewSet(
         parameters=[
             OpenApiParameter(
                 name="date",
-                description='Filter movies sessions by date (?date=2022-01-01)',
+                description="Filter movies sessions "
+                            "by date (?date=2022-01-01)",
                 required=False,
                 type=str,
             ),
@@ -179,8 +180,8 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
         .select_related("movie", "cinema_hall")
         .annotate(
             tickets_available=(
-                    F("cinema_hall__rows") * F("cinema_hall__seats_in_row")
-                    - Count("tickets")
+                F("cinema_hall__rows") * F("cinema_hall__seats_in_row")
+                - Count("tickets")
             )
         )
     )

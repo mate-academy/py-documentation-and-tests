@@ -1,20 +1,19 @@
-import tempfile
 import os
+import tempfile
 
 from PIL import Image
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
-
-from rest_framework.test import APIClient
 from rest_framework import status
+from rest_framework.test import APIClient
 
 from cinema.models import Movie, MovieSession, CinemaHall, Genre, Actor
 from cinema.serializers import MovieListSerializer, MovieDetailSerializer
 
+
 MOVIE_URL = reverse("cinema:movie-list")
 MOVIE_SESSION_URL = reverse("cinema:moviesession-list")
-
 
 def sample_movie(**params):
     defaults = {
@@ -225,16 +224,20 @@ class AuthenticatedMovieListApiTests(TestCase):
         )
         movie_filtered_with_actors.actors.add(actor_1, actor_2)
 
-        res = self.client.get(MOVIE_URL,
-                              {"actors": f"{actor_1.id},{actor_2.id}"})
+        res = self.client.get(
+            MOVIE_URL, {"actors": f"{actor_1.id},{actor_2.id}"}
+        )
 
         serializer_movie_without_actors = MovieListSerializer(
-            movie_without_actors)
+            movie_without_actors
+        )
         serializer_movie_filtered_with_actors = MovieListSerializer(
-            movie_filtered_with_actors)
+            movie_filtered_with_actors
+        )
 
-        self.assertEqual(res.data,
-                         [serializer_movie_filtered_with_actors.data])
+        self.assertEqual(
+            res.data, [serializer_movie_filtered_with_actors.data]
+        )
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertNotIn(serializer_movie_without_actors.data, res.data)
 
@@ -246,16 +249,20 @@ class AuthenticatedMovieListApiTests(TestCase):
         genre_2 = Genre.objects.create(name="Genre 2")
         movie_filtered_with_genres.genres.add(genre_1, genre_2)
 
-        res = self.client.get(MOVIE_URL,
-                              {"genres": f"{genre_1.id},{genre_2.id}"})
+        res = self.client.get(
+            MOVIE_URL, {"genres": f"{genre_1.id},{genre_2.id}"}
+        )
 
         serializer_movie_without_genres = MovieListSerializer(
-            movie_without_genres)
+            movie_without_genres
+        )
         serializer_movie_filtered_with_genres = MovieListSerializer(
-            movie_filtered_with_genres)
+            movie_filtered_with_genres
+        )
 
-        self.assertEqual(res.data,
-                         [serializer_movie_filtered_with_genres.data])
+        self.assertEqual(
+            res.data, [serializer_movie_filtered_with_genres.data]
+        )
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertNotIn(serializer_movie_without_genres.data, res.data)
 
@@ -271,8 +278,8 @@ class AuthenticatedMovieListApiTests(TestCase):
         serializer_movie_3 = MovieListSerializer(movie_3)
 
         expected_data = [serializer_movie_1.data, serializer_movie_2.data]
-        expected_data_sorted = sorted(expected_data, key=lambda x: x['title'])
-        res_data_sorted = sorted(res.data, key=lambda x: x['title'])
+        expected_data_sorted = sorted(expected_data, key=lambda x: x["title"])
+        res_data_sorted = sorted(res.data, key=lambda x: x["title"])
 
         self.assertEqual(res_data_sorted, expected_data_sorted)
         self.assertEqual(res.status_code, status.HTTP_200_OK)
@@ -312,12 +319,8 @@ class AdminBusTest(TestCase):
             "title": "stringsda",
             "description": "stringdsasda",
             "duration": 111,
-            "genres": [
-                genre.id
-            ],
-            "actors": [
-                actor.id
-            ]
+            "genres": [genre.id],
+            "actors": [actor.id],
         }
 
         res = self.client.post(MOVIE_URL, payload)
