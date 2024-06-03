@@ -112,21 +112,6 @@ class AdminMovieTests(TestCase):
         for key in payload:
             self.assertEqual(payload[key], getattr(movie, key))
 
-    def test_create_movie(self):
-        payload = {
-            "title": "The Saw",
-            "description": "The Horrors story about man",
-            "duration": 115,
-        }
-        res = self.client.post(MOVIE_URL, payload)
-
-        movie = Movie.objects.get(pk=res.data["id"])
-
-        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
-
-        for key in payload:
-            self.assertEqual(payload[key], getattr(movie, key))
-
     def test_create_movie_with_genres(self):
         genre_1 = Genre.objects.create(name="Horror")
         genre_2 = Genre.objects.create(name="Drama")
