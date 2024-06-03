@@ -11,9 +11,15 @@ from rest_framework.test import APIClient
 from rest_framework import status
 
 from cinema.models import Movie, MovieSession, CinemaHall, Genre, Actor
-from cinema.serializers import MovieListSerializer, MovieSessionListSerializer, \
-    GenreSerializer, ActorSerializer, MovieDetailSerializer, MovieSerializer, \
+from cinema.serializers import (
+    MovieListSerializer,
+    MovieSessionListSerializer,
+    GenreSerializer,
+    ActorSerializer,
+    MovieDetailSerializer,
+    MovieSerializer,
     MovieSessionSerializer
+)
 
 MOVIE_URL = reverse("cinema:movie-list")
 MOVIE_SESSION_URL = reverse("cinema:moviesession-list")
@@ -47,7 +53,11 @@ def sample_actor(**params):
 
 
 def sample_movie_session(**params):
-    cinema_hall = CinemaHall.objects.create(name="Blue", rows=20, seats_in_row=20)
+    cinema_hall = CinemaHall.objects.create(
+        name="Blue",
+        rows=20,
+        seats_in_row=20
+    )
 
     defaults = {
         "show_time": "2022-06-02 14:00:00",
@@ -170,7 +180,8 @@ class UnAuthenticatedMovieTests(TestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
         self.assertEqual(
-            response.data["detail"], "Authentication credentials were not provided."
+            response.data["detail"],
+            "Authentication credentials were not provided."
         )
 
     def test_get_actors_unauthorized(self):
@@ -178,7 +189,8 @@ class UnAuthenticatedMovieTests(TestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
         self.assertEqual(
-            response.data["detail"], "Authentication credentials were not provided."
+            response.data["detail"],
+            "Authentication credentials were not provided."
         )
 
     def test_get_movies_unauthorized(self):
@@ -186,7 +198,8 @@ class UnAuthenticatedMovieTests(TestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
         self.assertEqual(
-            response.data["detail"], "Authentication credentials were not provided."
+            response.data["detail"],
+            "Authentication credentials were not provided."
         )
 
     def test_get_movie_session_unauthorized(self):
@@ -194,7 +207,8 @@ class UnAuthenticatedMovieTests(TestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
         self.assertEqual(
-            response.data["detail"], "Authentication credentials were not provided."
+            response.data["detail"],
+            "Authentication credentials were not provided."
         )
 
 
@@ -209,8 +223,10 @@ class AuthenticatedMovieTests(TestCase):
         self.actor = sample_actor()
         self.movie = sample_movie()
         self.show_time = datetime.now()
-        self.movie_session = sample_movie_session(movie=self.movie,
-                                                 show_time=self.show_time)
+        self.movie_session = sample_movie_session(
+            movie=self.movie,
+            show_time=self.show_time
+        )
 
     def test_get_genres_authorized(self):
         url = reverse("cinema:genre-list")
@@ -291,7 +307,7 @@ class AuthenticatedMovieTests(TestCase):
         serializer = MovieSessionListSerializer(movie_sessions, many=True)
 
         for session in response.data:
-            session.pop('tickets_available', None)
+            session.pop("tickets_available", None)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
@@ -308,9 +324,9 @@ class AuthenticatedMovieTests(TestCase):
         serializer = MovieSessionListSerializer(movie_sessions, many=True)
 
         for session in response.data:
-            session.pop('tickets_available', None)
+            session.pop("tickets_available", None)
         for session in serializer.data:
-            session.pop('tickets_available', None)
+            session.pop("tickets_available", None)
 
         self.assertEqual(response.data, serializer.data)
 
@@ -360,7 +376,7 @@ class AdminMovieTests(TestCase):
             "genres": [self.genre.id],
             "actors": [self.actor.id],
         }
-        response = self.client.post(url, data, format='json')
+        response = self.client.post(url, data, format="json")
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
@@ -368,28 +384,28 @@ class AdminMovieTests(TestCase):
 
         response_serializer = MovieSerializer(movie)
 
-        self.assertEqual(response.data['title'],
-                         response_serializer.data['title'])
-        self.assertEqual(response.data['description'],
-                         response_serializer.data['description'])
-        self.assertEqual(response.data['duration'],
-                         response_serializer.data['duration'])
-        self.assertEqual(response.data['genres'],
+        self.assertEqual(response.data["title"],
+                         response_serializer.data["title"])
+        self.assertEqual(response.data["description"],
+                         response_serializer.data["description"])
+        self.assertEqual(response.data["duration"],
+                         response_serializer.data["duration"])
+        self.assertEqual(response.data["genres"],
                          [genre.id for genre in movie.genres.all()])
-        self.assertEqual(response.data['actors'],
+        self.assertEqual(response.data["actors"],
                          [actor.id for actor in movie.actors.all()])
 
         detail_serializer = MovieDetailSerializer(movie)
         detail_data = detail_serializer.data
 
-        self.assertEqual(response.data['title'], detail_data['title'])
-        self.assertEqual(response.data['description'],
-                         detail_data['description'])
-        self.assertEqual(response.data['duration'], detail_data['duration'])
-        self.assertEqual([genre['id'] for genre in detail_data['genres']],
-                         response.data['genres'])
-        self.assertEqual([actor['id'] for actor in detail_data['actors']],
-                         response.data['actors'])
+        self.assertEqual(response.data["title"], detail_data["title"])
+        self.assertEqual(response.data["description"],
+                         detail_data["description"])
+        self.assertEqual(response.data["duration"], detail_data["duration"])
+        self.assertEqual([genre["id"] for genre in detail_data["genres"]],
+                         response.data["genres"])
+        self.assertEqual([actor["id"] for actor in detail_data["actors"]],
+                         response.data["actors"])
 
     def test_add_movie_session(self):
         url = MOVIE_SESSION_URL
@@ -407,12 +423,11 @@ class AdminMovieTests(TestCase):
         movie_session = MovieSession.objects.last()
         serializer = MovieSessionSerializer(movie_session)
 
-        self.assertEqual(response.data['movie'], serializer.data['movie'])
-        self.assertEqual(response.data['cinema_hall'],
-                         serializer.data['cinema_hall'])
+        self.assertEqual(response.data["movie"], serializer.data["movie"])
+        self.assertEqual(response.data["cinema_hall"],
+                         serializer.data["cinema_hall"])
 
         self.assertEqual(
-            response.data['show_time'][:19],
-            serializer.data['show_time'][:19]
-
+            response.data["show_time"][:19],
+            serializer.data["show_time"][:19]
         )
