@@ -152,8 +152,8 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
         .select_related("movie", "cinema_hall")
         .annotate(
             tickets_available=(
-                    F("cinema_hall__rows") * F("cinema_hall__seats_in_row")
-                    - Count("tickets")
+                F("cinema_hall__rows") * F("cinema_hall__seats_in_row")
+                - Count("tickets")
             )
         )
     )
@@ -188,7 +188,7 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
         parameters=[
             OpenApiParameter(
                 name="date",
-                description="Filter movie sessions by date in the format YYYY-MM-DD",
+                description="Filter movie sessions by date(YYYY-MM-DD)",
                 type=str,
             ),
             OpenApiParameter(
