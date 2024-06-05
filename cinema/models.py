@@ -50,7 +50,7 @@ class Movie(models.Model):
     title = models.CharField(max_length=255)
     description = models.TextField()
     duration = models.IntegerField()
-    genres = models.ManyToManyField(Genre)
+    genres = models.ManyToManyField(Genre, blank=True)
     actors = models.ManyToManyField(Actor)
     image = models.ImageField(null=True, upload_to=movie_image_file_path)
 
