@@ -180,6 +180,25 @@ class AuthenticatedMovieApiTests(TestCase):
         )
         self.client.force_authenticate(self.user)
 
+    def test_movie_list(self):
+        sample_movie()
+        movie_with_genres_and_actors = sample_movie()
+
+        genre = Genre.objects.create(name="drama")
+        actor = Actor.objects.create(first_name="Dram", last_name="King")
+
+        movie_with_genres_and_actors.genres.add(genre)
+        movie_with_genres_and_actors.actors.add(actor)
+
+        res = self.client.get(MOVIE_URL)
+
+        movies = Movie.objects.all()
+
+        serializer = MovieListSerializer(movies, many=True)
+
+        self.assertEquals(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data, serializer.data)
+
     def test_filter_movies_by_title(self):
 
         movie_1 = sample_movie(title="Absolute film")
