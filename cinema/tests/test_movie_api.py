@@ -276,3 +276,47 @@ class AuthenticatedMovieApiTests(TestCase):
 
         self.assertEquals(res.status_code, status.HTTP_200_OK)
         self.assertEquals(res.data, serializer.data)
+
+    def test_create_movie_forbidden(self):
+        payload = {
+            "title": "TEST_TITLE"
+        }
+        res = self.client.post(MOVIE_URL, payload)
+
+        self.assertEquals(res.status_code, status.HTTP_403_FORBIDDEN)
+
+
+class AdminMovieTest(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.user = get_user_model().objects.create_user(
+            email="admin@test.test",
+            password="adminpassword",
+            is_staff=True
+        )
+        self.client.force_authenticate(self.user)
+
+    def test_create_movie_admin(self):
+        genre_1 = Genre.objects.create(name="GENRE-1")
+        actor_1 = Actor.objects.create(first_name="Actor", last_name="1")
+        payload = {
+            "title": "New Test Movie",
+            "description": "Description for the new movie",
+            "duration": 120,
+            "genres": [genre_1.id],
+            "actors": [actor_1.id],
+        }
+
+        response = self.client.post(reverse("cinema:movie-list"), payload)
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def test_delete_movie_not_allowed(self):
+
+        movie = sample_movie()
+
+        url = detail_url(movie.id)
+
+        res = self.client.delete(url)
+
+        self.assertEqual(res.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
