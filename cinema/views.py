@@ -125,14 +125,24 @@ class MovieViewSet(
     @extend_schema(
         parameters=[
             OpenApiParameter(
-                "genres",
+                name="title",
+                type=str,
+                description="Filter by title (exemple: ?title=str)",
+            ),
+            OpenApiParameter(
+                name="genres",
                 type={"type": "array", "items": {"type": "number"}},
-                description="Filter by genres id (ex. ?genres=2,3)",
-            )
+                description="Filter by genres id (exemple: ?genres=1,2)",
+            ),
+            OpenApiParameter(
+                name="actors",
+                type={"type": "array", "items": {"type": "number"}},
+                description="Filter by actors id (exemple: ?actors=1,2)",
+            ),
         ]
     )
     def list(self, request, *args, **kwargs):
-        """Get list of movies"""
+        """ filtering by title, genres, actors for movie """
         return super().list(request, *args, **kwargs)
 
 
@@ -148,7 +158,6 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
         )
     )
     serializer_class = MovieSessionSerializer
-    # authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
     def get_queryset(self):
@@ -174,6 +183,24 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
             return MovieSessionDetailSerializer
 
         return MovieSessionSerializer
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="date",
+                type=str,
+                description="Filter by date (exemple: ?date=2024-10-10)",
+            ),
+            OpenApiParameter(
+                name="movies",
+                type=int,
+                description="Filter by movie id (exemple: ?movie=1)",
+            ),
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        """ filtering by date, movie for movie session """
+        return super().list(request, *args, **kwargs)
 
 
 class OrderPagination(PageNumberPagination):
