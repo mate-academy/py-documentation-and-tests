@@ -166,8 +166,6 @@ class MovieImageUploadTests(TestCase):
 
         self.assertIn("movie_image", res.data[0].keys())
 
-# My test for cinema
-
 
 class UnauthenticatedCinemaAPITests(TestCase):
     def setUp(self):
