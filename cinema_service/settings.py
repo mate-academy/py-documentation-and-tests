@@ -117,8 +117,19 @@ AUTH_PASSWORD_VALIDATORS = [
 
 AUTH_USER_MODEL = "user.User"
 
+
+# Django Rest Framework settings
+# https://www.django-rest-framework.org/
 REST_FRAMEWORK = {
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "DEFAULT_THROTTLE_CLASSES": [
+        "rest_framework.throttling.AnonRateThrottle",
+        "rest_framework.throttling.UserRateThrottle",
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        "anon": "10/min",
+        "user": "30/min",
+    }
 }
 
 # Internationalization
