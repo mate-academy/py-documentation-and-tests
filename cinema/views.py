@@ -125,15 +125,21 @@ class MovieViewSet(
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     @extend_schema(parameters=[
-        OpenApiParameter(name="title",
-                         type={"type": "array", "items": {"type": "string"}},
-                         description="Filter by title (ex. ?title=name_movie)"),
-        OpenApiParameter(name="genre",
-                         type={"type": "array", "items": {"type": "string"}},
-                         description="Filter by genre (ex. ?genre=action)"),
-        OpenApiParameter(name="actors",
-                         type={"type": "array", "items": {"type": "string"}},
-                         description="Filter by actors (ex. ?actors=John_Doe)")
+        OpenApiParameter(
+            name="title",
+            type={"type": "array", "items": {"type": "string"}},
+            description="Filter by title (ex. ?title=name_movie)"
+        ),
+        OpenApiParameter(
+            name="genre",
+            type={"type": "array", "items": {"type": "string"}},
+            description="Filter by genre (ex. ?genre=action)"
+        ),
+        OpenApiParameter(
+            name="actors",
+            type={"type": "array", "items": {"type": "string"}},
+            description="Filter by actors (ex. ?actors=John_Doe)"
+        )
     ])
     def list(self, request, *args, **kwargs):
         """
@@ -144,7 +150,7 @@ class MovieViewSet(
             - "genre": Filter by genre. For example, ?genre=genre
             - "actors": Filter by actors. For example, ?actors=actor_name
 
-            Returns a list of movies that match the specified filtering criteria.
+            Returns list of movies that match the specified filtering criteria.
             """
         return super().list(request, *args, **kwargs)
 
@@ -155,8 +161,8 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
         .select_related("movie", "cinema_hall")
         .annotate(
             tickets_available=(
-                    F("cinema_hall__rows") * F("cinema_hall__seats_in_row")
-                    - Count("tickets")
+                F("cinema_hall__rows") * F("cinema_hall__seats_in_row")
+                - Count("tickets")
             )
         )
     )
@@ -191,7 +197,10 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
         parameters=[
             OpenApiParameter(
                 name="show_time",
-                type={"type": "array", "items": {"type": "string", "format": "date"}},
+                type={
+                    "type": "array",
+                    "items": {"type": "string", "format": "date"}
+                },
                 description="Filter by show time (ex. ?show_time=2023-06-18)"
             ),
             OpenApiParameter(
@@ -210,7 +219,8 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
         - `show_time`: Filter by show time. For example, ?show_time=2023-06-18
         - `movie`: Filter by movie title. For example, ?movie=Inception
 
-        Returns a list of movie sessions that match the specified filtering criteria.
+        Returns a list of movie sessions
+        that match the specified filtering criteria.
         """
         return super().list(request, *args, **kwargs)
 
