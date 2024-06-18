@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from django.db.models import F, Count
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import viewsets, mixins, status
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import action
@@ -126,6 +127,29 @@ class MovieViewSet(
             return Response(serializer.data, status=status.HTTP_200_OK)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="title",
+                description="Filter by title",
+                type={"type": "string"},
+            ),
+            OpenApiParameter(
+                name="genres",
+                description="Filter by genres id (ex. ?genres=1,2)",
+                type={"type": "list", "items": {"type": "number"}},
+            ),
+            OpenApiParameter(
+                name="actors",
+                description="Filter by actors id (ex. ?actors=1,2)",
+                type={"type": "list", "items": {"type": "number"}},
+            ),
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        """List movies with optional filtering by title, genres, and actors."""
+        return super().list(request, *args, **kwargs)
 
 
 class MovieSessionViewSet(viewsets.ModelViewSet):
