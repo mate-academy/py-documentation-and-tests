@@ -157,3 +157,50 @@ class MovieImageUploadTests(TestCase):
         res = self.client.get(MOVIE_SESSION_URL)
 
         self.assertIn("movie_image", res.data[0].keys())
+
+
+class MovieViewSetTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.user = get_user_model().objects.create_superuser(
+            "admin@myproject.com", "password"
+        )
+        self.client.force_authenticate(self.user)
+        self.movie = sample_movie()
+        self.genre = sample_genre()
+        self.actor = sample_actor()
+        self.movie_session = sample_movie_session(movie=self.movie)
+
+    def test_list_movies(self):
+        """Test listing movies"""
+        res = self.client.get(MOVIE_URL)
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        # Assuming one movie was created in the setup
+        self.assertEqual(len(res.data), 1)
+
+    def test_retrieve_movie(self):
+        """Test retrieving a specific movie"""
+        url = detail_url(self.movie.id)
+        res = self.client.get(url)
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data['title'], self.movie.title)
+
+    def test_list_movies_with_filters(self):
+        """Test listing movies with filters"""
+        # Assuming you have genres and actors already created in your setup
+        genre = Genre.objects.create(name='Action')
+        actor = Actor.objects.create(first_name='John', last_name='Doe')
+
+        self.movie.genres.add(genre)
+        self.movie.actors.add(actor)
+
+        url = MOVIE_URL
+        data = {'title': self.movie.title,
+                'genres': f'{genre.id}', 'actors': f'{actor.id}'}
+        res = self.client.get(url, data)
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        # Assuming one movie matches the filters
+        self.assertEqual(len(res.data), 1)
