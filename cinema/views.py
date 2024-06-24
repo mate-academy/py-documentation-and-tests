@@ -1,30 +1,34 @@
 from datetime import datetime
 
-from django.db.models import F, Count
-from rest_framework import viewsets, mixins, status
+from django.db.models import Count, F
+from drf_spectacular.utils import (
+    OpenApiExample,
+    OpenApiParameter,
+    extend_schema,
+)
+from rest_framework import mixins, status, viewsets
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
-from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.viewsets import GenericViewSet, ReadOnlyModelViewSet
+from rest_framework.viewsets import GenericViewSet
 
-from cinema.models import Genre, Actor, CinemaHall, Movie, MovieSession, Order
+from cinema.models import Actor, CinemaHall, Genre, Movie, MovieSession, Order
 from cinema.permissions import IsAdminOrIfAuthenticatedReadOnly
-
 from cinema.serializers import (
-    GenreSerializer,
     ActorSerializer,
     CinemaHallSerializer,
-    MovieSerializer,
-    MovieSessionSerializer,
-    MovieSessionListSerializer,
+    GenreSerializer,
     MovieDetailSerializer,
-    MovieSessionDetailSerializer,
-    MovieListSerializer,
-    OrderSerializer,
-    OrderListSerializer,
     MovieImageSerializer,
+    MovieListSerializer,
+    MovieSerializer,
+    MovieSessionDetailSerializer,
+    MovieSessionListSerializer,
+    MovieSessionSerializer,
+    OrderListSerializer,
+    OrderSerializer,
 )
 
 
@@ -127,6 +131,49 @@ class MovieViewSet(
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="title",
+                description="Filter by title",
+                required=False,
+                type=str,
+                examples=[
+                    OpenApiExample(
+                        "Example 1",
+                        description='Find movie with title "Inception"',
+                    )
+                ],
+            ),
+            OpenApiParameter(
+                name="actors",
+                description="Filter by actors.id",
+                required=False,
+                type={"type": "list", "items": {"type": "number"}},
+                examples=[
+                    OpenApiExample(
+                        "Example 1",
+                        description="Find movie with specific actor id",
+                    )
+                ],
+            ),
+            OpenApiParameter(
+                name="genres",
+                type={"type": "list", "items": {"type": "number"}},
+                description="Filter by genres.id",
+                examples=[
+                    OpenApiExample(
+                        "Example 1",
+                        description="Find movie with specific genre id",
+                    )
+                ],
+            ),
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        """Endpoint for listing movies"""
+        return super().list(request, *args, **kwargs)
+
 
 class MovieSessionViewSet(viewsets.ModelViewSet):
     queryset = (
@@ -157,6 +204,39 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(movie_id=int(movie_id_str))
 
         return queryset
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="date",
+                description="Filter by date",
+                required=False,
+                type=str,
+                examples=[
+                    OpenApiExample(
+                        "Example 1",
+                        description="Find movie session using date. "
+                                    "Format YYYY-MM-DD",
+                    )
+                ],
+            ),
+            OpenApiParameter(
+                name="movie",
+                description="Filter by movie.id",
+                required=False,
+                type=int,
+                examples=[
+                    OpenApiExample(
+                        "Example 1",
+                        description="Find movie session with id",
+                    )
+                ],
+            ),
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        """Endpoint for movie session list"""
+        return super().list(request, *args, **kwargs)
 
     def get_serializer_class(self):
         if self.action == "list":
