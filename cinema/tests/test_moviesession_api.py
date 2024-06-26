@@ -3,6 +3,7 @@ from datetime import timedelta
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.utils.timezone import now
+from rest_framework.reverse import reverse
 from rest_framework.test import APIClient
 
 from cinema.models import MovieSession, Movie, CinemaHall
@@ -38,24 +39,33 @@ class MovieSessionTests(TestCase):
         )
 
     def test_list_movie_sessions(self):
-        response = self.client.get("/api/cinema/movie_sessions/")
+        response = self.client.get(reverse("cinema:movie-sessions-list"))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 2)
 
     def test_retrieve_movie_session(self):
-        response = self.client.get(f"/api/cinema/movie_sessions/{self.session1.id}/")
+        response = self.client.get(
+            reverse(
+                "cinema:movie-sessions-detail",
+                args=[self.session1.id]
+            )
+        )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["id"], self.session1.id)
 
     def test_filter_by_date(self):
         date = (now() + timedelta(days=1)).date()
-        response = self.client.get(f"/api/cinema/movie_sessions/?date={date}")
+        response = self.client.get(
+            reverse("cinema:movie-sessions-list") + f"?date={date}"
+        )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]["id"], self.session1.id)
 
     def test_filter_by_movie(self):
-        response = self.client.get(f"/api/cinema/movie_sessions/?movie={self.movie.id}")
+        response = self.client.get(
+            reverse("cinema:movie-sessions-list") + "?movie=1"
+        )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 2)
 
@@ -73,7 +83,7 @@ class MovieSessionTests(TestCase):
 
     def test_permission_class(self):
         response = self.client.post(
-            "/api/cinema/movie_sessions/",
+            reverse("cinema:movie-sessions-list"),
             data={
                 "show_time": now() + timedelta(days=1),
                 "movie": self.movie.id,
@@ -83,7 +93,7 @@ class MovieSessionTests(TestCase):
         self.assertEqual(response.status_code, 403)
 
         response = self.client.put(
-            "/api/cinema/movie_sessions/",
+            reverse("cinema:movie-sessions-list"),
             data={
                 "show_time": now() + timedelta(days=1),
                 "movie": self.movie.id,
@@ -93,7 +103,11 @@ class MovieSessionTests(TestCase):
         self.assertEqual(response.status_code, 403)
 
         response = self.client.delete(
-            f"/api/cinema/movie_sessions/{self.session1.id}/",
+            reverse(
+                "cinema:movie-sessions-detail",
+                args=[self.session1.id]
+            )
+        ,
         )
         self.assertEqual(response.status_code, 403)
 
@@ -101,7 +115,7 @@ class MovieSessionTests(TestCase):
         self.user.save()
 
         response = self.client.post(
-            "/api/cinema/movie_sessions/",
+            reverse("cinema:movie-sessions-list"),
             data={
                 "show_time": now() + timedelta(days=1),
                 "movie": self.movie.id,
@@ -111,7 +125,7 @@ class MovieSessionTests(TestCase):
         self.assertEqual(response.status_code, 201)
 
         response = self.client.put(
-            "/api/cinema/movie_sessions/",
+            reverse("cinema:movie-sessions-list"),
             data={
                 "show_time": now() + timedelta(days=1),
                 "movie": self.movie.id,
@@ -121,6 +135,9 @@ class MovieSessionTests(TestCase):
         self.assertEqual(response.status_code, 405)
 
         response = self.client.delete(
-            f"/api/cinema/movie_sessions/{self.session1.id}/",
+            reverse(
+                "cinema:movie-sessions-detail",
+                args=[self.session1.id]
+            ),
         )
         self.assertEqual(response.status_code, 204)
