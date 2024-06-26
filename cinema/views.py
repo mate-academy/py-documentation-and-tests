@@ -3,8 +3,12 @@ from typing import List, Type
 
 from django.db.models import F, Count, QuerySet
 from drf_spectacular.types import OpenApiTypes
-from drf_spectacular.utils import extend_schema_view, extend_schema, \
-    OpenApiParameter, OpenApiExample
+from drf_spectacular.utils import (
+    extend_schema_view,
+    extend_schema,
+    OpenApiParameter,
+    OpenApiExample,
+)
 from rest_framework import viewsets, mixins, status
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import action
@@ -13,14 +17,7 @@ from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
-from cinema.models import (
-    Genre,
-    Actor,
-    CinemaHall,
-    Movie,
-    MovieSession,
-    Order
-)
+from cinema.models import Genre, Actor, CinemaHall, Movie, MovieSession, Order
 from cinema.permissions import IsAdminOrIfAuthenticatedReadOnly
 from cinema.serializers import (
     GenreSerializer,
@@ -59,6 +56,7 @@ class GenreViewSet(
     A viewset that provides `create` and `list` actions.
     This viewset is used to create and list Genre objects
     """
+
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
@@ -85,6 +83,7 @@ class ActorViewSet(
     A viewset that provides `create` and `list` actions for Actor objects.
     This viewset is used to create and list Actor objects.
     """
+
     queryset = Actor.objects.all()
     serializer_class = ActorSerializer
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
@@ -94,7 +93,7 @@ class ActorViewSet(
     list=extend_schema(
         summary="List Cinema Halls",
         description="Retrieve a list of all the cinema halls.",
-        tags=["Cinema Hall"]
+        tags=["Cinema Hall"],
     ),
     create=extend_schema(
         summary="Create Cinema Hall",
@@ -121,7 +120,7 @@ class CinemaHallViewSet(
     list=extend_schema(
         summary="List Movies",
         description="Retrieve a list of movies with optional filters "
-                    "for title, genres, and actors.",
+        "for title, genres, and actors.",
         tags=["Movie"],
         parameters=[
             OpenApiParameter(
@@ -132,14 +131,14 @@ class CinemaHallViewSet(
             OpenApiParameter(
                 name="genres",
                 type=OpenApiTypes.STR,
-                description="Filter by genre IDs (comma-separated)"
+                description="Filter by genre IDs (comma-separated)",
             ),
             OpenApiParameter(
                 name="actors",
                 type=OpenApiTypes.STR,
-                description="Filter by actor IDs (comma-separated)"
-            )
-        ]
+                description="Filter by actor IDs (comma-separated)",
+            ),
+        ],
     ),
     create=extend_schema(
         summary="Create Movie",
@@ -150,7 +149,7 @@ class CinemaHallViewSet(
         summary="Retrieve Movie",
         description="Retrieve a specific movie by ID.",
         tags=["Movie"],
-    )
+    ),
 )
 class MovieViewSet(
     mixins.ListModelMixin,
@@ -163,6 +162,7 @@ class MovieViewSet(
     for Movie objects.
     This viewset is used to interact with Movie objects.
     """
+
     queryset = Movie.objects.prefetch_related("genres", "actors")
     serializer_class = MovieSerializer
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
@@ -193,11 +193,14 @@ class MovieViewSet(
 
         return queryset.distinct()
 
-    def get_serializer_class(self) -> Type[
+    def get_serializer_class(
+        self,
+    ) -> Type[
         MovieListSerializer
         | MovieDetailSerializer
         | MovieImageSerializer
-        | MovieSerializer]:
+        | MovieSerializer
+    ]:
         if self.action == "list":
             return MovieListSerializer
 
@@ -219,22 +222,19 @@ class MovieViewSet(
         summary="Upload Movie Image",
         description="Endpoint for uploading an image to a specific movie.",
         tags=["Movie"],
-        responses={
-            200: MovieImageSerializer,
-            400: OpenApiTypes.OBJECT
-        },
+        responses={200: MovieImageSerializer, 400: OpenApiTypes.OBJECT},
         examples=[
             OpenApiExample(
                 "Successful response",
                 summary="A successful response example",
-                value={"image": "http://example.com/movies/1/image.jpg"}
+                value={"image": "http://example.com/movies/1/image.jpg"},
             ),
             OpenApiExample(
                 "Error response",
                 summary="An error response example",
-                value={"detail": "Invalid image upload."}
-            )
-        ]
+                value={"detail": "Invalid image upload."},
+            ),
+        ],
     )
     def upload_image(self, request, pk=None) -> Response:
         """Endpoint for uploading image to specific movie"""
@@ -252,20 +252,20 @@ class MovieViewSet(
     list=extend_schema(
         summary="List Movie Sessions",
         description="Retrieve a list of movie sessions with optional filters "
-                    "for date and movie ID.",
+        "for date and movie ID.",
         tags=["Movie Session"],
         parameters=[
             OpenApiParameter(
                 name="date",
                 type=OpenApiTypes.DATE,
-                description="Filter by session date (YYYY-MM-DD)"
+                description="Filter by session date (YYYY-MM-DD)",
             ),
             OpenApiParameter(
                 name="movie",
                 type=OpenApiTypes.INT,
                 description="Filter by movie ID"
-            )
-        ]
+            ),
+        ],
     ),
     create=extend_schema(
         summary="Create Movie Session",
@@ -285,24 +285,22 @@ class MovieViewSet(
                     "id": 1,
                     "movie": "Example Movie",
                     "cinema_hall": 1,
-                    "show_time": "2024-06-30T18:00:00Z"
-                }
+                    "show_time": "2024-06-30T18:00:00Z",
+                },
             ),
             OpenApiExample(
                 "Bad request response",
                 summary="A bad request response example",
-                value={
-                    "show_time": ["This field is required."]
-                }
+                value={"show_time": ["This field is required."]},
             ),
             OpenApiExample(
                 "Unauthorized response",
                 summary="An unauthorized response example",
                 value={
                     "detail": "Authentication credentials were not provided."
-                }
-            )
-        ]
+                },
+            ),
+        ],
     ),
     retrieve=extend_schema(
         summary="Retrieve Movie Session Details",
@@ -327,24 +325,22 @@ class MovieViewSet(
                     "id": 1,
                     "movie": "Example Movie",
                     "cinema_hall": 1,
-                    "show_time": "2024-06-30T20:00:00Z"
-                }
+                    "show_time": "2024-06-30T20:00:00Z",
+                },
             ),
             OpenApiExample(
                 "Bad request response",
                 summary="A bad request response example",
-                value={
-                    "show_time": ["Invalid date format."]
-                }
+                value={"show_time": ["Invalid date format."]},
             ),
             OpenApiExample(
                 "Unauthorized response",
                 summary="An unauthorized response example",
                 value={
                     "detail": "Authentication credentials were not provided."
-                }
-            )
-        ]
+                },
+            ),
+        ],
     ),
     partial_update=extend_schema(
         summary="Partially Update Movie Session",
@@ -364,24 +360,22 @@ class MovieViewSet(
                     "id": 1,
                     "movie": "Example Movie",
                     "cinema_hall": 1,
-                    "show_time": "2024-06-30T19:00:00Z"
-                }
+                    "show_time": "2024-06-30T19:00:00Z",
+                },
             ),
             OpenApiExample(
                 "Bad request response",
                 summary="A bad request response example",
-                value={
-                    "show_time": ["Invalid date format."]
-                }
+                value={"show_time": ["Invalid date format."]},
             ),
             OpenApiExample(
                 "Unauthorized response",
                 summary="An unauthorized response example",
                 value={
                     "detail": "Authentication credentials were not provided."
-                }
-            )
-        ]
+                },
+            ),
+        ],
     ),
     destroy=extend_schema(
         summary="Delete Movie Session",
@@ -395,22 +389,23 @@ class MovieViewSet(
             OpenApiExample(
                 "Successful response",
                 summary="A successful response example",
-                value=None
+                value=None,
             ),
             OpenApiExample(
                 "Unauthorized response",
                 summary="An unauthorized response example",
                 value={
                     "detail": "Authentication credentials were not provided."
-                }
-            )
-        ]
-    )
+                },
+            ),
+        ],
+    ),
 )
 class MovieSessionViewSet(viewsets.ModelViewSet):
     """
     A viewset for handling Movie Sessions.
     """
+
     queryset = (
         MovieSession.objects.all()
         .select_related("movie", "cinema_hall")
@@ -459,16 +454,14 @@ class OrderPagination(PageNumberPagination):
         summary="List Orders",
         description="Retrieve a list of orders placed by "
                     "the authenticated user.",
-        tags=["Orders"]
+        tags=["Orders"],
     ),
     create=extend_schema(
         summary="Create Order",
         description="Create a new order with tickets.",
         request=OrderSerializer,
         responses={
-            201: OrderSerializer,
-            400: "Bad Request",
-            401: "Unauthorized"
+            201: OrderSerializer, 400: "Bad Request", 401: "Unauthorized"
         },
         examples=[
             OpenApiExample(
@@ -483,26 +476,24 @@ class OrderPagination(PageNumberPagination):
                             "movie_session": 1,
                         }
                     ],
-                    "created_at": "2024-06-30T12:00:00Z"
-                }
+                    "created_at": "2024-06-30T12:00:00Z",
+                },
             ),
             OpenApiExample(
                 "Bad Request Response",
                 summary="A bad request response example",
-                value={
-                    "tickets": ["This field is required."]
-                }
+                value={"tickets": ["This field is required."]},
             ),
             OpenApiExample(
                 "Unauthorized Response",
                 summary="An unauthorized response example",
                 value={
                     "detail": "Authentication credentials were not provided."
-                }
-            )
+                },
+            ),
         ],
-        tags=["Orders"]
-    )
+        tags=["Orders"],
+    ),
 )
 class OrderViewSet(
     mixins.ListModelMixin,
@@ -513,6 +504,7 @@ class OrderViewSet(
     Viewset for Order model.
     This viewset provides list and create actions for Order model.
     """
+
     queryset = Order.objects.prefetch_related(
         "tickets__movie_session__movie", "tickets__movie_session__cinema_hall"
     )
