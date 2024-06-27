@@ -39,14 +39,14 @@ class MovieSessionTests(TestCase):
         )
 
     def test_list_movie_sessions(self):
-        response = self.client.get(reverse("cinema:movie-sessions-list"))
+        response = self.client.get(reverse("cinema:movie_sessions-list"))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 2)
 
     def test_retrieve_movie_session(self):
         response = self.client.get(
             reverse(
-                "cinema:movie-sessions-detail",
+                "cinema:movie_sessions-detail",
                 args=[self.session1.id]
             )
         )
@@ -56,7 +56,7 @@ class MovieSessionTests(TestCase):
     def test_filter_by_date(self):
         date = (now() + timedelta(days=1)).date()
         response = self.client.get(
-            reverse("cinema:movie-sessions-list") + f"?date={date}"
+            reverse("cinema:movie_sessions-list") + f"?date={date}"
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 1)
@@ -64,7 +64,7 @@ class MovieSessionTests(TestCase):
 
     def test_filter_by_movie(self):
         response = self.client.get(
-            reverse("cinema:movie-sessions-list") + "?movie=1"
+            reverse("cinema:movie_sessions-list") + "?movie=1"
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 2)
@@ -83,7 +83,7 @@ class MovieSessionTests(TestCase):
 
     def test_permission_class(self):
         response = self.client.post(
-            reverse("cinema:movie-sessions-list"),
+            reverse("cinema:movie_sessions-list"),
             data={
                 "show_time": now() + timedelta(days=1),
                 "movie": self.movie.id,
@@ -93,7 +93,7 @@ class MovieSessionTests(TestCase):
         self.assertEqual(response.status_code, 403)
 
         response = self.client.put(
-            reverse("cinema:movie-sessions-list"),
+            reverse("cinema:movie_sessions-list"),
             data={
                 "show_time": now() + timedelta(days=1),
                 "movie": self.movie.id,
@@ -104,7 +104,7 @@ class MovieSessionTests(TestCase):
 
         response = self.client.delete(
             reverse(
-                "cinema:movie-sessions-detail",
+                "cinema:movie_sessions-detail",
                 args=[self.session1.id]
             )
         ,
@@ -115,7 +115,7 @@ class MovieSessionTests(TestCase):
         self.user.save()
 
         response = self.client.post(
-            reverse("cinema:movie-sessions-list"),
+            reverse("cinema:movie_sessions-list"),
             data={
                 "show_time": now() + timedelta(days=1),
                 "movie": self.movie.id,
@@ -125,7 +125,7 @@ class MovieSessionTests(TestCase):
         self.assertEqual(response.status_code, 201)
 
         response = self.client.put(
-            reverse("cinema:movie-sessions-list"),
+            reverse("cinema:movie_sessions-list"),
             data={
                 "show_time": now() + timedelta(days=1),
                 "movie": self.movie.id,
@@ -136,7 +136,7 @@ class MovieSessionTests(TestCase):
 
         response = self.client.delete(
             reverse(
-                "cinema:movie-sessions-detail",
+                "cinema:movie_sessions-detail",
                 args=[self.session1.id]
             ),
         )
