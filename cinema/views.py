@@ -174,7 +174,7 @@ class MovieViewSet(
         genres = self.request.query_params.get("genres")
         actors = self.request.query_params.get("actors")
 
-        queryset = self.queryset
+        queryset = super().get_queryset()
 
         if title:
             queryset = queryset.filter(title__icontains=title)
@@ -418,8 +418,7 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
         date = self.request.query_params.get("date")
         movie_id_str = self.request.query_params.get("movie")
 
-        queryset = self.queryset
-
+        queryset = super().get_queryset()
         if date:
             date = datetime.strptime(date, "%Y-%m-%d").date()
             queryset = queryset.filter(show_time__date=date)

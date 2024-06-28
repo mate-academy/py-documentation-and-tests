@@ -22,52 +22,6 @@ class CreateUserView(generics.CreateAPIView):
 
 
 @extend_schema_view(
-    post=extend_schema(
-        summary="Obtain authentication token.",
-        request=AuthTokenSerializer,
-        tags=["User"],
-        responses={
-            200: OpenApiResponse(
-                response={
-                    "type": "object",
-                    "properties": {
-                        "token": {
-                            "type": "string",
-                            "example": "b93f81e76bded29c30ccf02bddeeaa8450c68",
-                        }
-                    },
-                },
-                description="Token obtained successfully.",
-            ),
-            400: OpenApiResponse(
-                response={
-                    "type": "object",
-                    "properties": {
-                        "non_field_errors": {
-                            "type": "array",
-                            "items": {
-                                "type": "string",
-                                "example": "Unable to log in with provided "
-                                           "credentials.",
-                            },
-                        }
-                    },
-                },
-                description="Invalid credentials provided.",
-            ),
-        },
-    )
-)
-class CreateTokenView(ObtainAuthToken):
-    """
-    API view to obtain authentication token.
-    Uses the custom AuthTokenSerializer.
-    """
-    renderer_classes = api_settings.DEFAULT_RENDERER_CLASSES
-    serializer_class = AuthTokenSerializer
-
-
-@extend_schema_view(
     get=extend_schema(
         summary="Retrieve User Information",
         description="Retrieve the authenticated user's information.",
