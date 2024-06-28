@@ -1,9 +1,10 @@
 # Documentation, throttling, JWT and tests
 
 - **Read** [the guideline](https://github.com/mate-academy/py-task-guideline/blob/main/README.md) before start
-- After loading data from fixture you can use following superuser (or create another one by yourself):
-  - Email: `admin.user@cinema.com`
-  - Password: `1qazcde3`
+  - After loading data from fixture you can use following superuser (or create another one by yourself):
+    `python manage.py loaddata cinema_service_db_data.json`
+    - Email: `admin.user@cinema.com`
+    - Password: `1qazcde3`
 
 In this task you will add tests and some advanced things to your project:
 1. Add Swagger documentation for the whole project. 

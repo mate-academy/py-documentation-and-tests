@@ -14,18 +14,32 @@ from cinema.models import (
 
 
 class GenreSerializer(serializers.ModelSerializer):
+    """
+    Serializer for the Genre model.
+    """
+
     class Meta:
         model = Genre
         fields = ("id", "name")
 
 
 class ActorSerializer(serializers.ModelSerializer):
+    """
+    Serializer for the Actor model.
+    """
+
     class Meta:
         model = Actor
         fields = ("id", "first_name", "last_name", "full_name")
 
 
 class CinemaHallSerializer(serializers.ModelSerializer):
+    """
+    Serializer for the CinemaHall model.
+    This serializer includes the `id`, `name`, `rows`, `seats_in_row`,
+    and [capacity] fields.
+    """
+
     class Meta:
         model = CinemaHall
         fields = ("id", "name", "rows", "seats_in_row", "capacity")
@@ -45,6 +59,11 @@ class MovieSerializer(serializers.ModelSerializer):
 
 
 class MovieListSerializer(serializers.ModelSerializer):
+    """
+    Serializer for the Movie model.
+    This serializer includes the `id`, `title`, `description`, `duration`,
+    `genres`, `actors`, and `image` fields.
+    """
 
     genres = serializers.SlugRelatedField(
         many=True, read_only=True, slug_field="name"
@@ -69,6 +88,12 @@ class MovieListSerializer(serializers.ModelSerializer):
 
 
 class MovieDetailSerializer(serializers.ModelSerializer):
+    """
+    Serializer for the Movie model.
+    This serializer includes the `id`, `title`, `description`, `duration`,
+    `genres`, `actors`, and `image` fields.
+    """
+
     genres = GenreSerializer(many=True, read_only=True)
     actors = ActorSerializer(many=True, read_only=True)
 
@@ -98,6 +123,11 @@ class MovieSessionSerializer(serializers.ModelSerializer):
 
 
 class MovieSessionListSerializer(MovieSessionSerializer):
+    """
+    Serializer for MovieSession model with additional fields for movie title,
+    image, cinema hall name, capacity, and tickets available.
+    """
+
     movie_title = serializers.CharField(source="movie.title", read_only=True)
     movie_image = serializers.ImageField(source="movie.image", read_only=True)
     cinema_hall_name = serializers.CharField(
@@ -122,13 +152,19 @@ class MovieSessionListSerializer(MovieSessionSerializer):
 
 
 class TicketSerializer(serializers.ModelSerializer):
+    """
+    Serializer for Ticket model with validation for ticket details.
+    This serializer validates the ticket details including row, seat,
+    and associated movie session.
+    """
+
     def validate(self, attrs):
         data = super(TicketSerializer, self).validate(attrs=attrs)
         Ticket.validate_ticket(
-            attrs["row"], 
-            attrs["seat"], 
-            attrs["movie_session"].cinema_hall, 
-            ValidationError
+            attrs["row"],
+            attrs["seat"],
+            attrs["movie_session"].cinema_hall,
+            ValidationError,
         )
         return data
 
@@ -148,6 +184,14 @@ class TicketSeatsSerializer(TicketSerializer):
 
 
 class MovieSessionDetailSerializer(MovieSessionSerializer):
+    """
+    Serializer for the MovieSession model that provides additional details
+    about the movie session.
+
+    This serializer includes the movie, cinema hall, and taken places
+    related to the movie session.
+    """
+
     movie = MovieListSerializer(many=False, read_only=True)
     cinema_hall = CinemaHallSerializer(many=False, read_only=True)
     taken_places = TicketSeatsSerializer(
@@ -160,6 +204,11 @@ class MovieSessionDetailSerializer(MovieSessionSerializer):
 
 
 class OrderSerializer(serializers.ModelSerializer):
+    """
+    Serializer for the Order model that handles the creation of
+    an order with multiple tickets.
+    """
+
     tickets = TicketSerializer(many=True, read_only=False, allow_empty=False)
 
     class Meta:
