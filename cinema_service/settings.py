@@ -162,7 +162,7 @@ SPECTACULAR_SETTINGS = {
     "DESCRIPTION": "Order tickets for movies in cinema.",
     "VERSION": "1.0.0",
     "SERVER_INCLUDE_SCHEMA": False,
-    "SWAGGER_UI_SETTINGS":  {
+    "SWAGGER_UI_SETTINGS": {
         "deepLinking": True,
         "defaultModelsExpanDepth": 2,
         "defaultModelExpanDepth": 2,
