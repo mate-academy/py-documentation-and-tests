@@ -3,14 +3,20 @@ from datetime import datetime
 from django.db.models import F, Count
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import viewsets, mixins, status
-from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
-from cinema.models import Genre, Actor, CinemaHall, Movie, MovieSession, Order
+from cinema.models import (
+    Genre,
+    Actor,
+    CinemaHall,
+    Movie,
+    MovieSession,
+    Order
+)
 from cinema.permissions import IsAdminOrIfAuthenticatedReadOnly
 
 from cinema.serializers import (
@@ -105,7 +111,7 @@ class MovieViewSet(
         if self.action == "upload_image":
             return MovieImageSerializer
 
-        return MovieSerializer
+        return super().get_serializer_class()
 
     @action(
         methods=["POST"],
@@ -122,7 +128,10 @@ class MovieViewSet(
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
 
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response(
+            serializer.errors,
+            status=status.HTTP_400_BAD_REQUEST
+        )
 
     @extend_schema(
         parameters=[
@@ -133,15 +142,13 @@ class MovieViewSet(
             ),
             OpenApiParameter(
                 "genres",
-                type={"type": "string"},
+                type={"type": "list", "items": {"type": "number"}},
                 description="Filter by genres ex. ?genres=1,2",
-                extensions={"x-placeholder": "1,3"},
             ),
             OpenApiParameter(
                 "actors",
-                type={"type": "string"},
+                type={"type": "list", "items": {"type": "number"}},
                 description="Filter by actors ex. ?actors=1,2",
-                extensions={"x-placeholder": "1,3"},
             ),
         ]
     )
@@ -194,7 +201,6 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
                 "date",
                 type={"type": "date"},
                 description="Filter by date ex. ?date=2024-10-15",
-                extensions={"x-placeholder": "yyyy-mm-dd"},
             ),
             OpenApiParameter(
                 "movie",
@@ -219,7 +225,8 @@ class OrderViewSet(
     GenericViewSet,
 ):
     queryset = Order.objects.prefetch_related(
-        "tickets__movie_session__movie", "tickets__movie_session__cinema_hall"
+        "tickets__movie_session__movie",
+        "tickets__movie_session__cinema_hall"
     )
     serializer_class = OrderSerializer
     pagination_class = OrderPagination
