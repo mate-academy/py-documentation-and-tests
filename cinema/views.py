@@ -1,6 +1,11 @@
 from datetime import datetime
 
 from django.db.models import F, Count
+from drf_spectacular.utils import (
+    extend_schema,
+    OpenApiParameter,
+    OpenApiExample,
+)
 from rest_framework import viewsets, mixins, status
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import action
@@ -126,6 +131,94 @@ class MovieViewSet(
             return Response(serializer.data, status=status.HTTP_200_OK)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @extend_schema(
+        summary="Displays the list of movies",
+        parameters=[
+            OpenApiParameter(
+                "title",
+                type=str,
+                description="Filter by movie title",
+                required=False,
+            ),
+            OpenApiParameter(
+                "genres",
+                type={"type": "list", "items": {"type": "number"}},
+                description="Filter by list of genres",
+            ),
+            OpenApiParameter(
+                "actors",
+                type={"type": "array", "items": {"type": "number"}},
+                description="Filter by list of actors",
+            ),
+        ],
+    )
+    def list(self, request, *args, **kwargs):
+        "Displays the list of movies. Can be filtered with query parameters by title, genres, actors"
+        return super().list(request, *args, **kwargs)
+
+    @extend_schema(
+        summary="Creates a movie",
+        examples=[
+            OpenApiExample(
+                "Example 1",
+                summary="Example of success 201 response status",
+                description="Success 201 response status returns the created movie."
+                " Actors and genres are displayed as relevant"
+                " ids(M2M relationship).",
+                value={
+                    "id": 7,
+                    "title": "New movie",
+                    "description": "Description for movie",
+                    "duration": 115,
+                    "genres": [3, 4],
+                    "actors": [3, 6],
+                },
+            ),
+        ],
+    )
+    def create(self, request, *args, **kwargs):
+        "Create a new movie. Only admin user can access"
+        return super().create(request, *args, **kwargs)
+
+    @extend_schema(
+        summary="Retrieve the detail movie",
+        examples=[
+            OpenApiExample(
+                "Example 1",
+                summary="Example of success 200 response status",
+                description="Success 200 response status returns the movie info.",
+                value={
+                    "id": 5,
+                    "title": "Thriller movie",
+                    "description": "Thriller movie detail description",
+                    "duration": 115,
+                    "genres": [
+                        {"id": 3, "name": "Thriller"},
+                        {"id": 4, "name": "Action"},
+                    ],
+                    "actors": [
+                        {
+                            "id": 3,
+                            "first_name": "Matt",
+                            "last_name": "Damon",
+                            "full_name": "Matt Damon",
+                        },
+                        {
+                            "id": 6,
+                            "first_name": "Bruce",
+                            "last_name": "Willis",
+                            "full_name": "Bruce Willis",
+                        },
+                    ],
+                    "image": "image link",
+                },
+            ),
+        ],
+    )
+    def retrieve(self, request, *args, **kwargs):
+        "Retrieve the detail movie with passed id"
+        return super().retrieve(request, *args, **kwargs)
 
 
 class MovieSessionViewSet(viewsets.ModelViewSet):
