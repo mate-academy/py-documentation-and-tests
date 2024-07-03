@@ -320,10 +320,11 @@ class AdminMovieTests(TestCase):
             "actors": [actor_1.id, actor_2.id]
         }
 
-        res = self.client.post(MOVIE_URL, payload)
-        movie = Movie.objects.get(id=res.data["id"])
-        actors = movie.actors.all()
+        res = self.client.post(MOVIE_URL, payload, format='json')
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+
+        movie = Movie.objects.get(id=res.data['id'])
+        actors = movie.actors.all()
         self.assertIn(actor_1, actors)
         self.assertIn(actor_2, actors)
         self.assertEqual(actors.count(), 2)
@@ -338,10 +339,11 @@ class AdminMovieTests(TestCase):
             "genres": [genre_1.id, genre_2.id]
         }
 
-        res = self.client.post(MOVIE_URL, payload)
-        movie = Movie.objects.get(id=res.data["id"])
-        genres = movie.genres.all()
+        res = self.client.post(MOVIE_URL, payload, format='json')
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+
+        movie = Movie.objects.get(id=res.data['id'])
+        genres = movie.genres.all()
         self.assertIn(genre_1, genres)
         self.assertIn(genre_2, genres)
         self.assertEqual(genres.count(), 2)
