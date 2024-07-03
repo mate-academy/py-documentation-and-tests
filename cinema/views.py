@@ -174,6 +174,7 @@ class MovieViewSet(
                     "genres": [3, 4],
                     "actors": [3, 6],
                 },
+                response_only=True,
             ),
         ],
     )
@@ -259,6 +260,26 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
             return MovieSessionDetailSerializer
 
         return MovieSessionSerializer
+
+    @extend_schema(
+        summary="Displays the list of sessions",
+        parameters=[
+            OpenApiParameter(
+                "movie",
+                type=str,
+                description="Filter by movie title",
+                required=False,
+            ),
+            OpenApiParameter(
+                "date",
+                type=str,
+                description="Filter by date of session. Data has format 'YYYY-MM-DD'",
+            ),
+        ],
+    )
+    def list(self, request, *args, **kwargs):
+        "Displays the list of movie sessions. Can be filtered with query parameters by movie title, and session date"
+        return super().list(request, *args, **kwargs)
 
 
 class OrderPagination(PageNumberPagination):
