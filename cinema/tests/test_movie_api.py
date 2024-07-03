@@ -295,6 +295,7 @@ class AdminMovieTests(TestCase):
             is_staff=True
         )
         self.client.force_authenticate(self.user)
+        self.movie_url = reverse("movie-list")
 
     def test_create_movie(self):
         payload = {
@@ -303,50 +304,59 @@ class AdminMovieTests(TestCase):
             "duration": 90,
         }
 
-        res = self.client.post(MOVIE_URL, payload, format='json')
-        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        response = self.client.post(self.movie_url, payload, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
-        movie = Movie.objects.get(id=res.data['id'])
-        for key in payload:
-            self.assertEqual(payload[key], getattr(movie, key))
+        movie_id = response.data.get('id')
+        movie = Movie.objects.get(id=movie_id)
+
+        self.assertEqual(movie.title, payload['title'])
+        self.assertEqual(movie.description, payload['description'])
+        self.assertEqual(movie.duration, payload['duration'])
 
     def test_create_movie_with_actors(self):
-        actor_1 = sample_actor()
-        actor_2 = sample_actor(first_name="Test", last_name="User")
+        actor1 = Actor.objects.create(first_name='Actor', last_name='One')
+        actor2 = Actor.objects.create(first_name='Actor', last_name='Two')
+
         payload = {
             "title": "Sample movie",
             "description": "Sample description",
-            "duration": 90,
-            "actors": [actor_1.id, actor_2.id]
+            "duration": 120,
+            "actors": [actor1.id, actor2.id]
         }
 
-        res = self.client.post(MOVIE_URL, payload, format='json')
-        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        response = self.client.post(self.movie_url, payload, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
-        movie = Movie.objects.get(id=res.data['id'])
+        movie_id = response.data.get('id')
+        movie = Movie.objects.get(id=movie_id)
         actors = movie.actors.all()
-        self.assertIn(actor_1, actors)
-        self.assertIn(actor_2, actors)
+
         self.assertEqual(actors.count(), 2)
+        self.assertIn(actor1, actors)
+        self.assertIn(actor2, actors)
 
     def test_create_movie_with_genres(self):
-        genre_1 = sample_genre()
-        genre_2 = sample_genre(name="Detective")
+        genre1 = Genre.objects.create(name='Action')
+        genre2 = Genre.objects.create(name='Adventure')
+
         payload = {
             "title": "Sample movie",
             "description": "Sample description",
-            "duration": 90,
-            "genres": [genre_1.id, genre_2.id]
+            "duration": 120,
+            "genres": [genre1.id, genre2.id]
         }
 
-        res = self.client.post(MOVIE_URL, payload, format='json')
-        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        response = self.client.post(self.movie_url, payload, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
-        movie = Movie.objects.get(id=res.data['id'])
+        movie_id = response.data.get('id')
+        movie = Movie.objects.get(id=movie_id)
         genres = movie.genres.all()
-        self.assertIn(genre_1, genres)
-        self.assertIn(genre_2, genres)
+
         self.assertEqual(genres.count(), 2)
+        self.assertIn(genre1, genres)
+        self.assertIn(genre2, genres)
 
     def test_delete_movie_not_allowed(self):
         movie = sample_movie()
