@@ -303,11 +303,10 @@ class AdminMovieTests(TestCase):
             "duration": 90,
         }
 
-        res = self.client.post(MOVIE_URL, payload)
-        movie = Movie.objects.get(id=res.data["id"])
-
+        res = self.client.post(MOVIE_URL, payload, format='json')
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
 
+        movie = Movie.objects.get(id=res.data['id'])
         for key in payload:
             self.assertEqual(payload[key], getattr(movie, key))
 
