@@ -149,7 +149,8 @@ class MovieViewSet(
         ],
     )
     def list(self, request, *args, **kwargs):
-        "Displays the list of movies. Can be filtered with query parameters by title, genres, actors"
+        """Displays the list of movies.
+        Can be filtered with query parameters by title, genres, actors"""
         return super().list(request, *args, **kwargs)
 
     @extend_schema(
@@ -158,7 +159,7 @@ class MovieViewSet(
             OpenApiExample(
                 "Example 1",
                 summary="Example of success 201 response status",
-                description="Success 201 response status returns the created movie."
+                description="Success response returns the created movie."
                 " Actors and genres are displayed as relevant"
                 " ids(M2M relationship).",
                 value={
@@ -174,7 +175,7 @@ class MovieViewSet(
         ],
     )
     def create(self, request, *args, **kwargs):
-        "Create a new movie. Only admin user can access"
+        """ "Create a new movie. Only admin user can access"""
         return super().create(request, *args, **kwargs)
 
     @extend_schema(
@@ -183,7 +184,7 @@ class MovieViewSet(
             OpenApiExample(
                 "Example 1",
                 summary="Example of success 200 response status",
-                description="Success 200 response status returns the movie info.",
+                description="Success response returns the movie info.",
                 value={
                     "id": 5,
                     "title": "Thriller movie",
@@ -213,7 +214,7 @@ class MovieViewSet(
         ],
     )
     def retrieve(self, request, *args, **kwargs):
-        "Retrieve the detail movie with passed id"
+        """Retrieve the detail movie with passed id"""
         return super().retrieve(request, *args, **kwargs)
 
 
@@ -268,12 +269,15 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
             OpenApiParameter(
                 "date",
                 type=str,
-                description="Filter by date of session. Data has format 'YYYY-MM-DD'",
+                description="Filter by date of session."
+                " Data has format 'YYYY-MM-DD'",
             ),
         ],
     )
     def list(self, request, *args, **kwargs):
-        "Displays the list of movie sessions. Can be filtered with query parameters by movie title, and session date"
+        """Displays the list of movie sessions.
+        Can be filtered with query parameters
+         by movie title, and session date"""
         return super().list(request, *args, **kwargs)
 
 
