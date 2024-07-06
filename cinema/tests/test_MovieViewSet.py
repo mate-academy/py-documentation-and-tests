@@ -63,3 +63,26 @@ class MovieViewSetTest(TestCase):
         self.assertEqual(
             response_retrieve.status_code, status.HTTP_401_UNAUTHORIZED
         )
+
+    def test_auth_user_has_access(self):
+        user = User.objects.create_user("User")
+        self.client.force_authenticate(user)
+        response_list = self.client.get(self.url)
+        self.assertEqual(response_list.status_code, status.HTTP_200_OK)
+
+        response_create = self.client.post(
+            reverse("cinema:movie-list"),
+            data={},
+        )
+        self.assertEqual(
+            response_create.status_code, status.HTTP_403_FORBIDDEN
+        )
+
+        movie = create_movie()
+        response_retrieve = self.client.get(
+            reverse("cinema:movie-detail", args=(1,))
+        )
+        self.assertEqual(response_retrieve.status_code, status.HTTP_200_OK)
+
+        serializer = MovieDetailSerializer(movie)
+        self.assertEqual(response_retrieve.data, serializer.data)
