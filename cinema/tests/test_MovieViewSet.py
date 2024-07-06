@@ -86,3 +86,22 @@ class MovieViewSetTest(TestCase):
 
         serializer = MovieDetailSerializer(movie)
         self.assertEqual(response_retrieve.data, serializer.data)
+
+    def test_admin_can_post(self):
+        user = User.objects.create_user("User", is_staff=True)
+        self.client.force_authenticate(user)
+        genre = Genre.objects.create(name="Test genre")
+        actor = Actor.objects.create(
+            first_name="Actorname", last_name="Actor LastName"
+        )
+        response_create = self.client.post(
+            reverse("cinema:movie-list"),
+            data={
+                "title": "Title",
+                "description": "description",
+                "duration": 109,
+                "genres": [genre.id],
+                "actors": [actor.id],
+            },
+        )
+        self.assertEqual(response_create.status_code, status.HTTP_201_CREATED)
