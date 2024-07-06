@@ -105,3 +105,40 @@ class MovieViewSetTest(TestCase):
             },
         )
         self.assertEqual(response_create.status_code, status.HTTP_201_CREATED)
+
+    def test_querry_params_filtering(self):
+        user = User.objects.create_user("User")
+        self.client.force_authenticate(user)
+        for suffix in range(20):
+            create_genre(suffix)
+            create_actor(suffix)
+
+        for suffix in range(13):
+            create_movie(suffix)
+
+        for suffix in range(13, 20):
+            create_movie(
+                f"{suffix} exciting movie", genres=[1, 2], actors=[17, 6, 9, 4]
+            )
+
+        movies = Movie.objects.filter(genres__in=(1, 2)).distinct()
+        serializer = MovieListSerializer(movies, many=True)
+
+        response_genre_filter = self.client.get(self.url, data={"genres": "1"})
+
+        response_actor_filter = self.client.get(
+            self.url, data={"actors": "6,9"}
+        )
+
+        response_title_filter = self.client.get(
+            self.url, data={"title": "exciting movie"}
+        )
+
+        for response in (
+            response_genre_filter,
+            response_actor_filter,
+            response_title_filter,
+        ):
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            self.assertEqual(response.data, serializer.data)
+            self.assertEqual(len(response.data), 7)
