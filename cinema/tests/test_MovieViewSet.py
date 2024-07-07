@@ -8,9 +8,6 @@ from cinema.serializers import MovieListSerializer, MovieDetailSerializer
 from user.models import User
 
 
-suffix = 0
-
-
 def create_genre(suffix):
     Genre.objects.create(name=f"Test genre{suffix}")
 
@@ -22,15 +19,12 @@ def create_actor(suffix):
 
 
 def create_movie(suffix=None, genres: list = None, actors: list = None):
-
     data = {
         "title": f"Title{suffix}",
         "description": "description",
         "duration": 109,
     }
-
     movie = Movie.objects.create(**data)
-
     if actors:
         movie.actors.set(actors)
     if genres:
