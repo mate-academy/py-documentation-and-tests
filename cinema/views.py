@@ -1,8 +1,12 @@
 from datetime import datetime
 
 from django.db.models import F, Count
+from drf_spectacular.utils import (
+    extend_schema,
+    OpenApiParameter,
+    OpenApiExample,
+)
 from rest_framework import viewsets, mixins, status
-from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
@@ -35,7 +39,6 @@ class GenreViewSet(
 ):
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
-    authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
 
@@ -46,7 +49,6 @@ class ActorViewSet(
 ):
     queryset = Actor.objects.all()
     serializer_class = ActorSerializer
-    authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
 
@@ -57,7 +59,6 @@ class CinemaHallViewSet(
 ):
     queryset = CinemaHall.objects.all()
     serializer_class = CinemaHallSerializer
-    authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
 
@@ -69,7 +70,6 @@ class MovieViewSet(
 ):
     queryset = Movie.objects.prefetch_related("genres", "actors")
     serializer_class = MovieSerializer
-    authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
     @staticmethod
@@ -127,6 +127,96 @@ class MovieViewSet(
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    @extend_schema(
+        summary="Displays the list of movies",
+        parameters=[
+            OpenApiParameter(
+                "title",
+                type=str,
+                description="Filter by movie title",
+                required=False,
+            ),
+            OpenApiParameter(
+                "genres",
+                type={"type": "list", "items": {"type": "number"}},
+                description="Filter by list of genres",
+            ),
+            OpenApiParameter(
+                "actors",
+                type={"type": "array", "items": {"type": "number"}},
+                description="Filter by list of actors",
+            ),
+        ],
+    )
+    def list(self, request, *args, **kwargs):
+        """Displays the list of movies.
+        Can be filtered with query parameters by title, genres, actors"""
+        return super().list(request, *args, **kwargs)
+
+    @extend_schema(
+        summary="Creates a movie",
+        examples=[
+            OpenApiExample(
+                "Example 1",
+                summary="Example of success 201 response status",
+                description="Success response returns the created movie."
+                " Actors and genres are displayed as relevant"
+                " ids(M2M relationship).",
+                value={
+                    "id": 7,
+                    "title": "New movie",
+                    "description": "Description for movie",
+                    "duration": 115,
+                    "genres": [3, 4],
+                    "actors": [3, 6],
+                },
+                response_only=True,
+            ),
+        ],
+    )
+    def create(self, request, *args, **kwargs):
+        """ "Create a new movie. Only admin user can access"""
+        return super().create(request, *args, **kwargs)
+
+    @extend_schema(
+        summary="Retrieve the detail movie",
+        examples=[
+            OpenApiExample(
+                "Example 1",
+                summary="Example of success 200 response status",
+                description="Success response returns the movie info.",
+                value={
+                    "id": 5,
+                    "title": "Thriller movie",
+                    "description": "Thriller movie detail description",
+                    "duration": 115,
+                    "genres": [
+                        {"id": 3, "name": "Thriller"},
+                        {"id": 4, "name": "Action"},
+                    ],
+                    "actors": [
+                        {
+                            "id": 3,
+                            "first_name": "Matt",
+                            "last_name": "Damon",
+                            "full_name": "Matt Damon",
+                        },
+                        {
+                            "id": 6,
+                            "first_name": "Bruce",
+                            "last_name": "Willis",
+                            "full_name": "Bruce Willis",
+                        },
+                    ],
+                    "image": "image link",
+                },
+            ),
+        ],
+    )
+    def retrieve(self, request, *args, **kwargs):
+        """Retrieve the detail movie with passed id"""
+        return super().retrieve(request, *args, **kwargs)
+
 
 class MovieSessionViewSet(viewsets.ModelViewSet):
     queryset = (
@@ -140,7 +230,7 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
         )
     )
     serializer_class = MovieSessionSerializer
-    authentication_classes = (TokenAuthentication,)
+    # authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
     def get_queryset(self):
@@ -167,6 +257,29 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
 
         return MovieSessionSerializer
 
+    @extend_schema(
+        summary="Displays the list of sessions",
+        parameters=[
+            OpenApiParameter(
+                "movie",
+                type=str,
+                description="Filter by movie title",
+                required=False,
+            ),
+            OpenApiParameter(
+                "date",
+                type=str,
+                description="Filter by date of session."
+                " Data has format 'YYYY-MM-DD'",
+            ),
+        ],
+    )
+    def list(self, request, *args, **kwargs):
+        """Displays the list of movie sessions.
+        Can be filtered with query parameters
+         by movie title, and session date"""
+        return super().list(request, *args, **kwargs)
+
 
 class OrderPagination(PageNumberPagination):
     page_size = 10
@@ -183,7 +296,7 @@ class OrderViewSet(
     )
     serializer_class = OrderSerializer
     pagination_class = OrderPagination
-    authentication_classes = (TokenAuthentication,)
+    # authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAuthenticated,)
 
     def get_queryset(self):
