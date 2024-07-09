@@ -10,7 +10,7 @@ from rest_framework.test import APIClient
 from rest_framework import status
 
 from cinema.models import Movie, MovieSession, CinemaHall, Genre, Actor
-from cinema.serializers import MovieSerializer, MovieListSerializer, MovieDetailSerializer
+from cinema.serializers import MovieListSerializer, MovieDetailSerializer
 
 MOVIE_URL = reverse("cinema:movie-list")
 MOVIE_SESSION_URL = reverse("cinema:moviesession-list")
@@ -105,14 +105,10 @@ class MovieAuthorizationTests(TestCase):
 
     def test_filter_by_title(self):
         movie_1 = sample_movie(
-            title="Sample movie 1",
-            description="Sample description 1",
-            duration=90
+            title="Sample movie 1", description="Sample description 1", duration=90
         )
         movie_2 = sample_movie(
-            title="Sample movie 2",
-            description="Sample description 2",
-            duration=120
+            title="Sample movie 2", description="Sample description 2", duration=120
         )
 
         res = self.client.get(MOVIE_URL, {"title": movie_1.title})
@@ -129,14 +125,10 @@ class MovieAuthorizationTests(TestCase):
 
         movie_0 = sample_movie()
         movie_1 = sample_movie(
-            title="Sample movie 1",
-            description="Sample description 1",
-            duration=90
+            title="Sample movie 1", description="Sample description 1", duration=90
         )
         movie_2 = sample_movie(
-            title="Sample movie 2",
-            description="Sample description 2",
-            duration=120
+            title="Sample movie 2", description="Sample description 2", duration=120
         )
 
         movie_1.genres.add(genre_1)
@@ -153,25 +145,15 @@ class MovieAuthorizationTests(TestCase):
         self.assertNotIn(movie_0_serializer.data, res.data)
 
     def test_filter_by_actors(self):
-        actor_1 = sample_actor(
-            first_name="Actor 1",
-            last_name="Actor 11"
-        )
-        actor_2 = sample_actor(
-            first_name="Actor 2",
-            last_name="Actor 22"
-        )
+        actor_1 = sample_actor(first_name="Actor 1", last_name="Actor 11")
+        actor_2 = sample_actor(first_name="Actor 2", last_name="Actor 22")
 
         movie_0 = sample_movie()
         movie_1 = sample_movie(
-            title="Sample movie 1",
-            description="Sample description 1",
-            duration=90
+            title="Sample movie 1", description="Sample description 1", duration=90
         )
         movie_2 = sample_movie(
-            title="Sample movie 2",
-            description="Sample description 2",
-            duration=120
+            title="Sample movie 2", description="Sample description 2", duration=120
         )
         movie_1.actors.add(actor_1)
         movie_2.actors.add(actor_2)
@@ -200,8 +182,6 @@ class MovieAuthorizationTests(TestCase):
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(res.data, serializer.data)
-
-
 
 
 class MovieImageUploadTests(TestCase):
