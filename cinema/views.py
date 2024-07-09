@@ -146,7 +146,10 @@ class MovieViewSet(
         # extra parameters added to the schema
         parameters=[
             OpenApiParameter(
-                name="title", description="Filter by title", required=False, type=str
+                name="title",
+                description="Filter by title",
+                required=False,
+                type=str
             ),
             OpenApiParameter(
                 name="genres",
@@ -162,7 +165,9 @@ class MovieViewSet(
             ),
         ],
         responses={200: MovieListSerializer(many=True)},
-        description="Retrieve a list of movie, optionally filtered by title, genre and actors.",
+        description="Retrieve a list of movie, "
+                    "optionally filtered by title, "
+                    "genre and actors.",
     )
     def list(self, request, *args, **kwargs):
         return super().list(request, *args, **kwargs)
@@ -220,11 +225,15 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
                 description="Filter by date (YYYY-MM-DD)",
             ),
             OpenApiParameter(
-                name="movie", description="Filter by movie", required=False, type=str
+                name="movie",
+                description="Filter by movie",
+                required=False,
+                type=str
             ),
         ],
         responses={200: MovieSessionListSerializer(many=True)},
-        description="Retrieve a list of movie sessions, optionally filtered by date and movie.",
+        description="Retrieve a list of movie sessions, "
+                    "optionally filtered by date and movie.",
     )
     def list(self, request, *args, **kwargs):
         return super().list(request, args, kwargs)
