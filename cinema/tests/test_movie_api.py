@@ -351,8 +351,7 @@ class AdminMovieTests(TestCase):
             "description": "Description",
         }
         res = self.client.post(MOVIE_URL, payload, format="json")
-        print("Response status code:", res.status_code)
-        print("Response data:", res.data)
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
         try:
             movie = Movie.objects.get(title="Title")
             for key in payload:
