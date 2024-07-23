@@ -38,6 +38,13 @@ class Actor(models.Model):
     def full_name(self):
         return f"{self.first_name} {self.last_name}"
 
+    @full_name.setter
+    def full_name(self, full_name):
+        first_name, last_name = full_name.split(" ")
+        self.first_name = first_name
+        self.last_name = last_name
+
+
 
 def movie_image_file_path(instance, filename):
     _, extension = os.path.splitext(filename)
@@ -50,8 +57,8 @@ class Movie(models.Model):
     title = models.CharField(max_length=255)
     description = models.TextField()
     duration = models.IntegerField()
-    genres = models.ManyToManyField(Genre)
-    actors = models.ManyToManyField(Actor)
+    genres = models.ManyToManyField(Genre, blank=True)
+    actors = models.ManyToManyField(Actor, blank=True)
     image = models.ImageField(null=True, upload_to=movie_image_file_path)
 
     class Meta:
