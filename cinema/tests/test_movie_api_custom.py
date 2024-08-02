@@ -132,8 +132,8 @@ class AuthenticatedMovieApiTests(TestCase):
 
     def test_filter_movies_by_title(self):
         movie_1 = sample_movie(title="Test1")
-        movie_2 = sample_movie(title="Unique1")
-        movie_3 = sample_movie(title="Unique2")
+        movie_2 = sample_movie(title="UniqueTitle1")
+        movie_3 = sample_movie(title="UniqueTitle2")
 
         res = self.client.get(
             MOVIE_URL,
@@ -168,10 +168,11 @@ class AuthenticatedMovieApiTests(TestCase):
 
         res = self.client.get(
             MOVIE_URL,
-            {"genres": f"{genre_1.id},{genre_2.id}",
-             "actors": f"{actor_1.id},{actor_2.id}",
-             "title": "UniqueTitle"
-             }
+            {
+                "genres": f"{genre_1.id},{genre_2.id}",
+                "actors": f"{actor_1.id},{actor_2.id}",
+                "title": "Unique"
+            }
         )
 
         serializer_movie_without_anything = MovieListSerializer(movie_without_anything)
