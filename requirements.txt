@@ -6,4 +6,5 @@ pep8-naming==0.13.2
 djangorestframework==3.15.1
 pillow==10.4.0
 djangorestframework-simplejwt==5.2.0
+rest_framework_simplejwt==0.0.2
 drf-spectacular==0.22.1
