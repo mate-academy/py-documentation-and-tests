@@ -1,4 +1,4 @@
-# Documentation, throttling, JWT and tests
+q# Documentation, throttling, JWT and tests
 
 - **Read** [the guideline](https://github.com/mate-academy/py-task-guideline/blob/main/README.md) before start
 - After loading data from fixture you can use following superuser (or create another one by yourself):
