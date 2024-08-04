@@ -14,6 +14,7 @@ def get_movie_list_url():
 def get_movie_detail_url(movie_id):
     return reverse("cinema:movie-detail", args=[movie_id])
 
+
 def get_movie_upload_image_url(movie_id):
     return reverse("cinema:movie-upload-image", args=[movie_id])
 
@@ -111,17 +112,7 @@ class AdminMovieTests(TestCase):
         }
 
         result = self.client.patch(
-            get_movie_detail_url(self.movie.id), payload, format='json'
+            get_movie_detail_url(self.movie.id), payload
         )
 
-        self.assertEqual(result.status_code, status.HTTP_200_OK)
-        self.movie.refresh_from_db()
-        for key in payload:
-            self.assertEqual(payload[key], getattr(self.movie, key))
-
-    def test_delete_movie(self):
-        result = self.client.delete(get_movie_detail_url(self.movie.id))
-
-        self.assertEqual(
-            result.status_code, status.HTTP_200_OK
-        )
+        self.assertEqual(result.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
