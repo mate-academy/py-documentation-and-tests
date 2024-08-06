@@ -148,9 +148,6 @@ REST_FRAMEWORK = {
         "anon": "10/minute",
         "user": "30/minute"
     },
-    "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
-    )
 }
 
 SPECTACULAR_SETTINGS = {
