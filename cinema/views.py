@@ -156,11 +156,6 @@ class MovieViewSet(
         """Get list of movies"""
         return super().list(request, *args, **kwargs)
 
-    def create(self, request, *args, **kwargs):
-        response = super().create(request, *args, **kwargs)
-        print(f"Create response data: {response.data}")
-        return response
-
 
 class MovieSessionViewSet(viewsets.ModelViewSet):
     queryset = (
