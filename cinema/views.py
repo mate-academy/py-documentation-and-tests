@@ -130,7 +130,6 @@ class MovieViewSet(
                 "title",
                 type=str,
                 description="Filter movies by title",
-                required=False,
             ),
             OpenApiParameter(
                 "genres",
@@ -142,7 +141,6 @@ class MovieViewSet(
                 "actors",
                 type={"type": "array", "items": {"type": "integer"}},
                 description="Filter movies by actor IDs",
-                required=False,
             ),
         ]
     )
