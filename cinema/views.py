@@ -84,7 +84,7 @@ class MovieViewSet(
     @staticmethod
     def _params_to_ints(qs):
         """Converts a list of string IDs to a list of integers, handling various delimiters."""
-        delimiters = [",", "|"]  # Список можливих роздільників
+        delimiters = [",", "|"]
         for delimiter in delimiters:
             if delimiter in qs:
                 return [int(str_id) for str_id in qs.split(delimiter)]
@@ -146,19 +146,16 @@ class MovieViewSet(
                 "title",
                 type=str,
                 description="Filter by title (ex. ?title=Jaws)",
-                required=False,
             ),
             OpenApiParameter(
                 "genres",
                 type={"type": "list", "items": {"type": "number"}},
                 description="Filter by genres id (ex. ?genres=2,3)",
-                required=False,
             ),
             OpenApiParameter(
                 "actors",
                 type={"type": "list", "items": {"type": "number"}},
                 description="Filter by actors id (ex. ?actors=2,3)",
-                required=False,
             ),
         ]
     )
