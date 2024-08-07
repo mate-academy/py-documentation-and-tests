@@ -160,7 +160,7 @@ SIMPLE_JWT = {
 }
 
 SPECTACULAR_SETTINGS = {
-    'TITLE': 'Your Project Title',
-    'DESCRIPTION': 'Your project description',
+    'TITLE': 'Cinema service API',
+    'DESCRIPTION': 'API to work with cinema films, films sessions, actors and genres',
     'VERSION': '1.0.0',
 }

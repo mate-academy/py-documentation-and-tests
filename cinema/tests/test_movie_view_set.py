@@ -19,13 +19,12 @@ def get_movie_upload_image_url(movie_id):
     return reverse("cinema:movie-upload-image", args=[movie_id])
 
 
-def get_setup_data(is_staff: bool):
+def get_setup_data(is_staff: bool = False):
     user_data = {
         "email": "email@example.com",
-        "password": "testpassword"
+        "password": "testpassword",
+        "is_staff": is_staff
     }
-    if is_staff:
-        user_data["is_staff"] = True
 
     movie_data = {
         "title": "Test movie",
@@ -50,7 +49,7 @@ class UnauthenticatedMovieApiTest(TestCase):
 class AuthenticatedMovieApiTests(TestCase):
     def setUp(self):
         self.client = APIClient()
-        self.user, self.movie = get_setup_data(is_staff=False)
+        self.user, self.movie = get_setup_data()
         self.client.force_authenticate(self.user)
 
     def test_list_movies_authenticated(self):
@@ -72,7 +71,7 @@ class AuthenticatedMovieApiTests(TestCase):
 class AdminMovieTests(TestCase):
     def setUp(self):
         self.client = APIClient()
-        self.user, self.movie = get_setup_data(is_staff=True)
+        self.user, self.movie = get_setup_data(True)
         self.client.force_authenticate(self.user)
 
     def test_create_movie(self):
