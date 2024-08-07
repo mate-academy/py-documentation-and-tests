@@ -7,7 +7,9 @@ from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
-from rest_framework.viewsets import GenericViewSet, ReadOnlyModelViewSet
+from rest_framework.viewsets import GenericViewSet
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 
 from cinema.models import Genre, Actor, CinemaHall, Movie, MovieSession, Order
 from cinema.permissions import IsAdminOrIfAuthenticatedReadOnly
@@ -71,6 +73,22 @@ class MovieViewSet(
     serializer_class = MovieSerializer
     authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
+
+    @swagger_auto_schema(
+        manual_parameters=[
+            openapi.Parameter("title", openapi.IN_QUERY,
+                              description="Filter by title",
+                              type=openapi.TYPE_STRING),
+            openapi.Parameter("genres", openapi.IN_QUERY,
+                              description="Filter by genres",
+                              type=openapi.TYPE_STRING),
+            openapi.Parameter("actors", openapi.IN_QUERY,
+                              description="Filter by actors",
+                              type=openapi.TYPE_STRING),
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
 
     @staticmethod
     def _params_to_ints(qs):
@@ -142,6 +160,19 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
     serializer_class = MovieSessionSerializer
     authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
+
+    @swagger_auto_schema(
+        manual_parameters=[
+            openapi.Parameter("date", openapi.IN_QUERY,
+                              description="Filter by date",
+                              type=openapi.TYPE_STRING),
+            openapi.Parameter("movie", openapi.IN_QUERY,
+                              description="Filter by movie",
+                              type=openapi.TYPE_STRING),
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
 
     def get_queryset(self):
         date = self.request.query_params.get("date")
