@@ -1,13 +1,18 @@
 from datetime import datetime
 
+import PIL
 from django.db.models import F, Count
 from rest_framework import viewsets, mixins, status
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
+from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
-from rest_framework.viewsets import GenericViewSet, ReadOnlyModelViewSet
+from rest_framework.viewsets import GenericViewSet
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
+
 
 from cinema.models import Genre, Actor, CinemaHall, Movie, MovieSession, Order
 from cinema.permissions import IsAdminOrIfAuthenticatedReadOnly
@@ -62,20 +67,16 @@ class CinemaHallViewSet(
 
 
 class MovieViewSet(
-    mixins.ListModelMixin,
     mixins.CreateModelMixin,
+    mixins.ListModelMixin,
     mixins.RetrieveModelMixin,
+    mixins.UpdateModelMixin,
+    mixins.DestroyModelMixin,
     viewsets.GenericViewSet,
 ):
     queryset = Movie.objects.prefetch_related("genres", "actors")
-    serializer_class = MovieSerializer
     authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
-
-    @staticmethod
-    def _params_to_ints(qs):
-        """Converts a list of string IDs to a list of integers"""
-        return [int(str_id) for str_id in qs.split(",")]
 
     def get_queryset(self):
         """Retrieve the movies with filters"""
@@ -101,31 +102,39 @@ class MovieViewSet(
     def get_serializer_class(self):
         if self.action == "list":
             return MovieListSerializer
-
         if self.action == "retrieve":
             return MovieDetailSerializer
-
-        if self.action == "upload_image":
-            return MovieImageSerializer
-
         return MovieSerializer
 
-    @action(
-        methods=["POST"],
-        detail=True,
-        url_path="upload-image",
-        permission_classes=[IsAdminUser],
-    )
+    @staticmethod
+    def _params_to_ints(qs):
+        """Converts a list of string IDs to a list of integers"""
+        return [int(str_id) for str_id in qs.split(",")]
+
+    @action(detail=True, methods=["post"],
+            parser_classes=[MultiPartParser, FormParser])
     def upload_image(self, request, pk=None):
-        """Endpoint for uploading image to specific movie"""
         movie = self.get_object()
-        serializer = self.get_serializer(movie, data=request.data)
-
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
-
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        if "image" not in request.data:
+            return Response(
+                {"detail": "No image provided"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        image = request.data["image"]
+        try:
+            img = PIL.Image.open(image)
+            img.verify()
+        except (IOError, SyntaxError):
+            return Response(
+                {"detail": "Uploaded file is not a valid image."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        movie.image = image
+        movie.save()
+        return Response({
+            "status": "image uploaded",
+            "image": movie.image.url
+        }, status=status.HTTP_200_OK)
 
 
 class MovieSessionViewSet(viewsets.ModelViewSet):
@@ -142,6 +151,19 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
     serializer_class = MovieSessionSerializer
     authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
+
+    @swagger_auto_schema(
+        manual_parameters=[
+            openapi.Parameter("date", openapi.IN_QUERY,
+                              description="Filter by date",
+                              type=openapi.TYPE_STRING),
+            openapi.Parameter("movie", openapi.IN_QUERY,
+                              description="Filter by movie",
+                              type=openapi.TYPE_STRING),
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
 
     def get_queryset(self):
         date = self.request.query_params.get("date")
