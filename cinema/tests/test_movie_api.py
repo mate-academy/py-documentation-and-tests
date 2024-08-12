@@ -311,4 +311,3 @@ class AdminMovieApiTest(TestCase):
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
         self.assertIn(self.actor, actors)
         self.assertIn(self.genre, genres)
-        
