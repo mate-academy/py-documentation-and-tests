@@ -166,6 +166,7 @@ class UnauthenticatedMovieApiTests(TestCase):
     
     def test_auth_required(self):
         res = self.client.get(MOVIE_URL)
+
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
@@ -184,10 +185,8 @@ class AuthenticatedMovieApiTest(TestCase):
     def test_movies_list(self):
         sample_movie()
         movie_with_actor_genre = sample_movie()
-
         movie_with_actor_genre.actors.add(self.actor)
         movie_with_actor_genre.genres.add(self.genre)
-
         res = self.client.get(MOVIE_URL)
         movies = Movie.objects.all()
         serializer = MovieListSerializer(movies, many=True)
@@ -199,7 +198,6 @@ class AuthenticatedMovieApiTest(TestCase):
         res = self.client.get(
             MOVIE_URL, {"title": "Sample movie"}
         )
-
         serializer_movie_title = MovieListSerializer(self.movie)
         serializer_movie_title_1 = MovieListSerializer(self.movie2)
 
@@ -209,13 +207,10 @@ class AuthenticatedMovieApiTest(TestCase):
     def test_filter_movies_by_actors(self):
         movie_without_actors = sample_movie()
         movie_with_actors_1 = sample_movie(title="Test actor")
-        
         movie_with_actors_1.actors.add(self.actor)
-
         res = self.client.get(
             MOVIE_URL, {"actors": f"{self.actor.id}"}
         )
-
         serializer_without_actor = MovieListSerializer(movie_without_actors)
         serializer_movie_actor = MovieListSerializer(movie_with_actors_1)
 
@@ -226,16 +221,12 @@ class AuthenticatedMovieApiTest(TestCase):
         movie_without_genres = sample_movie()
         movie_with_genres_1 = sample_movie(title="Test genre1")
         movie_with_genres_2 = sample_movie(title="Test genre2")
-        
         genre2 = sample_genre(name="Horror")
-
         movie_with_genres_1.genres.add(self.genre)
         movie_with_genres_2.genres.add(genre2)
-
         res = self.client.get(
             MOVIE_URL, {"genres": f"{self.genre.id},{genre2.id}"}
         )
-
         serializer_without_genre = MovieListSerializer(movie_without_genres)
         serializer_movie_genre_1 = MovieListSerializer(movie_with_genres_1)
         serializer_movie_genre_2 = MovieListSerializer(movie_with_genres_2)
@@ -247,11 +238,8 @@ class AuthenticatedMovieApiTest(TestCase):
     def test_retrieve_movie_detail(self):
         movie = sample_movie()
         movie.genres.add(self.genre)
-
         url = detail_url(movie.id)
-
         res = self.client.get(url)
-
         serializer = MovieDetailSerializer(movie)
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
@@ -286,9 +274,7 @@ class AdminMovieApiTest(TestCase):
             "duration": 88,
         }
         res = self.client.post(MOVIE_URL, payload)
-
         movie = Movie.objects.get(id=res.data["id"])
-
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
 
         for key in payload:
@@ -303,7 +289,6 @@ class AdminMovieApiTest(TestCase):
             "genres": [self.genre.id],
         }
         res = self.client.post(MOVIE_URL, payload)
-
         movie = Movie.objects.get(id=res.data["id"])
         actors = movie.actors.all()
         genres = movie.genres.all()
