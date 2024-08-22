@@ -52,7 +52,7 @@ class ActorViewSet(
     GenericViewSet,
 ):
     queryset = Actor.objects.all()
-    serializer_class = ActorSerializer)
+    serializer_class = ActorSerializer
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
 
