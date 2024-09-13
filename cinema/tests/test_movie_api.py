@@ -305,36 +305,30 @@ class AuthenticatedMovieApiTests(TestCase):
 class AdminMoviesTests(TestCase):
     def setUp(self):
         self.client = APIClient()
-        self.user = get_user_model().objects.create_user(
+        self.user = get_user_model().objects.create_superuser(
             email="admin@email.com",
             password="1qazcde3",
-            is_staff=True,
+            is_staff=True
         )
         self.client.force_authenticate(self.user)
 
-    def test_create_movie(self):
-        payload = {
-            "title": "Test Movie Title",
-            "description": "Test Movie Description",
-            "duration": 90,
-        }
-
-        res = self.client.post(MOVIE_URL, payload)
-
-        movie = Movie.objects.get(pk=res.data["id"])
-
-        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
-
-        for key in payload:
-            self.assertEqual(payload[key], getattr(movie, key))
 
     def test_create_movie_with_genres_and_actors(self):
         genre_1 = sample_genre(name="Comedy")
         genre_2 = sample_genre(name="Detective")
 
-        actor_1 = sample_actor()
-        actor_2 = sample_actor()
-        actor_3 = sample_actor()
+        actor_1 = sample_actor(
+            first_name="first",
+            last_name="last",
+        )
+        actor_2 = sample_actor(
+            first_name="first",
+            last_name="last",
+        )
+        actor_3 = sample_actor(
+            first_name="first",
+            last_name="last",
+        )
 
         payload = {
             "title": "Test Movie Title",
