@@ -312,7 +312,6 @@ class AdminMoviesTests(TestCase):
         )
         self.client.force_authenticate(self.user)
 
-
     def test_create_movie_with_genres_and_actors(self):
         genre_1 = sample_genre(name="Comedy")
         genre_2 = sample_genre(name="Detective")
