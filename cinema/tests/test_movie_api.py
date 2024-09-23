@@ -320,7 +320,7 @@ class AdminMovieTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
     def test_create_movie_with_genre(self):
-        genre = sample_actor()
+        genre = sample_genre()
 
         payload = {
             "title": "title",
