@@ -1,17 +1,15 @@
-import tempfile
 import os
-from imghdr import tests
+import tempfile
 
 from PIL import Image
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
-
-from rest_framework.test import APIClient
 from rest_framework import status
+from rest_framework.test import APIClient
 
-from cinema.models import Movie, MovieSession, CinemaHall, Genre, Actor, Order, Ticket
-from cinema.serializers import MovieListSerializer, MovieSessionListSerializer
+from cinema.models import Movie, MovieSession, CinemaHall, Genre, Actor
+from cinema.serializers import MovieListSerializer
 
 MOVIE_URL = reverse("cinema:movie-list")
 MOVIE_SESSION_URL = reverse("cinema:moviesession-list")
