@@ -7,7 +7,9 @@ from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
-from rest_framework.viewsets import GenericViewSet, ReadOnlyModelViewSet
+from rest_framework.viewsets import GenericViewSet
+from drf_spectacular.utils import extend_schema, OpenApiParameter
+from drf_spectacular.types import OpenApiTypes
 
 from cinema.models import Genre, Actor, CinemaHall, Movie, MovieSession, Order
 from cinema.permissions import IsAdminOrIfAuthenticatedReadOnly
@@ -128,6 +130,30 @@ class MovieViewSet(
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="title",
+                description="Filter by part of the title (ex. ?title=smth)",
+                type=str,
+            ),
+            OpenApiParameter(
+                name="genres",
+                description="Filter by genre id (ex. ?genres=1,2)",
+                type={"type": "array", "items": {"type": "number"}},
+            ),
+            OpenApiParameter(
+                name="actors",
+                description="Filter by actor id (ex. ?actors =1,2)",
+                type={"type": "array", "items": {"type": "number"}},
+            ),
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        """Get list of movies"""
+        return super().list(request, *args, **kwargs)
+
+
 class MovieSessionViewSet(viewsets.ModelViewSet):
     queryset = (
         MovieSession.objects.all()
@@ -166,6 +192,24 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
             return MovieSessionDetailSerializer
 
         return MovieSessionSerializer
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="date",
+                description="Filter date (ex. ?date=2024-10-10)",
+                type=OpenApiTypes.DATE,
+            ),
+            OpenApiParameter(
+                name="movie",
+                description="Filter by movie id (ex. ?movie=1)",
+                type=str,
+            ),
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        """Get list of movie sessions"""
+        return super().list(request, *args, **kwargs)
 
 
 class OrderPagination(PageNumberPagination):
