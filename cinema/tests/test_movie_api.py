@@ -183,8 +183,8 @@ class AuthenticatedMovieApiTests(TestCase):
         movie_with_genre_1 = sample_movie()
         movie_with_genre_2 = sample_movie()
 
-        genre_1 = sample_genre("comedy")
-        genre_2 = sample_genre("horror")
+        genre_1 = sample_genre(name="comedy")
+        genre_2 = sample_genre(name="horror")
 
         movie_with_genre_1.genres.add(genre_1)
         movie_with_genre_2.genres.add(genre_2)
@@ -208,8 +208,8 @@ class AuthenticatedMovieApiTests(TestCase):
         movie_with_actor_1 = sample_movie()
         movie_with_actor_2 = sample_movie()
 
-        actor_1 = sample_actor(first_name="Will", second_name="Smith")
-        actor_2 = sample_actor(first_name="Max", second_name="Pain")
+        actor_1 = sample_actor(first_name="Will", last_name="Smith")
+        actor_2 = sample_actor(first_name="Max", last_name="Pain")
 
         movie_with_actor_1.actors.add(actor_1)
         movie_with_actor_2.actors.add(actor_2)
@@ -227,8 +227,8 @@ class AuthenticatedMovieApiTests(TestCase):
         self.assertEqual(result.data, serializer_with_actor_2.data)
 
     def test_title_filter(self):
-        movie_1 = sample_movie("Bleach")
-        movie_2 = sample_movie("DanDaDan")
+        movie_1 = sample_movie(title="Bleach")
+        movie_2 = sample_movie(title="DanDaDan")
 
         result = self.client.get(
             MOVIE_URL, {"title": "Bleach"}
