@@ -1,6 +1,5 @@
 import tempfile
 import os
-from tkinter.font import names
 
 from PIL import Image
 from django.contrib.auth import get_user_model
@@ -11,7 +10,7 @@ from rest_framework.test import APIClient
 from rest_framework import status
 
 from cinema.models import Movie, MovieSession, CinemaHall, Genre, Actor
-from cinema.serializers import MovieSerializer, MovieListSerializer, MovieDetailSerializer
+from cinema.serializers import MovieListSerializer, MovieDetailSerializer
 
 MOVIE_URL = reverse("cinema:movie-list")
 MOVIE_SESSION_URL = reverse("cinema:moviesession-list")
@@ -177,9 +176,9 @@ class AuthenticatedMovieAPITests(TestCase):
             email="test@test.com", password="test1234"
         )
         self.client.force_authenticate(self.user)
+        self.movie = sample_movie()
 
     def test_movies_list(self):
-        sample_movie()
         sample_movie().genres.add(sample_genre())
         sample_movie().actors.add(sample_actor())
 
@@ -191,13 +190,12 @@ class AuthenticatedMovieAPITests(TestCase):
         self.assertEqual(res.data, serializer.data)
 
     def test_filter_movie_by_title(self):
-        movie_without_genres = sample_movie()
         movie_with_genres = sample_movie(title="test1").genres.add(sample_genre())
         movie_with_actors = sample_movie(title="test2").actors.add(sample_actor())
 
-        res = self.client.get(MOVIE_URL, {"title": movie_without_genres.title})
+        res = self.client.get(MOVIE_URL, {"title": self.movie.title})
 
-        serializer_without_genres = MovieListSerializer(movie_without_genres)
+        serializer_without_genres = MovieListSerializer(self.movie)
         serializer_with_genres = MovieListSerializer(movie_with_genres)
         serializer_with_actors = MovieListSerializer(movie_with_actors)
 
@@ -207,7 +205,6 @@ class AuthenticatedMovieAPITests(TestCase):
         self.assertNotIn(serializer_with_actors.data, res.data)
 
     def test_filter_movie_by_genres(self):
-        movie_without_genres = sample_movie()
         movie_with_genres_1 = sample_movie(title="test1")
         movie_with_genres_2 = sample_movie(title="test2")
 
@@ -219,7 +216,7 @@ class AuthenticatedMovieAPITests(TestCase):
 
         res = self.client.get(MOVIE_URL, {"genres": f"{genre_1.id},{genre_2.id}"})
 
-        serializer_without_genres = MovieListSerializer(movie_without_genres)
+        serializer_without_genres = MovieListSerializer(self.movie)
         serializer_with_genres_1 = MovieListSerializer(movie_with_genres_1)
         serializer_with_genres_2 = MovieListSerializer(movie_with_genres_2)
 
@@ -229,7 +226,6 @@ class AuthenticatedMovieAPITests(TestCase):
         self.assertIn(serializer_with_genres_2.data, res.data)
 
     def test_filter_movie_by_actors(self):
-        movie_without_actors = sample_movie()
         movie_with_actors_1 = sample_movie(title="test1")
         movie_with_actors_2 = sample_movie(title="test2")
 
@@ -241,7 +237,7 @@ class AuthenticatedMovieAPITests(TestCase):
 
         res = self.client.get(MOVIE_URL, {"actors": f"{actor_1.id},{actor_2.id}"})
 
-        serializer_without_actors = MovieListSerializer(movie_without_actors)
+        serializer_without_actors = MovieListSerializer(self.movie)
         serializer_with_actors_1 = MovieListSerializer(movie_with_actors_1)
         serializer_with_actors_2 = MovieListSerializer(movie_with_actors_2)
 
@@ -251,15 +247,15 @@ class AuthenticatedMovieAPITests(TestCase):
         self.assertIn(serializer_with_actors_2.data, res.data)
 
     def test_retrieve_movie_detail(self):
-        movie = sample_movie()
-        movie.genres.add(sample_genre())
-        movie.actors.add(sample_actor())
 
-        url = detail_url(movie.id)
+        self.movie.genres.add(sample_genre())
+        self.movie.actors.add(sample_actor())
+
+        url = detail_url(self.movie.id)
 
         res = self.client.get(url)
 
-        serializer = MovieDetailSerializer(movie)
+        serializer = MovieDetailSerializer(self.movie)
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(res.data, serializer.data)
@@ -279,8 +275,8 @@ class AuthenticatedMovieAPITests(TestCase):
 class AdminMovieTests(TestCase):
     def setUp(self):
         self.client = APIClient()
-        self.user = get_user_model().objects.create_user(
-            email="admin@test.com", password="test1234", is_staff=True
+        self.user = get_user_model().objects.create_superuser(
+            email="admin@test.com", password="test1234"
         )
         self.client.force_authenticate(self.user)
 
