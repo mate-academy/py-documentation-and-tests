@@ -5,6 +5,8 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.conf import settings
 from django.utils.text import slugify
+from drf_spectacular.utils import extend_schema_field
+from rest_framework import serializers
 
 
 class CinemaHall(models.Model):
@@ -35,6 +37,7 @@ class Actor(models.Model):
         return self.first_name + " " + self.last_name
 
     @property
+    @extend_schema_field(serializers.CharField)
     def full_name(self):
         return f"{self.first_name} {self.last_name}"
 
@@ -52,7 +55,11 @@ class Movie(models.Model):
     duration = models.IntegerField()
     genres = models.ManyToManyField(Genre)
     actors = models.ManyToManyField(Actor)
-    image = models.ImageField(null=True, upload_to=movie_image_file_path)
+    image = models.ImageField(
+        null=True,
+        upload_to=movie_image_file_path,
+        blank=True,
+    )
 
     class Meta:
         ordering = ["title"]
