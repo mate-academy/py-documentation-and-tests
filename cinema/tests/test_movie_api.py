@@ -237,8 +237,8 @@ class AuthenticatedMovieApiTests(TestCase):
         serializer_movie_1 = MovieListSerializer(movie_1)
         serializer_movie_2 = MovieListSerializer(movie_2)
 
-        self.assertIn(serializer_movie_1, result.data)
-        self.assertNotIn(serializer_movie_2, result.data)
+        self.assertIn(serializer_movie_1.data, result.data)
+        self.assertNotIn(serializer_movie_2.data, result.data)
 
 
 class AdminMovieTests(TestCase):
