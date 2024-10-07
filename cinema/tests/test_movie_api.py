@@ -309,10 +309,9 @@ class AuthenticatedMovieApiTests(TestCase):
 class AdminMovieTests(TestCase):
     def setUp(self):
         self.client = APIClient()
-        self.user = get_user_model().objects.create_user(
+        self.user = get_user_model().objects.create_superuser(
             email="admin@email.test",
             password="adminpassword",
-            is_staff=True
         )
         self.client.force_authenticate(self.user)
 
