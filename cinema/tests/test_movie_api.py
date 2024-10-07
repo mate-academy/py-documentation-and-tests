@@ -191,7 +191,7 @@ class AuthenticatedMovieApiTests(TestCase):
 
         result = self.client.get(
             MOVIE_URL,
-            {f"{genre_1.id},{genre_2.id}"},
+            {"genres": f"{genre_1.id},{genre_2.id}"}
         )
 
         serializer_without_genre = MovieListSerializer(movie_without_genre)
@@ -222,9 +222,9 @@ class AuthenticatedMovieApiTests(TestCase):
         serializer_with_actor_1 = MovieListSerializer(movie_with_actor_1)
         serializer_with_actor_2 = MovieListSerializer(movie_with_actor_2)
 
-        self.assertEqual(result.data, serializer_without_actor.data)
-        self.assertEqual(result.data, serializer_with_actor_1.data)
-        self.assertEqual(result.data, serializer_with_actor_2.data)
+        self.assertNotIn(result.data, serializer_without_actor.data)
+        self.assertIn(result.data, serializer_with_actor_1.data)
+        self.assertIn(result.data, serializer_with_actor_2.data)
 
     def test_title_filter(self):
         movie_1 = sample_movie(title="Bleach")
@@ -237,8 +237,8 @@ class AuthenticatedMovieApiTests(TestCase):
         serializer_movie_1 = MovieListSerializer(movie_1)
         serializer_movie_2 = MovieListSerializer(movie_2)
 
-        self.assertEqual(result.data, serializer_movie_1.data)
-        self.assertEqual(result.data, serializer_movie_2.data)
+        self.assertIn(result.data, serializer_movie_1.data)
+        self.assertNotIn(result.data, serializer_movie_2.data)
 
 
 class AdminMovieTests(TestCase):
