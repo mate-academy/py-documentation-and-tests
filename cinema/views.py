@@ -71,8 +71,6 @@ class MovieViewSet(
 ):
     queryset = Movie.objects.prefetch_related("genres", "actors")
     serializer_class = MovieSerializer
-    # authentication_classes = (TokenAuthentication,)
-    # permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
     @staticmethod
     def _params_to_ints(qs):
@@ -153,7 +151,6 @@ class MovieViewSet(
         return super().list(request, *args, **kwargs)
 
 
-
 class MovieSessionViewSet(viewsets.ModelViewSet):
     queryset = (
         MovieSession.objects.all()
@@ -166,8 +163,6 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
         )
     )
     serializer_class = MovieSessionSerializer
-    # authentication_classes = (TokenAuthentication,)
-    # permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
     def get_queryset(self):
         date = self.request.query_params.get("date")
@@ -201,11 +196,7 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
                 description="Filtering by date",
                 required=False,
             ),
-            # OpenApiParameter(
-            #     "movie",
-            #     type={"type": "list", "items": {"type": "number"}},
-            #     description="Filtering by movies",
-            # ),
+
             OpenApiParameter(
                 name="movie",
                 type=str,
@@ -234,7 +225,6 @@ class OrderViewSet(
     )
     serializer_class = OrderSerializer
     pagination_class = OrderPagination
-    # authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAuthenticated,)
 
     def get_queryset(self):
