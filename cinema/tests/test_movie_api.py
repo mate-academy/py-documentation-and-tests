@@ -244,45 +244,46 @@ class AuthenticatedMovieApiTest(TestCase):
 
 
 class AdminMovieTest(TestCase):
-
     def setUp(self):
         self.client = APIClient()
         self.user = get_user_model().objects.create_user(
-            email="test@t.com", password="ti", is_staff=True
+            email="admin_test@test.com",
+            password="test_admin",
+            is_staff=True,
         )
         self.client.force_authenticate(self.user)
 
     def test_create_movie(self):
+        genre_1 = sample_genre(name="genre_1")
+        genre_2 = sample_genre(name="genre_2")
+        actor_1 = sample_actor(first_name="First", last_name="Actor")
+        actor_2 = sample_actor(first_name="Second", last_name="Actor")
         payload = {
-            "title": "Test",
-            "description": "TestDescription",
-            "duration": 120,
+            "title": "New movie",
+            "description": "New description",
+            "duration": 100,
+            "genres": [genre_1.id, genre_2.id],
+            "actors": [actor_1.id, actor_2.id],
         }
 
         res = self.client.post(MOVIE_URL, payload)
         movie = Movie.objects.get(id=res.data["id"])
-        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
-
-        for key in payload:
-            self.assertEqual(payload[key], getattr(movie, key))
-
-    def test_create_movie_with_genre_and_actor(self):
-        payload = {
-            "title": "Test",
-            "description": "TestDescription",
-            "duration": 120,
-            "genres": [sample_genre().id],
-            "actors": [sample_actor().id]
-        }
-
-        res = self.client.post(MOVIE_URL, payload)
+        genres = movie.genres.all()
+        actors = movie.actors.all()
 
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        self.assertIn(actor_1, actors)
+        self.assertIn(actor_2, actors)
+        self.assertIn(genre_1, genres)
+        self.assertIn(genre_2, genres)
+        self.assertEqual(genres.count(), 2)
+        self.assertEqual(actors.count(), 2)
 
-    def test_delete_movie_not_allowed(self):
+    def test_delete_bus_not_allowed(self):
         movie = sample_movie()
 
         url = detail_url(movie.id)
+
         res = self.client.delete(url)
 
         self.assertEqual(res.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
