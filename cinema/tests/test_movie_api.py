@@ -9,14 +9,10 @@ from rest_framework import status
 from rest_framework.test import APIClient
 
 from cinema.models import Movie, MovieSession, CinemaHall, Genre, Actor
-from cinema.serializers import MovieListSerializer
+from cinema.serializers import MovieListSerializer, MovieDetailSerializer
 
 MOVIE_URL = reverse("cinema:movie-list")
 MOVIE_SESSION_URL = reverse("cinema:moviesession-list")
-
-
-def detail_url(movie_id):
-    return reverse("cinema:movie-detail", args=[movie_id])
 
 
 def sample_movie(**params):
@@ -28,6 +24,46 @@ def sample_movie(**params):
     defaults.update(params)
 
     return Movie.objects.create(**defaults)
+
+
+def sample_genre(**params):
+    defaults = {
+        "name": "Drama",
+    }
+    defaults.update(params)
+
+    return Genre.objects.create(**defaults)
+
+
+def sample_actor(**params):
+    defaults = {"first_name": "George", "last_name": "Clooney"}
+    defaults.update(params)
+
+    return Actor.objects.create(**defaults)
+
+
+def sample_movie_session(**params):
+    cinema_hall = CinemaHall.objects.create(
+        name="Blue", rows=20, seats_in_row=20
+    )
+
+    defaults = {
+        "show_time": "2022-06-02 14:00:00",
+        "movie": None,
+        "cinema_hall": cinema_hall,
+    }
+    defaults.update(params)
+
+    return MovieSession.objects.create(**defaults)
+
+
+def image_upload_url(movie_id):
+    """Return URL for recipe image upload"""
+    return reverse("cinema:movie-upload-image", args=[movie_id])
+
+
+def detail_url(movie_id):
+    return reverse("cinema:movie-detail", args=[movie_id])
 
 
 class UnauthenticatedBusApiTest(TestCase):
@@ -115,6 +151,24 @@ class AuthenticatedMovieApiTest(TestCase):
         self.assertIn(serializer_with_actor_1.data, res.data)
         self.assertIn(serializer_with_actor_2.data, res.data)
 
+    def test_retrieve_movie_detail(self):
+        movie = sample_movie()
+
+        movie.genres.add(Genre.objects.create(name="Genre1"))
+        movie.actors.add(
+            Actor.objects.create(
+                first_name="first1", last_name="last1"
+            )
+        )
+
+        url = detail_url(movie.id)
+        res = self.client.get(url)
+
+        serializer = MovieDetailSerializer(movie)
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data, serializer.data)
+
     def test_create_movie_forbidden(self):
         payload = {
             "title": "New movie",
@@ -122,6 +176,37 @@ class AuthenticatedMovieApiTest(TestCase):
             "duration": 60,
         }
         res = self.client.post(MOVIE_URL, payload)
+
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_delete_movie_forbidden(self):
+        movie = sample_movie()
+
+        url = detail_url(movie.id)
+
+        res = self.client.delete(url)
+
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_update_movie_forbidden(self):
+        movie = sample_movie()
+        payload = {
+            "title": "New movie",
+            "description": "New description",
+            "duration": 60,
+        }
+        url = detail_url(movie.id)
+        res = self.client.put(url, payload)
+
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_partial_update_movie_forbidden(self):
+        movie = sample_movie()
+        payload = {
+            "title": "New movie",
+        }
+        url = detail_url(movie.id)
+        res = self.client.patch(url, payload)
 
         self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
 
@@ -183,46 +268,6 @@ class AdminMovieTest(TestCase):
         self.assertEqual(actors.count(), 2)
         self.assertIn(actor_1, actors)
         self.assertIn(actor_2, actors)
-
-
-def sample_genre(**params):
-    defaults = {
-        "name": "Drama",
-    }
-    defaults.update(params)
-
-    return Genre.objects.create(**defaults)
-
-
-def sample_actor(**params):
-    defaults = {"first_name": "George", "last_name": "Clooney"}
-    defaults.update(params)
-
-    return Actor.objects.create(**defaults)
-
-
-def sample_movie_session(**params):
-    cinema_hall = CinemaHall.objects.create(
-        name="Blue", rows=20, seats_in_row=20
-    )
-
-    defaults = {
-        "show_time": "2022-06-02 14:00:00",
-        "movie": None,
-        "cinema_hall": cinema_hall,
-    }
-    defaults.update(params)
-
-    return MovieSession.objects.create(**defaults)
-
-
-def image_upload_url(movie_id):
-    """Return URL for recipe image upload"""
-    return reverse("cinema:movie-upload-image", args=[movie_id])
-
-
-def detail_url(movie_id):
-    return reverse("cinema:movie-detail", args=[movie_id])
 
 
 class MovieImageUploadTests(TestCase):
