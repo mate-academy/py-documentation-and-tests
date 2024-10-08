@@ -1,6 +1,5 @@
 import tempfile
 import os
-from pydoc import describe
 
 from PIL import Image
 from django.contrib.auth import get_user_model
@@ -12,7 +11,6 @@ from rest_framework import status
 
 from cinema.models import Movie, MovieSession, CinemaHall, Genre, Actor
 from cinema.serializers import (
-    MovieSerializer,
     MovieListSerializer,
     MovieDetailSerializer,
 )
