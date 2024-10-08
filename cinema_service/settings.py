@@ -153,7 +153,7 @@ REST_FRAMEWORK = {
         "user": "30/minute",
     },
     "DEFAULT_AUTHENTICATION_CLASSES": [
-            "rest_framework_simplejwt.authentication.JWTAuthentication",
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
     ],
 }
 
