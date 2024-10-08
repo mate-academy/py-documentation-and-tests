@@ -14,7 +14,7 @@ It should include all query params described, such as:
 **Remember:** don't forget to add `description` to your `OpenApiParameter`.
 
 2. Add throttling settings, it should allow:
-    - 10 requests per minute for unauthorized users
+    - 10 requests per   for unauthorized users
     - 30 requests per minute for authorized ones
 3. Add a JWT support for the project.
 4. Cover the whole `MovieViewSet` with tests.
