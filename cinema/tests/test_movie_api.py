@@ -281,6 +281,7 @@ class AdminMovieTest(TestCase):
 
     def test_delete_movie_not_allowed(self):
         movie = sample_movie()
+
         url = detail_url(movie.id)
         res = self.client.delete(url)
 
