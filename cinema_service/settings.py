@@ -38,7 +38,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "rest_framework",
-    "rest_framework.authtoken",
+    "rest_framework_simplejwt",
     "debug_toolbar",
     "cinema",
     "user",
@@ -145,7 +145,8 @@ REST_FRAMEWORK = {
     ],
     "DEFAULT_THROTTLE_RATES": {
         "anon": "10/min",
-        "user": "30/min"},
+        "user": "30/min"
+    },
 }
 
 SPECTACULAR_SETTINGS = {
