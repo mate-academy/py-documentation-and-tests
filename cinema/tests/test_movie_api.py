@@ -10,6 +10,7 @@ from rest_framework.test import APIClient
 from rest_framework import status
 
 from cinema.models import Movie, MovieSession, CinemaHall, Genre, Actor
+from cinema.serializers import MovieListSerializer, MovieDetailSerializer
 
 MOVIE_URL = reverse("cinema:movie-list")
 MOVIE_SESSION_URL = reverse("cinema:moviesession-list")
@@ -64,6 +65,95 @@ def image_upload_url(movie_id):
 
 def detail_url(movie_id):
     return reverse("cinema:movie-detail", args=[movie_id])
+
+
+class MovieViewSetTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.user = get_user_model().objects.create_superuser(
+            "admin@myproject.com",
+            "password"
+        )
+        self.client.force_authenticate(self.user)
+
+        self.movie1 = sample_movie(title="Movie 1")
+        self.movie2 = sample_movie(title="Movie 2")
+
+        self.drama = Genre.objects.create(
+            name="Action",
+        )
+        self.comedy = Genre.objects.create(
+            name="Horror",
+        )
+        self.actress = Actor.objects.create(
+            first_name="Kate", last_name="Winslet"
+        )
+
+    def test_list_movies(self):
+        res = self.client.get(MOVIE_URL)
+
+        movies = Movie.objects.all()
+        serializer = MovieListSerializer(movies, many=True)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data, serializer.data)
+
+    def test_retrieve_movie_detail(self):
+        url = detail_url(self.movie1.id)
+        res = self.client.get(url)
+
+        serializer = MovieDetailSerializer(self.movie1)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data, serializer.data)
+
+    def test_create_movie(self):
+        movies = self.client.post(
+            MOVIE_URL,
+            {
+                "title": "Inception",
+                "description": "Description...",
+                "duration": 100,
+                "actors": [1],
+                "genres": [1, 2],
+            },
+        )
+        db_movies = Movie.objects.all()
+        self.assertEqual(movies.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(db_movies.count(), 3)
+        self.assertEqual(db_movies.filter(title="Inception").count(), 1)
+
+    def test_filter_movies_by_title(self):
+        res = self.client.get(MOVIE_URL, {"title": "Movie 1"})
+
+        serializer1 = MovieListSerializer(self.movie1)
+        serializer2 = MovieListSerializer(self.movie2)
+        self.assertIn(serializer1.data, res.data)
+        self.assertNotIn(serializer2.data, res.data)
+
+    def test_filter_movies_by_genres(self):
+        genre1 = sample_genre(name="action")
+        genre2 = sample_genre(name="horror")
+        self.movie1.genres.add(genre1)
+        self.movie2.genres.add(genre2)
+
+        res = self.client.get(MOVIE_URL, {"genres": f"{genre1.id}"})
+
+        serializer1 = MovieListSerializer(self.movie1)
+        serializer2 = MovieListSerializer(self.movie2)
+        self.assertIn(serializer1.data, res.data)
+        self.assertNotIn(serializer2.data, res.data)
+
+    def test_filter_movies_by_actors(self):
+        actor1 = sample_actor(first_name="Jack", last_name="Nicholson")
+        actor2 = sample_actor(first_name="Leonardo", last_name="DiCaprio")
+        self.movie1.actors.add(actor1)
+        self.movie2.actors.add(actor2)
+
+        res = self.client.get(MOVIE_URL, {"actors": f"{actor1.id}"})
+
+        serializer1 = MovieListSerializer(self.movie1)
+        serializer2 = MovieListSerializer(self.movie2)
+        self.assertIn(serializer1.data, res.data)
+        self.assertNotIn(serializer2.data, res.data)
 
 
 class MovieImageUploadTests(TestCase):
