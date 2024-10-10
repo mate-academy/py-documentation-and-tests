@@ -148,7 +148,7 @@ class MovieImageUploadTests(TestCase):
 
         self.assertIn("image", res.data[0].keys())
 
-    def test_image_url_is_shown_on_movie_session_detail(self):
+    def test_upload_image_to_movie_shows_image_in_movie_session_detail(self):
         url = image_upload_url(self.movie.id)
         with tempfile.NamedTemporaryFile(suffix=".jpg") as ntf:
             img = Image.new("RGB", (10, 10))
@@ -164,7 +164,7 @@ class UnauthenticatedCinemaAPITests(TestCase):
     def setUp(self):
         self.client = APIClient()
 
-    def test_auth_required(self):
+    def test_unauthenticated_user_cannot_access_movie_list(self):
         res = self.client.get(MOVIE_URL)
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
 
@@ -279,7 +279,7 @@ class AuthenticatedCinemaAPITests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, serializer.data)
 
-    def test_create_movie_forbidden(self):
+    def test_non_admin_user_cannot_create_movie(self):
         payload = {
             "title": "TestTitle",
             "description": "TestDescription",
@@ -300,7 +300,7 @@ class AdminMovieTests(TestCase):
         )
         self.client.force_authenticate(self.user)
 
-    def test_create_movie(self):
+    def test_admin_user_can_create_movie_with_actors_and_genres(self):
         actor_1 = sample_actor()
 
         genre_1 = sample_genre(name="Action")
@@ -326,7 +326,7 @@ class AdminMovieTests(TestCase):
         self.assertEqual(genres.count(), 1)
 
 
-    def test_delete_movie_not_allowed(self):
+    def test_delete_movie_is_not_allowed(self):
         movie = sample_movie()
         response = self.client.delete(detail_url(movie.id))
 
