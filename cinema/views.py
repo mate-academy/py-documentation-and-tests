@@ -8,8 +8,11 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet, ReadOnlyModelViewSet
-from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiExample
-from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import (
+    extend_schema,
+    OpenApiParameter,
+    OpenApiExample
+)
 
 from cinema.models import Genre, Actor, CinemaHall, Movie, MovieSession, Order
 from cinema.permissions import IsAdminOrIfAuthenticatedReadOnly
@@ -140,13 +143,15 @@ class MovieViewSet(
             OpenApiParameter(
                 name="genres",
                 type={"type": "list", "items": {"type": "number"}},
-                description="Filtering by genres (comma-separated list of IDs)",
+                description="Filtering by genres "
+                            "(comma-separated list of IDs)",
                 required=False,
             ),
             OpenApiParameter(
                 name="actors",
                 type={"type": "list", "items": {"type": "number"}},
-                description="Filtering by actors (comma-separated list of IDs)",
+                description="Filtering by actors "
+                            "(comma-separated list of IDs)",
                 required=False,
             ),
         ],
@@ -210,7 +215,8 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
             OpenApiParameter(
                 name="movie",
                 type=int,
-                description="Finding sessions for exactly one movie by movie id",
+                description="Finding sessions for "
+                            "exactly one movie by movie id",
                 required=False,
             ),
         ],
