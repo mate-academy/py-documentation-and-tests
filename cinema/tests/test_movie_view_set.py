@@ -21,17 +21,24 @@ def sample_movie(**params) -> Movie:
     defaults.update(params)
     return Movie.objects.create(**defaults)
 
-class TestMovieViewSet(TestCase):
+
+class TestUnauthenticatedUser(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+
+    def test_auth_required(self):
+        res = self.client.get(MOVIE_URL)
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+
+class TestAuthenticatedUser(TestCase):
     def setUp(self):
         self.client = APIClient()
         self.user = get_user_model().objects.create_user(
             email="user1@cinema.com",
             password="2wsxcvfr4",
         )
-        self.admin = get_user_model().objects.create_superuser(
-            email="admin@cinema.com",
-            password="3edcvbgt5",
-        )
+        self.client.force_authenticate(self.user)
 
         self.movie = sample_movie()
         self.comedy_movie = sample_movie(title="The Great Brick 2")
@@ -60,10 +67,6 @@ class TestMovieViewSet(TestCase):
             "description": "The Great Brick fall on superman head",
             "duration": 121,
         }
-
-    def test_auth_required(self):
-        res = self.client.get(MOVIE_URL)
-        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_movie_list(self):
         self.client.force_authenticate(self.user)
@@ -121,7 +124,45 @@ class TestMovieViewSet(TestCase):
 
         self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
 
-    def test_admin_create_movie(self):
+
+class TestAdminUser(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.admin = get_user_model().objects.create_superuser(
+            email="admin@cinema.com",
+            password="3edcvbgt5",
+        )
+        self.client.force_authenticate(self.admin)
+
+        self.movie = sample_movie()
+        self.comedy_movie = sample_movie(title="The Great Brick 2")
+        self.drama_movie = sample_movie(title="The Great Brick 3")
+
+        self.genre_1 = Genre.objects.create(name="Comedy")
+        self.genre_2 = Genre.objects.create(name="Drama")
+
+        self.actor_1 = Actor.objects.create(
+            first_name="Adam",
+            last_name="Smith",
+        )
+        self.actor_2 = Actor.objects.create(
+            first_name="Eva",
+            last_name="Smith",
+        )
+
+        self.comedy_movie.genres.add(self.genre_1)
+        self.drama_movie.genres.add(self.genre_2)
+
+        self.comedy_movie.actors.add(self.actor_1)
+        self.drama_movie.actors.add(self.actor_2)
+
+        self.payload = {
+            "title": "The Great Brick 4",
+            "description": "The Great Brick fall on superman head",
+            "duration": 121,
+        }
+
+    def test_create_movie(self):
         self.client.force_authenticate(self.admin)
         res = self.client.post(MOVIE_URL, self.payload)
 
