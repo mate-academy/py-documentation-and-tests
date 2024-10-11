@@ -34,7 +34,7 @@ class MovieAndMovieSessionTestCaseForAnonimUser(TestCase):
 class MovieAndMovieSessionTestCaseForSimpleUser(TestCase):
     def setUp(self):
         self.client = APIClient()
-        self.user = User.objects.create_superuser(
+        self.user = User.objects.create_user(
             email="<EMAIL>",
             password="<PASSWORD>",
         )
@@ -67,11 +67,20 @@ class MovieAndMovieSessionTestCaseForSimpleUser(TestCase):
             description="Test movie",
             duration=6,
         )
+        self.movie_japon = Movie.objects.create(
+            title="japon",
+            description="Test movie",
+            duration=6,
+        )
+
         self.movie_apalon.actors.add(self.actor_John)
         self.movie_apalon.genres.add(self.genre_horror)
 
         self.movie_vinston.actors.add(self.actor_Illia)
         self.movie_vinston.genres.add(self.genre_drama)
+
+        self.movie_japon.actors.add(self.actor_John)
+        self.movie_japon.genres.add(self.genre_drama)
 
         self.movie_session_2024 = MovieSession.objects.create(
             show_time=datetime.datetime(2024, 1, 1, 12, 0, 0),
@@ -117,15 +126,20 @@ class MovieAndMovieSessionTestCaseForSimpleUser(TestCase):
     def test_filter_movie_by_title(self):
         movie_response_apalon = self.client.get(MOVIE_LIST_URL, {"title": "apalon"})
         movie_response_vinston = self.client.get(MOVIE_LIST_URL, {"title": "vinston"})
+        movie_response_lolipops = self.client.get(MOVIE_LIST_URL, {"title": "lolipops"})
 
         movie_serializer_apalon = MovieListSerializer(self.movie_apalon, many=False)
         movie_serializer_vinston = MovieListSerializer(self.movie_vinston, many=False)
+        movie_serializer_japon = MovieListSerializer(self.movie_japon, many=False)
 
         self.assertIn(movie_serializer_apalon.data, movie_response_apalon.data)
         self.assertIn(movie_serializer_vinston.data, movie_response_vinston.data)
 
-        self.assertNotIn(movie_serializer_vinston.data, movie_response_apalon.data)
+        self.assertNotIn(movie_serializer_japon.data, movie_response_apalon.data)
         self.assertNotIn(movie_serializer_apalon.data, movie_response_vinston.data)
+
+        self.assertEqual(movie_response_lolipops.status_code, status.HTTP_200_OK)
+        self.assertEqual(movie_response_lolipops.data, [])
 
     def test_filter_movie_by_actors(self):
         movie_responce_Illia = self.client.get(
@@ -134,9 +148,13 @@ class MovieAndMovieSessionTestCaseForSimpleUser(TestCase):
         movie_responce_Jonh = self.client.get(
             MOVIE_LIST_URL, {"actors": f"{self.actor_John.id}"}
         )
+        movie_responce_qeuty = self.client.get(
+            MOVIE_LIST_URL, {"actors": f"918"}
+        )
 
         movie_serializer_Jonh = MovieListSerializer(self.movie_apalon, many=False)
         movie_serializer_Illia = MovieListSerializer(self.movie_vinston, many=False)
+
 
         self.assertEqual(
             movie_serializer_Illia.data["actors"],
@@ -150,12 +168,18 @@ class MovieAndMovieSessionTestCaseForSimpleUser(TestCase):
             movie_serializer_Jonh.data["actors"], movie_responce_Illia.data[0]["actors"]
         )
 
+        self.assertEqual(movie_responce_qeuty.status_code, status.HTTP_200_OK)
+        self.assertEqual(movie_responce_qeuty.data, [])
+
     def test_filter_movie_by_genres(self):
         movie_response_horror = self.client.get(
             MOVIE_LIST_URL, {"genres": f"{self.genre_horror.id}"}
         )
         movie_response_drama = self.client.get(
             MOVIE_LIST_URL, {"genres": f"{self.genre_drama.id}"}
+        )
+        movie_response_something = self.client.get(
+            MOVIE_LIST_URL, {"genres": f"89982"}
         )
 
         movie_serializer_horror = MovieListSerializer(self.movie_apalon, many=False)
@@ -173,6 +197,8 @@ class MovieAndMovieSessionTestCaseForSimpleUser(TestCase):
             movie_serializer_drama.data["genres"],
             movie_response_horror.data[0]["genres"],
         )
+        self.assertEqual(movie_response_something.status_code, status.HTTP_200_OK)
+        self.assertEqual(movie_response_something.data, [])
 
     def test_filter_movie_session_by_date(self):
         movie_session_response_2023 = self.client.get(
@@ -190,6 +216,12 @@ class MovieAndMovieSessionTestCaseForSimpleUser(TestCase):
                 "date": f"{self.movie_session_2024.show_time.year}-"
                 f"{self.movie_session_2024.show_time.month}-"
                 f"{self.movie_session_2024.show_time.day}"
+            },
+        )
+        movie_session_response_1762 = self.client.get(
+            MOVIE_SESSION_LIST_URL,
+            {
+                "date": "1762-01-01",
             },
         )
 
@@ -216,12 +248,18 @@ class MovieAndMovieSessionTestCaseForSimpleUser(TestCase):
             movie_session_serializer_2023.data["show_time"],
         )
 
+        self.assertEqual(movie_session_response_1762.status_code, status.HTTP_200_OK)
+        self.assertEqual(movie_session_response_1762.data, [])
+
     def test_filter_movie_session_by_movie_title(self):
         movie_session_response_vinston = self.client.get(
             MOVIE_SESSION_LIST_URL, {"movie": f"{self.movie_session_2023.movie.id}"}
         )
         movie_session_response_apalon = self.client.get(
             MOVIE_SESSION_LIST_URL, {"movie": f"{self.movie_session_2024.movie.id}"}
+        )
+        movie_session_response_with_doesnt_exist_movie = self.client.get(
+            MOVIE_SESSION_LIST_URL, {"movie": "1929323"}
         )
 
         movie_session_serializer_vinston = MovieSessionListSerializer(
@@ -244,3 +282,5 @@ class MovieAndMovieSessionTestCaseForSimpleUser(TestCase):
             movie_session_serializer_apalon.data["id"],
             movie_session_response_vinston.data[0]["id"],
         )
+        self.assertEqual(movie_session_response_with_doesnt_exist_movie.status_code, status.HTTP_200_OK)
+        self.assertEqual(movie_session_response_with_doesnt_exist_movie.data, [])
