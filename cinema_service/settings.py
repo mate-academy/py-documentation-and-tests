@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",
     "rest_framework.authtoken",
+    "rest_framework_simplejwt",
     "drf_spectacular",
     "debug_toolbar",
     "cinema",
@@ -144,12 +145,12 @@ REST_FRAMEWORK = {
         "rest_framework.throttling.AnonRateThrottle",
         "rest_framework.throttling.UserRateThrottle",
     ],
-    "DEFAULT_THROTTLE_RATES": {"anon": "100/day", "user": "1000/day"},
+    "DEFAULT_THROTTLE_RATES": {"anon": "10/day", "user": "30/day"},
 }
 
 SPECTACULAR_SETTINGS = {
-    "TITLE": "Bus station API",
-    "DESCRIPTION": "Order tickets for your bus trips",
+    "TITLE": "Cinema service API",
+    "DESCRIPTION": "Order tickets for your cinema service",
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
     "SWAGGER_UI_SETTINGS": {

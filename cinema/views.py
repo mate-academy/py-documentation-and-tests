@@ -1,6 +1,9 @@
 from datetime import datetime
 
 from django.db.models import F, Count
+
+from drf_spectacular.utils import extend_schema, OpenApiParameter
+
 from rest_framework import viewsets, mixins, status
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import action
@@ -127,6 +130,54 @@ class MovieViewSet(
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                "actors",
+                type=str,
+                description="Filter by actors id",
+                required=False,
+            ),
+            OpenApiParameter(
+                "actors",
+                type={"type": "list", "items": {"type": "number"}},
+                description="Filter by actors id"
+            )
+        ]
+    )
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                "genres",
+                type=str,
+                description="Filter by genres id",
+                required=False,
+            ),
+            OpenApiParameter(
+                "genres",
+                type={"type": "list", "items": {"type": "number"}},
+                description="Filter by genres id"
+            )
+        ]
+    )
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                "title",
+                type=str,
+                description="Filter by title id",
+                required=False,
+            ),
+            OpenApiParameter(
+                "title",
+                type={"type": "list", "items": {"type": "number"}},
+                description="Filter by title id"
+            )
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
 
 class MovieSessionViewSet(viewsets.ModelViewSet):
     queryset = (
@@ -134,8 +185,8 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
         .select_related("movie", "cinema_hall")
         .annotate(
             tickets_available=(
-                F("cinema_hall__rows") * F("cinema_hall__seats_in_row")
-                - Count("tickets")
+                    F("cinema_hall__rows") * F("cinema_hall__seats_in_row")
+                    - Count("tickets")
             )
         )
     )
@@ -166,6 +217,39 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
             return MovieSessionDetailSerializer
 
         return MovieSessionSerializer
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                "movie",
+                type=str,
+                description="Filter by movie id",
+                required=False,
+            ),
+            OpenApiParameter(
+                "movie",
+                type={"type": "list", "items": {"type": "number"}},
+                description="Filter by movie id"
+            )
+        ]
+    )
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                "date",
+                type=str,
+                description="Filter by date",
+                required=False,
+            ),
+            OpenApiParameter(
+                "date",
+                type={"type": "list", "items": {"type": "number"}},
+                description="Filter by date"
+            )
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
 
 
 class OrderPagination(PageNumberPagination):
