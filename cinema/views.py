@@ -38,7 +38,6 @@ class GenreViewSet(
 ):
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
-    authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
 
@@ -49,7 +48,6 @@ class ActorViewSet(
 ):
     queryset = Actor.objects.all()
     serializer_class = ActorSerializer
-    authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
 
@@ -60,7 +58,6 @@ class CinemaHallViewSet(
 ):
     queryset = CinemaHall.objects.all()
     serializer_class = CinemaHallSerializer
-    authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
 
@@ -72,7 +69,6 @@ class MovieViewSet(
 ):
     queryset = Movie.objects.prefetch_related("genres", "actors")
     serializer_class = MovieSerializer
-    authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
     @staticmethod
@@ -141,8 +137,8 @@ class MovieViewSet(
             OpenApiParameter(
                 "actors",
                 type={"type": "list", "items": {"type": "number"}},
-                description="Filter by actors id"
-            )
+                description="Filter by actors id",
+            ),
         ]
     )
     @extend_schema(
@@ -156,8 +152,8 @@ class MovieViewSet(
             OpenApiParameter(
                 "genres",
                 type={"type": "list", "items": {"type": "number"}},
-                description="Filter by genres id"
-            )
+                description="Filter by genres id",
+            ),
         ]
     )
     @extend_schema(
@@ -171,8 +167,8 @@ class MovieViewSet(
             OpenApiParameter(
                 "title",
                 type={"type": "list", "items": {"type": "number"}},
-                description="Filter by title id"
-            )
+                description="Filter by title id",
+            ),
         ]
     )
     def list(self, request, *args, **kwargs):
@@ -185,13 +181,12 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
         .select_related("movie", "cinema_hall")
         .annotate(
             tickets_available=(
-                    F("cinema_hall__rows") * F("cinema_hall__seats_in_row")
-                    - Count("tickets")
+                F("cinema_hall__rows") * F("cinema_hall__seats_in_row")
+                - Count("tickets")
             )
         )
     )
     serializer_class = MovieSessionSerializer
-    authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
     def get_queryset(self):
@@ -229,8 +224,8 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
             OpenApiParameter(
                 "movie",
                 type={"type": "list", "items": {"type": "number"}},
-                description="Filter by movie id"
-            )
+                description="Filter by movie id",
+            ),
         ]
     )
     @extend_schema(
@@ -244,8 +239,8 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
             OpenApiParameter(
                 "date",
                 type={"type": "list", "items": {"type": "number"}},
-                description="Filter by date"
-            )
+                description="Filter by date",
+            ),
         ]
     )
     def list(self, request, *args, **kwargs):
@@ -267,7 +262,6 @@ class OrderViewSet(
     )
     serializer_class = OrderSerializer
     pagination_class = OrderPagination
-    authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAuthenticated,)
 
     def get_queryset(self):
