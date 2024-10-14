@@ -56,16 +56,6 @@ def sample_movie_session(**params):
     defaults.update(params)
 
 
-class MovieTests(TestCase):
-
-    def setUp(self):
-        self.client = APIClient()
-        self.user = get_user_model().objects.create_user(
-            email="test@test.test", password="testpassword"
-        )
-        self.client.force_authenticate(self.user)
-
-
 class MovieViewSetTests(APITestCase):
     def setUp(self):
         self.client = APIClient()
