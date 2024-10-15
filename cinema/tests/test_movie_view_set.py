@@ -86,6 +86,7 @@ class MovieViewSetTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]["title"], self.movie.title)
+        self.assertIsNot(response.data[0]["title"], [])
 
     def test_filter_movies_by_genre(self):
         url = (MOVIE_URL) + f"?genres={self.genre.id}"
@@ -93,6 +94,7 @@ class MovieViewSetTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]["title"], self.movie.title)
+        self.assertIsNot(response.data[0]["genres"], [])
 
     def test_filter_movies_by_actor(self):
         url = (MOVIE_URL + f"?actors={self.actor.id}")
@@ -100,6 +102,7 @@ class MovieViewSetTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]["title"], self.movie.title)
+        self.assertIsNot(response.data[0]["actors"], [])
 
     def test_get_serializer_class(self):
         view = MovieViewSet()

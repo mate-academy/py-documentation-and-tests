@@ -2,6 +2,7 @@ import os
 import tempfile
 from PIL import Image
 
+from django.utils import timezone
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
@@ -46,7 +47,7 @@ def sample_movie_session(**params):
     cinema_hall = CinemaHall.objects.create(name="Blue", rows=20, seats_in_row=20)
 
     defaults = {
-        "show_time": "2022-06-02 14:00:00",
+        "show_time" : timezone.now(),
         "movie": None,
         "cinema_hall": cinema_hall,
     }
