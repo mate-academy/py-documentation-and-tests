@@ -9,11 +9,14 @@ from PIL import Image
 
 User = get_user_model()
 
+
 def create_genre(name: str) -> Genre:
     return Genre.objects.create(name=name)
 
+
 def create_actor(first_name: str, last_name: str) -> Actor:
     return Actor.objects.create(first_name=first_name, last_name=last_name)
+
 
 def create_movie(title: str, genres=None, actors=None) -> Movie:
     movie = Movie.objects.create(title=title, description="Sample description", duration=120)
@@ -23,12 +26,14 @@ def create_movie(title: str, genres=None, actors=None) -> Movie:
         movie.actors.set(actors)
     return movie
 
+
 def generate_image_file():
     image = Image.new('RGB', (100, 100))
     byte_arr = BytesIO()
     image.save(byte_arr, format='PNG')
     byte_arr.seek(0)
     return byte_arr
+
 
 class MovieViewSetTests(APITestCase):
     def setUp(self):
