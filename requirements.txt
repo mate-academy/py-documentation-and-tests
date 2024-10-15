@@ -33,3 +33,5 @@ setuptools==75.1.0
 sqlparse==0.5.1
 tzdata==2024.2
 uritemplate==4.1.1
+pip~=24.2
+python-dotenv~=1.0.1
