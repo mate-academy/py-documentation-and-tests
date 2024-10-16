@@ -1,4 +1,5 @@
 from django.urls import reverse
+from rest_framework.exceptions import ErrorDetail
 from rest_framework.test import APITestCase, APIClient
 from rest_framework import status
 from cinema.models import Movie, Genre, Actor
@@ -50,15 +51,12 @@ class MovieViewSetTests(APITestCase):
         self.admin_token = Token.objects.create(user=self.admin_user)
         self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.token.key}")
 
-        # Створення жанрів
         self.genre1 = create_genre("Action")
         self.genre2 = create_genre("Drama")
 
-        # Створення акторів
         self.actor1 = create_actor("John", "Doe")
         self.actor2 = create_actor("Jane", "Smith")
 
-        # Створення фільмів
         self.movie1 = create_movie(
             "Movie One", genres=[self.genre1], actors=[self.actor1]
         )
@@ -104,9 +102,17 @@ class MovieViewSetTests(APITestCase):
         }
         response = self.client.post(url, data, format="json")
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        expected_error = {
+            "detail": ErrorDetail(
+            string="You do not have permission to perform this action.",
+            code="permission_denied"
+            )
+        }
+        self.assertEqual(response.data, expected_error)
 
     def test_create_movie_as_admin(self):
         self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.admin_token.key}")
+
         url = reverse("cinema:movie-list")
         data = {
             "title": "New Movie",
@@ -115,15 +121,31 @@ class MovieViewSetTests(APITestCase):
             "genres": [self.genre1.id],
             "actors": [self.actor1.id, self.actor2.id],
         }
+
         response = self.client.post(url, data, format="json")
+
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
         self.assertEqual(response.data["title"], "New Movie")
+
+        movie = Movie.objects.get(title="New Movie")
+
+        self.assertEqual(movie.description, "A new movie description")
+        self.assertEqual(movie.duration, 90)
+        self.assertEqual(list(movie.genres.values_list('id', flat=True)), [self.genre1.id])
+        self.assertEqual(list(movie.actors.values_list('id', flat=True)), [self.actor1.id, self.actor2.id])
 
     def test_retrieve_movie(self):
         url = reverse("cinema:movie-detail", args=[self.movie1.id])
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["title"], "Movie One")
+        response_genre_ids = [genre['id'] for genre in response.data["genres"]]
+        expected_genre_ids = [self.genre1.id]
+        self.assertEqual(response_genre_ids, expected_genre_ids)
+        response_actor_ids = [actor['id'] for actor in response.data["actors"]]
+        expected_actor_ids = [self.actor1.id]
+        self.assertEqual(response_actor_ids, expected_actor_ids)
 
     def test_upload_movie_image_as_authenticated_user(self):
         url = reverse(
