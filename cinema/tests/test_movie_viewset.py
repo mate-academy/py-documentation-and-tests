@@ -37,8 +37,7 @@ def generate_image_file():
     byte_arr.seek(0)
     return byte_arr
 
-
-class MovieViewSetTests(APITestCase):
+class MovieViewSetTestData(APITestCase):
     def setUp(self):
         self.client = APIClient()
         self.user = User.objects.create_user(
@@ -63,6 +62,8 @@ class MovieViewSetTests(APITestCase):
         self.movie2 = create_movie(
             "Movie Two", genres=[self.genre2], actors=[self.actor2]
         )
+
+class MovieViewSetTests(MovieViewSetTestData):
 
     def test_list_movies(self):
         url = reverse("cinema:movie-list")
