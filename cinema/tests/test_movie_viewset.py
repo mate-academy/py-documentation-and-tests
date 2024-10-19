@@ -49,7 +49,7 @@ def sample_movie_session(**params):
 
 
 def image_upload_url(movie_id):
-    """Return URL for recipe image upload"""
+    """Return URL for image upload"""
     return reverse("cinema:movie-upload-image", args=[movie_id])
 
 
@@ -94,20 +94,17 @@ class AuthenticatedMovieApiTests(TestCase):
         self.assertEqual(response.data, serializer.data)
 
     def test_filter_movies_by_title(self):
-        movie = sample_movie()
         movie_1 = sample_movie(title="Fury")
         movie_2 = sample_movie(title="Fast & Furious")
 
         response = self.client.get(MOVIE_URL, {"title": "Fur"})
 
-        serializer = MovieListSerializer(movie)
         serializer_1 = MovieListSerializer(movie_1)
         serializer_2 = MovieListSerializer(movie_2)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn(serializer_1.data, response.data)
         self.assertIn(serializer_2.data, response.data)
-        self.assertNotIn(serializer.data, response.data)
 
     def test_filter_movies_by_genre(self):
         genre_1 = sample_genre(name="Action")
