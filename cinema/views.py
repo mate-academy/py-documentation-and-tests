@@ -3,7 +3,6 @@ from datetime import datetime
 from django.db.models import F, Count
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import viewsets, mixins, status
-from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
@@ -37,14 +36,6 @@ class GenreViewSet(
     serializer_class = GenreSerializer
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
-    def list(self, request, *args, **kwargs):
-        """Get list of all genres."""
-        return super().list(request, *args, **kwargs)
-
-    def create(self, request, *args, **kwargs):
-        """Create a new genre."""
-        return super().create(request, *args, **kwargs)
-
 
 class ActorViewSet(
     mixins.CreateModelMixin,
@@ -55,14 +46,6 @@ class ActorViewSet(
     serializer_class = ActorSerializer
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
-    def list(self, request, *args, **kwargs):
-        """Get list of all actors."""
-        return super().list(request, *args, **kwargs)
-
-    def create(self, request, *args, **kwargs):
-        """Create a new actor."""
-        return super().create(request, *args, **kwargs)
-
 
 class CinemaHallViewSet(
     mixins.CreateModelMixin,
@@ -72,14 +55,6 @@ class CinemaHallViewSet(
     queryset = CinemaHall.objects.all()
     serializer_class = CinemaHallSerializer
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
-
-    def list(self, request, *args, **kwargs):
-        """Get list of all cinema halls."""
-        return super().list(request, *args, **kwargs)
-
-    def create(self, request, *args, **kwargs):
-        """Create a new cinema hall."""
-        return super().create(request, *args, **kwargs)
 
 
 class MovieViewSet(
@@ -128,7 +103,7 @@ class MovieViewSet(
         if self.action == "upload_image":
             return MovieImageSerializer
 
-        return MovieSerializer
+        return self.serializer_class
 
     @action(
         methods=["POST"],
@@ -174,14 +149,6 @@ class MovieViewSet(
         """
         return super().list(request, *args, **kwargs)
 
-    def create(self, request, *args, **kwargs):
-        """Create a new movie."""
-        return super().create(request, *args, **kwargs)
-
-    def retrieve(self, request, *args, **kwargs):
-        """Get a specific movie by its ID."""
-        return super().retrieve(request, *args, **kwargs)
-
 
 class MovieSessionViewSet(viewsets.ModelViewSet):
     queryset = (
@@ -219,7 +186,7 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
         if self.action == "retrieve":
             return MovieSessionDetailSerializer
 
-        return MovieSessionSerializer
+        return self.serializer_class
 
     @extend_schema(
         description="Retrieve a list of movie sessions.",
@@ -242,14 +209,6 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
         or movie ID.
         """
         return super().list(request, *args, **kwargs)
-
-    def retrieve(self, request, *args, **kwargs):
-        """Get a specific movie session by its ID."""
-        return super().retrieve(request, *args, **kwargs)
-
-    def create(self, request, *args, **kwargs):
-        """Create a new movie session."""
-        return super().create(request, *args, **kwargs)
 
 
 class OrderPagination(PageNumberPagination):
@@ -277,15 +236,7 @@ class OrderViewSet(
         if self.action == "list":
             return OrderListSerializer
 
-        return OrderSerializer
+        return self.serializer_class
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
-
-    def list(self, request, *args, **kwargs):
-        """Get list of all orders for the current user."""
-        return super().list(request, *args, **kwargs)
-
-    def create(self, request, *args, **kwargs):
-        """Create a new order for the current user."""
-        return super().create(request, *args, **kwargs)
