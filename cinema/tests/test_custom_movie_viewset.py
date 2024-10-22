@@ -43,18 +43,21 @@ class CustomMovieViewSetTests(APITestCase):
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(len(res.data), 2)
 
-        titles = [movie["title"] for movie in res.data]
-        self.assertIn(self.movie1.title, titles)
-        self.assertIn(self.movie2.title, titles)
+        for movie in res.data:
+            if movie["title"] == self.movie1.title:
+                self.assertEqual(movie["description"], self.movie1.description)
+                self.assertEqual(movie["duration"], self.movie1.duration)
+            elif movie["title"] == self.movie2.title:
+                self.assertEqual(movie["description"], self.movie2.description)
+                self.assertEqual(movie["duration"], self.movie2.duration)
 
     def test_filter_movies_by_title(self):
-        res = self.client.get(
-            MOVIE_URL, {"title": "interesting movie"}
-        )
+        movie_title = self.movie1.title
+        res = self.client.get(MOVIE_URL, {"title": movie_title})
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(len(res.data), 1)
-        self.assertEqual(res.data[0]["title"], self.movie1.title)
+        self.assertEqual(res.data[0]["title"], movie_title)
 
     def test_filter_movies_by_genre(self):
         res = self.client.get(
@@ -66,7 +69,8 @@ class CustomMovieViewSetTests(APITestCase):
         self.assertEqual(res.data[0]["title"], self.movie1.title)
 
     def test_filter_movies_by_actor(self):
-        res = self.client.get(MOVIE_URL, {"actors": f"{self.actor.id}"})
+        actor_id = self.actor.id
+        res = self.client.get(MOVIE_URL, {"actors": f"{actor_id}"})
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(len(res.data), 1)
@@ -83,6 +87,17 @@ class CustomMovieViewSetTests(APITestCase):
 
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
 
+    def test_create_movie_authorized(self):
+        payload = {
+            "title": "new movie",
+            "description": "new description",
+            "duration": 110,
+        }
+        res = self.client.post(MOVIE_URL, payload)
+
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(res.data["title"], payload["title"])
+
     def test_retrieve_movie_detail(self):
         url = reverse("cinema:movie-detail", args=[self.movie1.id])
         res = self.client.get(url)
@@ -93,12 +108,27 @@ class CustomMovieViewSetTests(APITestCase):
 
     def test_list_action_uses_list_serializer(self):
         res = self.client.get(MOVIE_URL)
+
         self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertIn("title", res.data[0])
+
+        expected_fields = ["title", "description", "duration", "genres", "actors"]
+        for field in expected_fields:
+            self.assertIn(field, res.data[0])
+
+        unexpected_fields = ["created_at", "updated_at"]
+        for field in unexpected_fields:
+            self.assertNotIn(field, res.data[0])
 
     def test_retrieve_action_uses_detail_serializer(self):
         url = reverse("cinema:movie-detail", args=[self.movie1.id])
         res = self.client.get(url)
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertIn("description", res.data)
+
+        expected_fields = ["title", "description", "duration", "genres", "actors"]
+        for field in expected_fields:
+            self.assertIn(field, res.data)
+
+        unexpected_fields = ["created_at", "updated_at"]
+        for field in unexpected_fields:
+            self.assertNotIn(field, res.data)
