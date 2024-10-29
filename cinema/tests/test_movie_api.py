@@ -6,10 +6,12 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 
-from rest_framework.test import APIClient
+from rest_framework.test import APIClient, APITestCase
 from rest_framework import status
 
 from cinema.models import Movie, MovieSession, CinemaHall, Genre, Actor
+
+from user.models import User
 
 MOVIE_URL = reverse("cinema:movie-list")
 MOVIE_SESSION_URL = reverse("cinema:moviesession-list")
@@ -157,3 +159,44 @@ class MovieImageUploadTests(TestCase):
         res = self.client.get(MOVIE_SESSION_URL)
 
         self.assertIn("movie_image", res.data[0].keys())
+
+
+class MovieViewSetTests(APITestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.admin_user = User.objects.create_superuser(
+            email="admin@cinema.com", password="testpass123"
+        )
+        self.client.force_authenticate(user=self.admin_user)
+
+        self.actor = Actor.objects.create(first_name="John", last_name="Doe")
+        self.genre = Genre.objects.create(name="Action")
+        self.movie = Movie.objects.create(
+            title="Test Movie",
+            description="Test Description",
+            duration=120,
+        )
+        self.movie.genres.add(self.genre)
+        self.movie.actors.add(self.actor)
+
+    def test_list_movies(self):
+        url = reverse("cinema:movie-list")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_retrieve_movie(self):
+        url = reverse("cinema:movie-detail", args=[self.movie.id])
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_create_movie(self):
+        url = reverse("cinema:movie-list")
+        payload = {
+            "title": "New Movie",
+            "description": "New Description",
+            "duration": 90,
+            "genres": [self.genre.id],
+            "actors": [self.actor.id],
+        }
+        response = self.client.post(url, payload)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
