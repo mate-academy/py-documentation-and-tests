@@ -6,7 +6,6 @@ from rest_framework.test import APIClient
 from cinema.models import Movie
 from cinema.serializers import MovieSerializer
 from cinema.tests.test_movie_api import MOVIE_URL
-
 MOVIE_URL = reverse("cinema:movie-list")
 
 
