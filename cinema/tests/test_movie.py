@@ -79,7 +79,7 @@ class AuthenticatedMovieApiTests(TestCase):
 
         self.assertIn(serializer_movie_genre_1.data, res.data)
         self.assertIn(serializer_movie_genre_2.data, res.data)
-        self.assertNotIn(serializer_without_genres, res.data)
+        self.assertNotIn(serializer_without_genres.data, res.data)
 
     def test_filter_movies_by_actors(self):
         movie_without_actors = sample_movie()
@@ -103,7 +103,7 @@ class AuthenticatedMovieApiTests(TestCase):
 
         self.assertIn(serializer_movie_actor_1.data, res.data)
         self.assertIn(serializer_movie_actor_2.data, res.data)
-        self.assertNotIn(serializer_without_actors, res.data)
+        self.assertNotIn(serializer_without_actors.data, res.data)
 
     def test_retrieve_movie_detail(self):
         movie = sample_movie()
