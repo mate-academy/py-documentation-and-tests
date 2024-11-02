@@ -138,7 +138,7 @@ class MovieViewSet(
         ]
     )
     def list(self, request, *args, **kwargs):
-        """ Get a list of all available buses """
+        """ Get a list of all available movies """
         return super().list(request, *args, **kwargs)
 
 
@@ -194,7 +194,7 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
         ]
     )
     def list(self, request, *args, **kwargs):
-        """ Get a list of all available buses """
+        """ Get a list of all available movie sessions """
         return super().list(request, *args, **kwargs)
 
 
