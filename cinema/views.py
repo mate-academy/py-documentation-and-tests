@@ -192,7 +192,7 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
                 name="movie",
                 type=OpenApiTypes.INT,
                 description="Filter movie sessions by movie id "
-                            "(ex. ?movie=4,5)",
+                            "(ex. ?movie=5)",
             ),
         ]
     )
