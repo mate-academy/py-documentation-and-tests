@@ -28,9 +28,7 @@ def sample_movie(**params):
 
 
 def sample_genre(**params):
-    defaults = {
-        "name": "Drama",
-    }
+    defaults = {"name": "Drama",}
     defaults.update(params)
 
     return Genre.objects.create(**defaults)
