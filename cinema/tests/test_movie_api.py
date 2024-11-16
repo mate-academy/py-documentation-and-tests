@@ -300,12 +300,10 @@ class AdminMovieTests(TestCase):
         genre_1 = sample_genre(name="test1")
         genre_2 = sample_genre(name="test2")
 
-        payload = {
-            "title": "test",
-            "description": "test",
-            "duration": 90,
-            "genres": [genre_1.id, genre_2.id],
-        }
+        payload = {"title": "test",
+                   "description": "test",
+                   "duration": 90,
+                   "genres": [genre_1.id, genre_2.id],}
 
         res = self.client.post(MOVIE_URL, payload)
 
