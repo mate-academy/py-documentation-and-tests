@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from django.db.models import F, Count
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import viewsets, mixins, status
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import action
@@ -38,6 +39,14 @@ class GenreViewSet(
     authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
+    def list(self, request, *args, **kwargs):
+        """Retrieve list of genres"""
+        return super().list(request, args, kwargs)
+
+    def create(self, request, *args, **kwargs):
+        """Create a new genre"""
+        return super().create(request, args, kwargs)
+
 
 class ActorViewSet(
     mixins.CreateModelMixin,
@@ -49,6 +58,14 @@ class ActorViewSet(
     authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
+    def list(self, request, *args, **kwargs):
+        """Retrieve list of actors"""
+        return super().list(request, args, kwargs)
+
+    def create(self, request, *args, **kwargs):
+        """Create a new actor"""
+        return super().create(request, args, kwargs)
+
 
 class CinemaHallViewSet(
     mixins.CreateModelMixin,
@@ -59,6 +76,14 @@ class CinemaHallViewSet(
     serializer_class = CinemaHallSerializer
     authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
+
+    def list(self, request, *args, **kwargs):
+        """Retrieve list of cinema halls"""
+        return super().list(request, args, kwargs)
+
+    def create(self, request, *args, **kwargs):
+        """Create a new cinema hall"""
+        return super().create(request, args, kwargs)
 
 
 class MovieViewSet(
@@ -134,8 +159,8 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
         .select_related("movie", "cinema_hall")
         .annotate(
             tickets_available=(
-                F("cinema_hall__rows") * F("cinema_hall__seats_in_row")
-                - Count("tickets")
+                    F("cinema_hall__rows") * F("cinema_hall__seats_in_row")
+                    - Count("tickets")
             )
         )
     )
@@ -166,6 +191,26 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
             return MovieSessionDetailSerializer
 
         return MovieSessionSerializer
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                "data",
+                type=datetime,
+                description="Filter date of movie session",
+                required=False,
+            ),
+            OpenApiParameter(
+                "movie",
+                type=str,
+                description="Filter by movie title",
+                required=False,
+            ),
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        """Retrieve list of movies"""
+        return super().list(request, *args, **kwargs)
 
 
 class OrderPagination(PageNumberPagination):
