@@ -135,6 +135,18 @@ class MovieViewSet(
 
         return MovieSerializer
 
+    @extend_schema(
+        operation_id="upload_image",
+        request={
+            "multipart/form-data": {
+                "type": "object",
+                "properties": {
+                    "image": {"type": "string", "format": "binary"},
+                },
+                "required": ["image"],
+            }
+        },
+    )
     @action(
         methods=["POST"],
         detail=True,
