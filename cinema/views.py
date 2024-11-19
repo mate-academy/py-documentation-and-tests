@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from django.db.models import F, Count
-from drf_spectacular.utils import extend_schema, OpenApiParameter
+from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiExample
 from rest_framework import viewsets, mixins, status
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import action
@@ -41,11 +41,11 @@ class GenreViewSet(
 
     def list(self, request, *args, **kwargs):
         """Retrieve list of genres"""
-        return super().list(request, args, kwargs)
+        return super().list(request, *args, **kwargs)
 
     def create(self, request, *args, **kwargs):
         """Create a new genre"""
-        return super().create(request, args, kwargs)
+        return super().create(request, *args, **kwargs)
 
 
 class ActorViewSet(
@@ -60,11 +60,11 @@ class ActorViewSet(
 
     def list(self, request, *args, **kwargs):
         """Retrieve list of actors"""
-        return super().list(request, args, kwargs)
+        return super().list(request, *args, **kwargs)
 
     def create(self, request, *args, **kwargs):
         """Create a new actor"""
-        return super().create(request, args, kwargs)
+        return super().create(request, *args, **kwargs)
 
 
 class CinemaHallViewSet(
@@ -79,11 +79,11 @@ class CinemaHallViewSet(
 
     def list(self, request, *args, **kwargs):
         """Retrieve list of cinema halls"""
-        return super().list(request, args, kwargs)
+        return super().list(request, *args, **kwargs)
 
     def create(self, request, *args, **kwargs):
         """Create a new cinema hall"""
-        return super().create(request, args, kwargs)
+        return super().create(request, *args, **kwargs)
 
 
 class MovieViewSet(
@@ -152,6 +152,71 @@ class MovieViewSet(
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                "title",
+                type=str,
+                description="Filter by title of movie",
+                required=False,
+                examples=[
+                    OpenApiExample(
+                        name="Filter by single title",
+                        value="Inception",
+                        description="Filter movies by the title 'Inception'."
+                    )
+                ]
+            ),
+            OpenApiParameter(
+                "genres",
+                type=str,
+                description="Filter by single genre of movie",
+                required=False,
+                examples=[
+                    OpenApiExample(
+                        name="Filter by single genre",
+                        value="5",
+                        description="Filter movies by the genre 'Adventure'."
+                    ),
+                    OpenApiExample(
+                        name="Filter by multi genres",
+                        value="5,6,7",
+                        description="Filter movies by the genre 'Adventure, Sci-Fi, Mystery'."
+                    ),
+                ]
+            ),
+            OpenApiParameter(
+                "actors",
+                type=str,
+                description="Filter by single actor of movie by id",
+                required=False,
+                examples=[
+                    OpenApiExample(
+                        name="Filter by single actor",
+                        value="1",
+                        description="Filter movies by the actor 'Jack Nicholson'."
+                    ),
+                    OpenApiExample(
+                        name="Filter by multi actors",
+                        value="1,2,3",
+                        description="Filter movies by actors 'Jack Nicholson, Leonardo DiCaprio, Matt Damon'."
+                    ),
+                ]
+            ),
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        """Retrieve a list of movies."""
+        return super().list(request, *args, **kwargs)
+
+    def create(self, request, *args, **kwargs):
+        """Created a new movie."""
+        return super().create(request, *args, **kwargs)
+
+    def retrieve(self, request, *args, **kwargs):
+        """Retrieve a movie"""
+        return super().retrieve(request, *args, **kwargs)
+
 
 class MovieSessionViewSet(viewsets.ModelViewSet):
     queryset = (
@@ -195,22 +260,42 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
     @extend_schema(
         parameters=[
             OpenApiParameter(
-                "data",
-                type=datetime,
+                "date",
+                type=str,
                 description="Filter date of movie session",
                 required=False,
             ),
             OpenApiParameter(
                 "movie",
-                type=str,
-                description="Filter by movie title",
+                type=int,
+                description="Filter by movie id",
                 required=False,
             ),
         ]
     )
     def list(self, request, *args, **kwargs):
-        """Retrieve list of movies"""
+        """Retrieve list of movies."""
         return super().list(request, *args, **kwargs)
+
+    def create(self, request, *args, **kwargs):
+        """Created a new movie session."""
+        return super().create(request, *args, **kwargs)
+
+    def retrieve(self, request, *args, **kwargs):
+        """Retrieve detail movie session."""
+        return super().retrieve(request, *args, **kwargs)
+
+    def update(self, request, *args, **kwargs):
+        """Update full information about movie session."""
+        super().update(request, *args, **kwargs)
+
+    def partial_update(self, request, *args, **kwargs):
+        """Partial update a movie session."""
+        return super().partial_update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        """Destroy the movie session."""
+        return super().destroy(request, *args, **kwargs)
 
 
 class OrderPagination(PageNumberPagination):
@@ -242,3 +327,11 @@ class OrderViewSet(
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
+
+    def list(self, request, *args, **kwargs):
+        """Retrieve a list of orders filtered by current user."""
+        return super().list(request, *args, **kwargs)
+
+    def create(self, request, *args, **kwargs):
+        """Create a new order."""
+        return super().create(request, *args, **kwargs)
