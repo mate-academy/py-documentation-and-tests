@@ -5,7 +5,7 @@ from rest_framework.test import APIClient
 from rest_framework.reverse import reverse
 from rest_framework import status
 
-from cinema.models import Movie
+from cinema.models import Movie, Genre
 from cinema.serializers import MovieListSerializer
 
 MOVIE_URL = reverse("cinema:movie-list")
@@ -40,7 +40,18 @@ class AuthenticatedCinemaApiTests(TestCase):
         self.client.force_authenticate(self.user)
 
     def test_movie_list(self):
+        genre_1 = Genre.objects.create(name="Comedy")
+        genre_2 = Genre.objects.create(name="Drama")
+        genre_3 = Genre.objects.create(name="Fantasy")
+        genre_4 = Genre.objects.create(name="Romance")
         sample_movie()
+        sample_movie_with_genres = sample_movie()
+        sample_movie_with_genres.genres.add(
+            genre_1,
+            genre_2,
+            genre_3,
+            genre_4,
+        )
         movies = Movie.objects.all()
         serializer = MovieListSerializer(movies, many=True)
         res = self.client.get(MOVIE_URL)
