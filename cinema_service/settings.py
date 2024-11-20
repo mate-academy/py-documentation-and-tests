@@ -9,8 +9,14 @@ https://docs.djangoproject.com/en/4.0/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.0/ref/settings/
 """
+import os
 
 from pathlib import Path
+
+from dotenv import load_dotenv
+
+
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -20,12 +26,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = (
-    "django-insecure-6vubhk2$++agnctay_4pxy_8cq)mosmn(*-#2b^v4cgsh-^!i3"
-)
+SECRET_KEY = os.environ.get("SECRET_KEY", "default_secret_key")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = []
 
@@ -47,6 +51,7 @@ INSTALLED_APPS = [
     "debug_toolbar",
     "cinema",
     "user",
+    "drf_spectacular",
 ]
 
 MIDDLEWARE = [
@@ -101,16 +106,13 @@ AUTH_PASSWORD_VALIDATORS = [
         "UserAttributeSimilarityValidator",
     },
     {
-        "NAME": "django.contrib.auth.password_validation."
-        "MinimumLengthValidator",
+        "NAME": "django.contrib.auth.password_validation." "MinimumLengthValidator",
     },
     {
-        "NAME": "django.contrib.auth.password_validation."
-        "CommonPasswordValidator",
+        "NAME": "django.contrib.auth.password_validation." "CommonPasswordValidator",
     },
     {
-        "NAME": "django.contrib.auth.password_validation."
-        "NumericPasswordValidator",
+        "NAME": "django.contrib.auth.password_validation." "NumericPasswordValidator",
     },
 ]
 
@@ -123,7 +125,8 @@ LANGUAGE_CODE = "en-us"
 
 TIME_ZONE = "UTC"
 
-USE_I18N = True
+USE_I18N = False
+
 
 USE_TZ = False
 
@@ -140,3 +143,61 @@ MEDIA_ROOT = BASE_DIR / "media"
 # https://docs.djangoproject.com/en/4.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+    ],
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "DEFAULT_THROTTLE_CLASSES": [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle',
+    ],
+    "DEFAULT_THROTTLE_RATES": {
+        "anon": "10/minute",
+        "user": "30/minute",
+    }
+}
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Documentation, throttling, JWT and tests",
+    "DESCRIPTION": """
+    This task involves enhancing your project by adding documentation,
+    implementing throttling, JWT support, and comprehensive tests:
+
+1. **Swagger Documentation**:
+   - Add Swagger/OpenAPI documentation for the entire project.
+   - Ensure query parameters are well-documented, including:
+     - Filtering movies by title, genres, and actors.
+     - Filtering movie sessions by date and movie.
+   - Use `OpenApiParameter` and provide clear descriptions for all parameters.
+
+2. **Throttling Settings**:
+   - Configure throttling as follows:
+     - **Unauthorized users**: 10 requests per minute.
+     - **Authorized users**: 30 requests per minute.
+
+3. **JWT Support**:
+   - Integrate JSON Web Token (JWT) authentication into the project.
+
+4. **Testing**:
+   - Cover the entire `MovieViewSet` with tests.
+   - Verify functionality, including filters and permissions.
+
+5. **Code Clean-Up**:
+   - Ensure your codebase is clean.
+   - Remove unused imports and redundant code.
+
+Before starting, read the guidelines carefully. Once the data is loaded from the fixture, you can use the following superuser credentials (or create a new one):
+   - Email: `admin.user@cinema.com`
+   - Password: `1qazcde3`
+   """,
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
+    "SWAGGER_UI_SETTINGS": {
+        "deepLinking": True,
+        "defaultModelRendering": "model",
+        "defaultModelsExpandDepth": 2,
+        "defaultModelExpandDepth": 2,
+    },
+}
