@@ -102,12 +102,12 @@ class MovieViewSet(
                 description="Filter by title (ex. ?type=Titanic)",
             ),
             OpenApiParameter(
-                "genre",
+                "genres",
                 type={"type": "array", "items": {"type": "number"}},
                 description="Filter by genres id (ex. ?facilities=2,3)",
             ),
             OpenApiParameter(
-                "actor",
+                "actors",
                 type={"type": "array", "items": {"type": "number"}},
                 description="Filter by actors id (ex. ?facilities=2,3)",
             )
