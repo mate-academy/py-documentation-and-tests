@@ -40,11 +40,23 @@ class AuthenticatedCinemaApiTests(TestCase):
         self.client.force_authenticate(self.user)
 
     def test_movie_list(self):
+        sample_movie()
+        movies = Movie.objects.all()
+        serializer = MovieListSerializer(movies, many=True)
+        res = self.client.get(MOVIE_URL)
+        self.assertTrue(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data, serializer.data)
+
+    def test_movie_by_genre(self):
+        sample_movie(
+            title="test title",
+            description="test description",
+            duration=100
+        )
         genre_1 = Genre.objects.create(name="Comedy")
         genre_2 = Genre.objects.create(name="Drama")
         genre_3 = Genre.objects.create(name="Fantasy")
         genre_4 = Genre.objects.create(name="Romance")
-        sample_movie()
         sample_movie_with_genres = sample_movie()
         sample_movie_with_genres.genres.add(
             genre_1,
@@ -52,8 +64,4 @@ class AuthenticatedCinemaApiTests(TestCase):
             genre_3,
             genre_4,
         )
-        movies = Movie.objects.all()
-        serializer = MovieListSerializer(movies, many=True)
-        res = self.client.get(MOVIE_URL)
-        self.assertTrue(res.status_code, status.HTTP_200_OK)
-        self.assertEqual(res.data, serializer.data)
+        sample_movie_with_genres.save()
