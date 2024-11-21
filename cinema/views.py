@@ -303,7 +303,7 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
 
     def update(self, request, *args, **kwargs):
         """Update full information about movie session."""
-        super().update(request, *args, **kwargs)
+        return super().update(request, *args, **kwargs)
 
     def partial_update(self, request, *args, **kwargs):
         """Partial update a movie session."""
