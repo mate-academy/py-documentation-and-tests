@@ -19,7 +19,7 @@ def sample_movie(**params) -> Movie:
     defaults = {
         "title": "Groundhog Day",
         "description": "A narcissistic, self-centered weatherman finds himself in a time loop on Groundhog Day.",
-        "duration": "101",
+        "duration": 101,
     }
     defaults.update(params)
     return Movie.objects.create(**defaults)
@@ -48,7 +48,7 @@ class AuthenticatedCinemaApiTests(TestCase):
         movies = Movie.objects.all()
         serializer = MovieListSerializer(movies, many=True)
         res = self.client.get(MOVIE_URL)
-        self.assertTrue(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(res.data, serializer.data)
 
     def test_filter_movie_by_genre(self):
@@ -111,11 +111,11 @@ class AuthenticatedCinemaApiTests(TestCase):
         movie = sample_movie()
         url = detail_url(movie.id)
         res = self.client.get(url)
-        serializer = MovieDetailSerializer(res.data)
+        serializer = MovieDetailSerializer(movie)
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(res.data, serializer.data)
 
-    def create_movie_forbidden(self):
+    def test_create_movie_forbidden(self):
         payload = {
             "title": "Test title",
             "description": "Test description",
@@ -157,7 +157,7 @@ class AdminMovieTests(TestCase):
             "title": "Test title",
             "description": "Test description",
             "duration": 123,
-            "genres": 1
+            "genres": [genre_1.id, genre_2.id, genre_3.id, genre_4.id]
         }
         res = self.client.post(path=MOVIE_URL, data=payload)
         movie = Movie.objects.get(id=res.data["id"])
