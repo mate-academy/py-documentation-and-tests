@@ -33,7 +33,7 @@ class ManageUserView(generics.RetrieveUpdateAPIView):
 
     def put(self, request, *args, **kwargs):
         """Update all information about current users"""
-        return super().get(request, *args, **kwargs)
+        return super().update(request, *args, **kwargs)
 
     def patch(self, request, *args, **kwargs):
         """Update partial information about current users"""
