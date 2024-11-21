@@ -5,7 +5,7 @@ from rest_framework.test import APIClient
 from rest_framework.reverse import reverse
 from rest_framework import status
 
-from cinema.models import Movie, Genre
+from cinema.models import Movie, Genre, Actor
 from cinema.serializers import MovieListSerializer, MovieDetailSerializer
 
 MOVIE_URL = reverse("cinema:movie-list")
@@ -73,6 +73,39 @@ class AuthenticatedCinemaApiTests(TestCase):
         serializer_movie_without_genres = MovieListSerializer(movie_without_genres)
         self.assertIn(serializer_movie_with_genres.data, res.data)
         self.assertNotIn(serializer_movie_without_genres.data, res.data)
+
+    def test_filter_movie_by_title(self):
+        movie_test_title = sample_movie(
+            title="test title",
+            description="test description",
+            duration=100
+        )
+        sample_movie()
+
+        res = self.client.get(MOVIE_URL, data={"title": "Groundhog Day"})
+        serializer_movie_default_title = MovieListSerializer(Movie.objects.get(title="Groundhog Day"))
+        serializer_movie_with_test_title = MovieListSerializer(movie_test_title)
+        self.assertIn(serializer_movie_default_title.data, res.data)
+        self.assertNotIn(serializer_movie_with_test_title.data, res.data)
+
+    def test_filter_movie_by_actors(self):
+        movie_without_actors = sample_movie(
+            title="test title",
+            description="test description",
+            duration=100
+        )
+        actor_1 = Actor.objects.create(first_name="Bill", last_name="Murray")
+        actor_2 = Actor.objects.create(first_name="Andie", last_name="MacDowell")
+        movie_with_actors = sample_movie()
+        movie_with_actors.actors.add(
+            actor_1,
+            actor_2,
+        )
+        res = self.client.get(MOVIE_URL, data={"actors": f"{actor_1.id},{actor_2.id}"})
+        serializer_movie_with_actors = MovieListSerializer(movie_with_actors)
+        serializer_movie_without_actors = MovieListSerializer(movie_without_actors)
+        self.assertIn(serializer_movie_with_actors.data, res.data)
+        self.assertNotIn(serializer_movie_without_actors.data, res.data)
 
     def test_retrieve_movie_detail(self):
         movie = sample_movie()
