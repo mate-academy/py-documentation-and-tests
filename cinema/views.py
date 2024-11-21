@@ -1,16 +1,26 @@
 from datetime import datetime
 
 from django.db.models import F, Count
+from drf_spectacular.utils import (
+    extend_schema,
+    OpenApiParameter,
+    OpenApiExample
+)
 from rest_framework import viewsets, mixins, status
-from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
-from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
-from rest_framework.viewsets import GenericViewSet, ReadOnlyModelViewSet
+from rest_framework.viewsets import GenericViewSet
 
-from cinema.models import Genre, Actor, CinemaHall, Movie, MovieSession, Order
-from cinema.permissions import IsAdminOrIfAuthenticatedReadOnly
+from cinema.models import (
+    Genre,
+    Actor,
+    CinemaHall,
+    Movie,
+    MovieSession,
+    Order
+)
 
 from cinema.serializers import (
     GenreSerializer,
@@ -35,8 +45,14 @@ class GenreViewSet(
 ):
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
-    authentication_classes = (TokenAuthentication,)
-    permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
+
+    def list(self, request, *args, **kwargs):
+        """Retrieve list of genres"""
+        return super().list(request, *args, **kwargs)
+
+    def create(self, request, *args, **kwargs):
+        """Create a new genre"""
+        return super().create(request, *args, **kwargs)
 
 
 class ActorViewSet(
@@ -46,8 +62,14 @@ class ActorViewSet(
 ):
     queryset = Actor.objects.all()
     serializer_class = ActorSerializer
-    authentication_classes = (TokenAuthentication,)
-    permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
+
+    def list(self, request, *args, **kwargs):
+        """Retrieve list of actors"""
+        return super().list(request, *args, **kwargs)
+
+    def create(self, request, *args, **kwargs):
+        """Create a new actor"""
+        return super().create(request, *args, **kwargs)
 
 
 class CinemaHallViewSet(
@@ -57,8 +79,14 @@ class CinemaHallViewSet(
 ):
     queryset = CinemaHall.objects.all()
     serializer_class = CinemaHallSerializer
-    authentication_classes = (TokenAuthentication,)
-    permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
+
+    def list(self, request, *args, **kwargs):
+        """Retrieve list of cinema halls"""
+        return super().list(request, *args, **kwargs)
+
+    def create(self, request, *args, **kwargs):
+        """Create a new cinema hall"""
+        return super().create(request, *args, **kwargs)
 
 
 class MovieViewSet(
@@ -69,8 +97,6 @@ class MovieViewSet(
 ):
     queryset = Movie.objects.prefetch_related("genres", "actors")
     serializer_class = MovieSerializer
-    authentication_classes = (TokenAuthentication,)
-    permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
     @staticmethod
     def _params_to_ints(qs):
@@ -110,6 +136,18 @@ class MovieViewSet(
 
         return MovieSerializer
 
+    @extend_schema(
+        operation_id="upload_image",
+        request={
+            "multipart/form-data": {
+                "type": "object",
+                "properties": {
+                    "image": {"type": "string", "format": "binary"},
+                },
+                "required": ["image"],
+            }
+        },
+    )
     @action(
         methods=["POST"],
         detail=True,
@@ -127,6 +165,75 @@ class MovieViewSet(
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                "title",
+                type=str,
+                description="Filter by title of movie",
+                required=False,
+                examples=[
+                    OpenApiExample(
+                        name="Filter by single title",
+                        value="Inception",
+                        description="Filter movies by the title 'Inception'."
+                    )
+                ]
+            ),
+            OpenApiParameter(
+                "genres",
+                type=str,
+                description="Filter by single genre of movie",
+                required=False,
+                examples=[
+                    OpenApiExample(
+                        name="Filter by single genre",
+                        value="5",
+                        description="Filter movies by the genre 'Adventure'."
+                    ),
+                    OpenApiExample(
+                        name="Filter by multi genres",
+                        value="5,6,7",
+                        description="Filter movies by the genre "
+                                    "'Adventure, Sci-Fi, Mystery'."
+                    ),
+                ]
+            ),
+            OpenApiParameter(
+                "actors",
+                type=str,
+                description="Filter by single actor of movie by id",
+                required=False,
+                examples=[
+                    OpenApiExample(
+                        name="Filter by single actor",
+                        value="1",
+                        description="Filter movies by the actor "
+                                    "'Jack Nicholson'."
+                    ),
+                    OpenApiExample(
+                        name="Filter by multi actors",
+                        value="1,2,3",
+                        description="Filter movies by actors "
+                                    "'Jack Nicholson, Leonardo DiCaprio, "
+                                    "Matt Damon'."
+                    ),
+                ]
+            ),
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        """Retrieve a list of movies."""
+        return super().list(request, *args, **kwargs)
+
+    def create(self, request, *args, **kwargs):
+        """Created a new movie."""
+        return super().create(request, *args, **kwargs)
+
+    def retrieve(self, request, *args, **kwargs):
+        """Retrieve a movie"""
+        return super().retrieve(request, *args, **kwargs)
+
 
 class MovieSessionViewSet(viewsets.ModelViewSet):
     queryset = (
@@ -134,14 +241,13 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
         .select_related("movie", "cinema_hall")
         .annotate(
             tickets_available=(
-                F("cinema_hall__rows") * F("cinema_hall__seats_in_row")
+                F("cinema_hall__rows")
+                * F("cinema_hall__seats_in_row")
                 - Count("tickets")
             )
         )
     )
     serializer_class = MovieSessionSerializer
-    authentication_classes = (TokenAuthentication,)
-    permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
     def get_queryset(self):
         date = self.request.query_params.get("date")
@@ -167,6 +273,46 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
 
         return MovieSessionSerializer
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                "date",
+                type=str,
+                description="Filter date of movie session",
+                required=False,
+            ),
+            OpenApiParameter(
+                "movie",
+                type=int,
+                description="Filter by movie id",
+                required=False,
+            ),
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        """Retrieve list of movies."""
+        return super().list(request, *args, **kwargs)
+
+    def create(self, request, *args, **kwargs):
+        """Created a new movie session."""
+        return super().create(request, *args, **kwargs)
+
+    def retrieve(self, request, *args, **kwargs):
+        """Retrieve detail movie session."""
+        return super().retrieve(request, *args, **kwargs)
+
+    def update(self, request, *args, **kwargs):
+        """Update full information about movie session."""
+        return super().update(request, *args, **kwargs)
+
+    def partial_update(self, request, *args, **kwargs):
+        """Partial update a movie session."""
+        return super().partial_update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        """Destroy the movie session."""
+        return super().destroy(request, *args, **kwargs)
+
 
 class OrderPagination(PageNumberPagination):
     page_size = 10
@@ -183,8 +329,6 @@ class OrderViewSet(
     )
     serializer_class = OrderSerializer
     pagination_class = OrderPagination
-    authentication_classes = (TokenAuthentication,)
-    permission_classes = (IsAuthenticated,)
 
     def get_queryset(self):
         return Order.objects.filter(user=self.request.user)
@@ -197,3 +341,11 @@ class OrderViewSet(
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
+
+    def list(self, request, *args, **kwargs):
+        """Retrieve a list of orders filtered by current user."""
+        return super().list(request, *args, **kwargs)
+
+    def create(self, request, *args, **kwargs):
+        """Create a new order."""
+        return super().create(request, *args, **kwargs)
