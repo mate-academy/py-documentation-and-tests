@@ -46,7 +46,7 @@ class AuthenticatedMovieViewSetTests(TestCase):
     def setUp(self):
         self.client = APIClient()
         self.user = get_user_model().objects.create_user(
-            email="exampl@gmail.com",
+            email="example@gmail.com",
             password="strong_password",
         )
         self.client.force_authenticate(self.user, [])
