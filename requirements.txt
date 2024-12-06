@@ -1,9 +1,10 @@
 asgiref==3.8.1
 attrs==24.2.0
 Django==5.1.4
+django-debug-toolbar==4.4.6
 djangorestframework==3.15.2
-djangorestframework-simplejwt==5.2.0
-drf-spectacular==0.22.1
+djangorestframework-simplejwt==5.3.1
+drf-spectacular==0.28.0
 flake8==5.0.4
 flake8-quotes==3.3.1
 flake8-variables-names==0.0.5
@@ -19,5 +20,6 @@ PyJWT==2.10.1
 PyYAML==6.0.2
 referencing==0.35.1
 rpds-py==0.22.3
+setuptools==75.6.0
 sqlparse==0.5.2
 uritemplate==4.1.1
