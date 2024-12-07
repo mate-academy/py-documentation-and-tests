@@ -24,7 +24,7 @@ from cinema.serializers import (
     MovieDetailSerializer,
     MovieImageSerializer,
     MovieListSerializer,
-    MovieSerializer,
+    MovieBaseSerializer,
     MovieSessionDetailSerializer,
     MovieSessionListSerializer,
     MovieSessionBaseSerializer,
@@ -67,7 +67,7 @@ class MovieViewSet(
     viewsets.GenericViewSet,
 ):
     queryset = Movie.objects.prefetch_related("genres", "actors")
-    serializer_class = MovieSerializer
+    serializer_class = MovieBaseSerializer
 
     @staticmethod
     def _params_to_ints(ids_string: str) -> list[int]:
@@ -105,7 +105,7 @@ class MovieViewSet(
         if self.action == "upload_image":
             return MovieImageSerializer
 
-        return MovieSerializer
+        return MovieBaseSerializer
 
     @action(
         methods=["POST"],

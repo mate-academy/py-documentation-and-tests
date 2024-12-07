@@ -31,7 +31,7 @@ class CinemaHallSerializer(serializers.ModelSerializer):
         fields = ("id", "name", "rows", "seats_in_row", "capacity")
 
 
-class MovieSerializer(serializers.ModelSerializer):
+class MovieBaseSerializer(serializers.ModelSerializer):
     class Meta:
         model = Movie
         fields = (
@@ -44,7 +44,7 @@ class MovieSerializer(serializers.ModelSerializer):
         )
 
 
-class MovieListSerializer(serializers.ModelSerializer):
+class MovieListSerializer(MovieBaseSerializer):
 
     genres = serializers.SlugRelatedField(
         many=True, read_only=True, slug_field="name"
@@ -55,34 +55,16 @@ class MovieListSerializer(serializers.ModelSerializer):
         slug_field="full_name",
     )
 
-    class Meta:
-        model = Movie
-        fields = (
-            "id",
-            "title",
-            "description",
-            "duration",
-            "genres",
-            "actors",
-            "image",
-        )
+    class Meta(MovieBaseSerializer.Meta):
+        fields = MovieBaseSerializer.Meta.fields + ("image",)
 
 
-class MovieDetailSerializer(serializers.ModelSerializer):
+class MovieDetailSerializer(MovieBaseSerializer):
     genres = GenreSerializer(many=True, read_only=True)
     actors = ActorSerializer(many=True, read_only=True)
 
-    class Meta:
-        model = Movie
-        fields = (
-            "id",
-            "title",
-            "description",
-            "duration",
-            "genres",
-            "actors",
-            "image",
-        )
+    class Meta(MovieBaseSerializer.Meta):
+        fields = MovieBaseSerializer.Meta.fields + ("image",)
 
 
 class MovieImageSerializer(serializers.ModelSerializer):
@@ -160,7 +142,9 @@ class MovieSessionDetailSerializer(MovieSessionBaseSerializer):
 
 
 class OrderBaseSerializer(serializers.ModelSerializer):
-    tickets = TicketBaseSerializer(many=True, read_only=False, allow_empty=False)
+    tickets = TicketBaseSerializer(
+        many=True, read_only=False, allow_empty=False
+    )
 
     class Meta:
         model = Order
