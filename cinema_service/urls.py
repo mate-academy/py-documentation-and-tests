@@ -7,6 +7,10 @@ from drf_spectacular.views import (
     SpectacularRedocView,
     SpectacularSwaggerView,
 )
+from rest_framework_simplejwt.views import (
+    TokenObtainPairView,
+    TokenRefreshView,
+)
 
 api_doc_patterns = [
     path(
@@ -27,8 +31,24 @@ api_doc_patterns = [
 ]
 
 api_patterns = [
-    path("cinema/", include("cinema.urls", namespace="cinema")),
-    path("user/", include("user.urls", namespace="user")),
+    path(
+        "cinema/",
+        include("cinema.urls", namespace="cinema"),
+    ),
+    path(
+        "user/",
+        include("user.urls", namespace="user"),
+    ),
+    path(
+        "token/",
+        TokenObtainPairView.as_view(),
+        name="token-obtain-pair",
+    ),
+    path(
+        "token/refresh/",
+        TokenRefreshView.as_view(),
+        name="token-refresh",
+    ),
 ] + api_doc_patterns
 
 urlpatterns = [
