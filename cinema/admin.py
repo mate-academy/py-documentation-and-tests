@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import (
+from cinema.models import (
     CinemaHall,
     Genre,
     Actor,
@@ -9,7 +9,6 @@ from .models import (
     Order,
     Ticket,
 )
-
 admin.site.register(CinemaHall)
 admin.site.register(Genre)
 admin.site.register(Actor)
