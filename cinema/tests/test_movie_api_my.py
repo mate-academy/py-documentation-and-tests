@@ -1,6 +1,7 @@
 from django.test import TestCase
 from rest_framework.reverse import reverse
 from rest_framework.test import APIClient
+from django.contrib.auth.models import User
 from rest_framework.authtoken.models import Token
 from django.contrib.auth import get_user_model
 
@@ -125,22 +126,18 @@ class AuthenticatedMovieApiTests(TestCase):
 
 
 
-    def tets_retrieve_movie_details(self):
+    def test_retrieve_movie_details(self):
         movie = sample_movie()
         movie.genres.add(Genre.objects.create(name="sci-fi"))
 
-        url = detail_url(bus.id)
+        url = detail_url(movie.id)
 
         res = self.client.get(url)
 
         serializer = MovieRetriveSerializer(movie)
         self.assertEqual(res.data, serializer.data)
 
-    from rest_framework.test import APIClient
-    from django.contrib.auth.models import User
-    from rest_framework.authtoken.models import Token
-
-    def test_create_movie_forbidden(self):
+    def test_create_movie_successful(self):
         actor_1 = sample_actor()
         actor_2 = sample_actor()
         genre = Genre.objects.create(name="Action")
