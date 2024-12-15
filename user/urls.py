@@ -9,7 +9,6 @@ from user.views import CreateUserView, CreateTokenView, ManageUserView
 
 app_name = "user"
 
-
 urlpatterns = [
     path("register/", CreateUserView.as_view(), name="create"),
     path("token/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
