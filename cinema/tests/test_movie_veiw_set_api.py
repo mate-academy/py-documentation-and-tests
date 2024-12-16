@@ -1,5 +1,4 @@
 from django.contrib.auth import get_user_model
-from django.template.context_processors import request
 from django.test import TestCase
 from rest_framework import status
 from rest_framework.test import APIClient
@@ -206,7 +205,3 @@ class AdminMovieTests(TestCase):
         response = self.client.delete(url)
 
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
-
-
-
-
