@@ -309,3 +309,12 @@ class AdminMovieTest(TestCase):
         self.assertIn(actor_2, actors)
         self.assertEqual(genres.count(), 2)
         self.assertEqual(actors.count(), 2)
+
+    def test_delete_movie_not_allowed(self):
+        movie = sample_movie()
+
+        url = detail_url(movie.id)
+
+        res = self.client.delete(url)
+
+        self.assertEqual(res.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
