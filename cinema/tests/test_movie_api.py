@@ -168,6 +168,14 @@ class UnauthenticatedMovieViewSetTests(TestCase):
     def test_auth_required(self):
         res = self.client.get(MOVIE_URL)
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+    
+    def test_auth_post_required(self):
+        res = self.client.post(MOVIE_URL)
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+    
+    def test_auth_delete_required(self):
+        res = self.client.delete(MOVIE_URL)
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
 class AuthenticatedMovieViewSetTests(TestCase):
@@ -247,6 +255,21 @@ class AuthenticatedMovieViewSetTests(TestCase):
         serializer = MovieDetailSerializer(movie)
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(res.data, serializer.data)
+    
+    def test_post_retrive_movie(self):
+        payload = {
+            "title": "New Movie",
+            "description": "New Description",
+            "duration": 110,
+        }
+        res = self.client.post(MOVIE_URL, payload)
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+    
+    def test_delete_retrive_movie(self):
+        movie = sample_movie()
+        res = self.client.delete(detail_url(movie.id))
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertTrue(Movie.objects.filter(id=movie.id).exists())
 
 
 class AdminMovieViewSetTests(TestCase):
