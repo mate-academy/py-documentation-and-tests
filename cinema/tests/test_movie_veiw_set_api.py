@@ -170,6 +170,21 @@ class AdminMovieTests(TestCase):
 
         self.client.force_authenticate(self.user)
 
+    def test_create_movie(self):
+        payload = {
+            "title": "Sample movie",
+            "description": "Sample description",
+            "duration": 90,
+        }
+
+        response = self.client.post(MOVIE_URL, payload)
+        movie = Movie.objects.get(id=response.data["id"])
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        for key in payload:
+            self.assertEqual(payload[key], getattr(movie, key))
+
     def test_create_movie_with_genres_actors(self):
         sample_actor()
         sample_genre()
