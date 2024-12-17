@@ -160,7 +160,7 @@ class MovieImageUploadTests(TestCase):
         self.assertIn("movie_image", res.data[0].keys())
 
 
-class UnauthenticatedMovieAoiTest(TestCase):
+class UnauthenticatedMovieApiTest(TestCase):
     def setUp(self):
         self.client = APIClient()
 
@@ -169,7 +169,7 @@ class UnauthenticatedMovieAoiTest(TestCase):
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
-class AuthenticatedMovieAoiTest(TestCase):
+class AuthenticatedMovieApiTest(TestCase):
     def setUp(self):
         self.client = APIClient()
         self.user = get_user_model().objects.create_user(
@@ -258,7 +258,7 @@ class AuthenticatedMovieAoiTest(TestCase):
         self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
 
 
-class AdminMovieTest(TestCase):
+class AdminMovieApiTest(TestCase):
 
     def setUp(self):
         self.client = APIClient()
