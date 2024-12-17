@@ -1,15 +1,15 @@
-import tempfile
 import os
+import tempfile
 
-from PIL import Image
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
-
-from rest_framework.test import APIClient
+from PIL import Image
 from rest_framework import status
+from rest_framework.reverse import reverse
+from rest_framework.test import APIClient
 
-from cinema.models import Movie, MovieSession, CinemaHall, Genre, Actor
+from cinema.models import Actor, CinemaHall, Genre, Movie, MovieSession
 
 MOVIE_URL = reverse("cinema:movie-list")
 MOVIE_SESSION_URL = reverse("cinema:moviesession-list")
@@ -157,3 +157,114 @@ class MovieImageUploadTests(TestCase):
         res = self.client.get(MOVIE_SESSION_URL)
 
         self.assertIn("movie_image", res.data[0].keys())
+
+class MovieViewSetTest(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+
+        self.genre1 = Genre.objects.create(name="Drama")
+        self.genre2 = Genre.objects.create(name="Action")
+
+        self.actor1 = Actor.objects.create(first_name="Michael", last_name="Johnson")
+        self.actor2 = Actor.objects.create(first_name="Emma", last_name="Brown")
+
+        self.movie1 = Movie.objects.create(
+            title="The Silent Road", description="A drama about resilience", duration=110
+        )
+        self.movie1.genres.add(self.genre1)
+        self.movie1.actors.add(self.actor1)
+
+        self.movie2 = Movie.objects.create(
+            title="Chasing Shadows", description="An action-packed thriller", duration=95
+        )
+        self.movie2.genres.add(self.genre2)
+        self.movie2.actors.add(self.actor2)
+
+        self.list_url = reverse("cinema:movie-list")
+        self.detail_url = lambda pk: reverse("cinema:movie-detail", args=[pk])
+
+        self.admin_user = get_user_model().objects.create_superuser(
+            email="admin@example.com",
+            password="password123",
+        )
+        self.regular_user = get_user_model().objects.create_user(
+            email="user@example.com",
+            password="password123",
+        )
+
+    def test_list_movies(self):
+        self.client.force_authenticate(user=self.regular_user)
+        response = self.client.get(self.list_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 2)
+
+    def test_list_movies_with_filter(self):
+        self.client.force_authenticate(user=self.regular_user)
+
+        response = self.client.get(self.list_url, {"title": "The Silent Road"})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["title"], "The Silent Road")
+
+        response = self.client.get(self.list_url, {"genres": str(self.genre1.id)})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["title"], "The Silent Road")
+
+    def test_retrieve_movie_detail(self):
+        self.client.force_authenticate(user=self.regular_user)
+        response = self.client.get(self.detail_url(self.movie1.id))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["title"], "The Silent Road")
+        self.assertEqual(response.data["genres"][0]["name"], "Drama")
+        self.assertEqual(response.data["actors"][0]["full_name"], "Michael Johnson")
+
+    def test_create_movie(self):
+        self.client.force_authenticate(user=self.admin_user)
+        payload = {
+            "title": "Lost in Time",
+            "description": "A thrilling adventure through time",
+            "duration": 130,
+            "genres": [self.genre1.id],
+            "actors": [self.actor1.id, self.actor2.id],
+        }
+        response = self.client.post(self.list_url, payload, format="json")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data["title"], "Lost in Time")
+
+    def test_filter_movies_by_actor(self):
+        self.client.force_authenticate(user=self.regular_user)
+        response = self.client.get(self.list_url, {"actors": str(self.actor1.id)})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["title"], "The Silent Road")
+
+    def test_unauthorized_user_cannot_create_movie(self):
+        payload = {
+            "title": "Hidden Truth",
+            "description": "An exploration of mystery and truth",
+            "duration": 140,
+            "genres": [self.genre2.id],
+            "actors": [self.actor1.id, self.actor2.id],
+        }
+        response = self.client.post(self.list_url, payload, format="json")
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_non_admin_user_cannot_create_movie(self):
+        self.client.force_authenticate(user=self.regular_user)
+        payload = {
+            "title": "Shattered Memories",
+            "description": "A journey through broken memories",
+            "duration": 125,
+            "genres": [self.genre2.id],
+            "actors": [self.actor1.id, self.actor2.id],
+        }
+        response = self.client.post(self.list_url, payload, format="json")
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_empty_movies_list(self):
+        Movie.objects.all().delete()
+        self.client.force_authenticate(user=self.regular_user)
+        response = self.client.get(self.list_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 0)

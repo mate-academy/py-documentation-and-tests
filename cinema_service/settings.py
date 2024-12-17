@@ -122,11 +122,11 @@ AUTH_USER_MODEL = "user.User"
 
 LANGUAGE_CODE = "en-us"
 
-TIME_ZONE = "UTC"
+TIME_ZONE = "Europe/Kiev"
 
 USE_I18N = True
 
-USE_TZ = False
+USE_TZ = True
 
 
 # Static files (CSS, JavaScript, Images)
@@ -163,7 +163,8 @@ REST_FRAMEWORK = {
 
 SPECTACULAR_SETTINGS = {
     "TITLE": "Cinema Service API",
-    "DESCRIPTION": "Cinema management system API and some other information",    "VERSION": "1.0.0",
+    "DESCRIPTION": "Cinema management system API and some other information",
+    "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
     "SWAGGER_UI_SETTINGS": {
         "deepLinking": True,
