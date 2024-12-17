@@ -1,5 +1,6 @@
 from django.urls import path, include
 from rest_framework import routers
+from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
 from cinema.views import (
     GenreViewSet,
@@ -18,6 +19,13 @@ router.register("movies", MovieViewSet)
 router.register("movie_sessions", MovieSessionViewSet)
 router.register("orders", OrderViewSet)
 
-urlpatterns = [path("", include(router.urls))]
+urlpatterns = [
+    path("schema/", SpectacularAPIView.as_view(), name="schema"),
+    path(
+        "swagger/",
+        SpectacularSwaggerView.as_view(url_name="schema"),
+        name="swagger-ui"
+    ),
+    path("", include(router.urls))]
 
 app_name = "cinema"
