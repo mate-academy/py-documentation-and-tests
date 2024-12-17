@@ -28,7 +28,8 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="moviesession",
             name="movie",
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to="cinema.movie"),
+            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to="cinema.movie"
+            ),
         ),
         migrations.AddField(
             model_name="movie",
