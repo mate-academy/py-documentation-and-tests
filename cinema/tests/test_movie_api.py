@@ -6,13 +6,88 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 
-from rest_framework.test import APIClient
+from rest_framework.test import APIClient, APITestCase
 from rest_framework import status
 
 from cinema.models import Movie, MovieSession, CinemaHall, Genre, Actor
 
 MOVIE_URL = reverse("cinema:movie-list")
 MOVIE_SESSION_URL = reverse("cinema:moviesession-list")
+
+
+class MovieViewSetTests(APITestCase):
+
+    def setUp(self):
+        self.admin_user = get_user_model().objects.create_user(
+            email="admin@example.com", password="adminpassword", is_staff=True
+        )
+        self.user = get_user_model().objects.create_user(
+            email="user@example.com", password="userpassword"
+        )
+
+        self.client.force_authenticate(user=self.admin_user)
+
+        self.genre1 = Genre.objects.create(name="Action")
+        self.genre2 = Genre.objects.create(name="Comedy")
+        self.actor1 = Actor.objects.create(first_name="Actor", last_name="One")
+        self.actor2 = Actor.objects.create(first_name="Actor", last_name="Two")
+
+        self.movie1 = Movie.objects.create(title="Action Movie", duration=120)
+        self.movie1.genres.set([self.genre1])
+        self.movie1.actors.set([self.actor1])
+
+        self.movie2 = Movie.objects.create(title="Comedy Movie", duration=90)
+        self.movie2.genres.set([self.genre2])
+        self.movie2.actors.set([self.actor2])
+
+    def test_movie_list_with_filters(self):
+        """Test that movies can be filtered by title, genres, and actors."""
+        url = reverse('cinema:movie-list')
+
+        response = self.client.get(url, {'title': 'Action Movie'})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+
+        response = self.client.get(url, {'genres': '1'})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+
+        response = self.client.get(url, {'actors': '1'})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+
+    def test_movie_create(self):
+        url = reverse('cinema:movie-list')
+
+        data = {
+            'title': 'New Movie',
+            'description': 'A test movie without an image',
+            'duration': 120,
+            'genres': [self.genre1.id],
+            'actors': [self.actor1.id],
+        }
+
+        response = self.client.post(url, data, format='json')
+
+        print("Response data:", response.data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(Movie.objects.count(), 3)
+        self.assertEqual(Movie.objects.latest('id').title, 'New Movie')
+
+    def test_movie_retrieve(self):
+        """Test retrieving a movie by id."""
+        url = reverse('cinema:movie-detail', args=[self.movie1.id])
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['title'], self.movie1.title)
+
+    def test_movie_list_permissions(self):
+        """Test that non-admin users can access the movie list."""
+        self.client.force_authenticate(user=self.user)
+        url = reverse('cinema:movie-list')
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
 
 
 def sample_movie(**params):
