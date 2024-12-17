@@ -35,7 +35,7 @@ class Actor(models.Model):
         return self.first_name + " " + self.last_name
 
     @property
-    def full_name(self):
+    def full_name(self) -> str:
         return f"{self.first_name} {self.last_name}"
 
 
@@ -50,9 +50,9 @@ class Movie(models.Model):
     title = models.CharField(max_length=255)
     description = models.TextField()
     duration = models.IntegerField()
-    genres = models.ManyToManyField(Genre)
-    actors = models.ManyToManyField(Actor)
-    image = models.ImageField(null=True, upload_to=movie_image_file_path)
+    genres = models.ManyToManyField(Genre, blank=True)
+    actors = models.ManyToManyField(Actor, blank=True)
+    image = models.ImageField(null=True, blank=True, upload_to=movie_image_file_path)
 
     class Meta:
         ordering = ["title"]
