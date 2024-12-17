@@ -81,7 +81,9 @@ class MovieTests(TestCase):
             "id": 700,
             "title": "teeeest",
             "description": "teest12345",
-            "duration": 125
+            "duration": 125,
+            "genres": 1,
+            "actors": 1,
         }
 
         self.client.force_authenticate(self.user)
