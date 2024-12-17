@@ -73,3 +73,11 @@ class MovieViewSetTest(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["title"], self.first_movie.title)
         self.assertEqual(response.data["description"], self.first_movie.description)
+
+class MovieViewSetUnAuthorizedTest(TestCase):
+    def setUp(self) -> None:
+        self.client = APIClient()
+    def test_unauthorized(self):
+        url = reverse("cinema:movie-list")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
