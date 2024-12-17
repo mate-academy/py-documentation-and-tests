@@ -202,7 +202,7 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
                 required=False,
             ),
             OpenApiParameter(
-                "genres",
+                "movie",
                 type=int,
                 description="movie id"
             ),
