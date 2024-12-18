@@ -8,6 +8,11 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet, ReadOnlyModelViewSet
+from rest_framework_simplejwt.authentication import JWTAuthentication
+from rest_framework.throttling import UserRateThrottle, AnonRateThrottle
+
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 
 from cinema.models import Genre, Actor, CinemaHall, Movie, MovieSession, Order
 from cinema.permissions import IsAdminOrIfAuthenticatedReadOnly
@@ -69,14 +74,37 @@ class MovieViewSet(
 ):
     queryset = Movie.objects.prefetch_related("genres", "actors")
     serializer_class = MovieSerializer
-    authentication_classes = (TokenAuthentication,)
+    authentication_classes = (JWTAuthentication, TokenAuthentication)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
+    throttle_classes = [UserRateThrottle, AnonRateThrottle]
 
     @staticmethod
     def _params_to_ints(qs):
         """Converts a list of string IDs to a list of integers"""
         return [int(str_id) for str_id in qs.split(",")]
 
+    @swagger_auto_schema(
+        manual_parameters=[
+            openapi.Parameter(
+                name="title",
+                in_=openapi.IN_QUERY,
+                description="Filter movies by title",
+                type=openapi.TYPE_STRING,
+            ),
+            openapi.Parameter(
+                name="genres",
+                in_=openapi.IN_QUERY,
+                description="Filter movies by genres (comma-separated IDs)",
+                type=openapi.TYPE_STRING,
+            ),
+            openapi.Parameter(
+                name="actors",
+                in_=openapi.IN_QUERY,
+                description="Filter movies by actors (comma-separated IDs)",
+                type=openapi.TYPE_STRING,
+            ),
+        ]
+    )
     def get_queryset(self):
         """Retrieve the movies with filters"""
         title = self.request.query_params.get("title")
