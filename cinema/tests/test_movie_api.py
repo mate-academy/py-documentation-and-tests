@@ -1,14 +1,11 @@
 import tempfile
 import os
-
 from PIL import Image
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
-
 from rest_framework.test import APIClient
 from rest_framework import status
-
 from cinema.models import Movie, MovieSession, CinemaHall, Genre, Actor
 
 MOVIE_URL = reverse("cinema:movie-list")
@@ -22,7 +19,6 @@ def sample_movie(**params):
         "duration": 90,
     }
     defaults.update(params)
-
     return Movie.objects.create(**defaults)
 
 
@@ -31,14 +27,12 @@ def sample_genre(**params):
         "name": "Drama",
     }
     defaults.update(params)
-
     return Genre.objects.create(**defaults)
 
 
 def sample_actor(**params):
     defaults = {"first_name": "George", "last_name": "Clooney"}
     defaults.update(params)
-
     return Actor.objects.create(**defaults)
 
 
@@ -46,14 +40,12 @@ def sample_movie_session(**params):
     cinema_hall = CinemaHall.objects.create(
         name="Blue", rows=20, seats_in_row=20
     )
-
     defaults = {
         "show_time": "2022-06-02 14:00:00",
         "movie": None,
         "cinema_hall": cinema_hall,
     }
     defaults.update(params)
-
     return MovieSession.objects.create(**defaults)
 
 
@@ -90,7 +82,6 @@ class MovieImageUploadTests(TestCase):
             ntf.seek(0)
             res = self.client.post(url, {"image": ntf}, format="multipart")
         self.movie.refresh_from_db()
-
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertIn("image", res.data)
         self.assertTrue(os.path.exists(self.movie.image.path))
@@ -99,7 +90,6 @@ class MovieImageUploadTests(TestCase):
         """Test uploading an invalid image"""
         url = image_upload_url(self.movie.id)
         res = self.client.post(url, {"image": "not image"}, format="multipart")
-
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_post_image_to_movie_list(self):
@@ -120,7 +110,6 @@ class MovieImageUploadTests(TestCase):
                 },
                 format="multipart",
             )
-
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
         movie = Movie.objects.get(title="Title")
         self.assertFalse(movie.image)
@@ -133,7 +122,6 @@ class MovieImageUploadTests(TestCase):
             ntf.seek(0)
             self.client.post(url, {"image": ntf}, format="multipart")
         res = self.client.get(detail_url(self.movie.id))
-
         self.assertIn("image", res.data)
 
     def test_image_url_is_shown_on_movie_list(self):
@@ -144,7 +132,6 @@ class MovieImageUploadTests(TestCase):
             ntf.seek(0)
             self.client.post(url, {"image": ntf}, format="multipart")
         res = self.client.get(MOVIE_URL)
-
         self.assertIn("image", res.data[0].keys())
 
     def test_image_url_is_shown_on_movie_session_detail(self):
@@ -155,5 +142,124 @@ class MovieImageUploadTests(TestCase):
             ntf.seek(0)
             self.client.post(url, {"image": ntf}, format="multipart")
         res = self.client.get(MOVIE_SESSION_URL)
-
         self.assertIn("movie_image", res.data[0].keys())
+
+
+class MovieViesSetTest(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.regular_user = get_user_model().objects.create_user(
+            email="regular@example.com",
+            password="password",
+        )
+        self.admin_user = get_user_model().objects.create_superuser(
+            email="admin@example.com",
+            password="password",
+        )
+        self.genre1 = Genre.objects.create(name="Drama")
+        self.genre2 = Genre.objects.create(name="Comedy")
+        self.actor1 = Actor.objects.create(first_name="Jane", last_name="Doe")
+        self.actor2 = Actor.objects.create(first_name="John", last_name="Doe")
+        self.movie1 = Movie.objects.create(
+            title="Movie 1",
+            description="Description 1",
+            duration=90,
+        )
+        self.movie1.genres.add(self.genre1)
+        self.movie1.actors.add(self.actor1)
+        self.movie2 = Movie.objects.create(
+            title="Movie 2",
+            description="Description 2",
+            duration=120,
+        )
+        self.movie2.genres.add(self.genre2)
+        self.movie2.actors.add(self.actor2)
+        self.movie3 = Movie.objects.create(
+            title="Movie 3",
+            description="Description 3",
+            duration=150,
+        )
+        self.movie3.genres.add(self.genre1)
+        self.movie3.genres.add(self.genre2)
+        self.list_url = reverse("cinema:movie-list")
+        self.detail_url = reverse("cinema:movie-detail", args=[self.movie1.id])
+
+    def test_retrieve_movies(self):
+        self.client.force_authenticate(user=self.regular_user)
+        response = self.client.get(self.list_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 3)
+        self.assertEqual(response.data[0]["title"], self.movie1.title)
+        response = self.client.get(self.detail_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["title"], self.movie1.title)
+        self.assertEqual(response.data["description"], self.movie1.description)
+        self.assertEqual(response.data["duration"], self.movie1.duration)
+        self.assertEqual(response.data["genres"][0]["name"], self.genre1.name)
+
+    def test_create_movie(self):
+        self.client.force_authenticate(user=self.admin_user)
+        data = {
+            "title": "Movie 4",
+            "description": "Description 4",
+            "duration": 180,
+            "genres": [self.genre1.id],
+            "actors": [self.actor1.id],
+        }
+        response = self.client.post(self.list_url, data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        movie = Movie.objects.get(id=response.data["id"])
+        self.assertEqual(movie.title, data["title"])
+        self.assertEqual(movie.description, data["description"])
+        self.assertEqual(movie.duration, data["duration"])
+        self.assertEqual(movie.genres.first().name, self.genre1.name)
+
+    def test_filtering_movies(self):
+        self.client.force_authenticate(user=self.regular_user)
+        response = self.client.get(
+            self.list_url, {"genres": f"{self.genre1.id}"}
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 2)
+        self.assertEqual(response.data[0]["title"], self.movie1.title)
+
+    def test_unauthorized_user_cannot_create_movie(self):
+        data = {
+            "title": "Movie 4",
+            "description": "Description 4",
+            "duration": 180,
+            "genres": [self.genre1.id],
+            "actors": [self.actor1.id],
+        }
+        self.client.force_authenticate(user=None)
+        response = self.client.post(self.list_url, data)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_regular_user_cant_create_movie(self):
+        data = {
+            "title": "Movie 4",
+            "description": "Description 4",
+            "duration": 180,
+            "genres": [self.genre1.id],
+            "actors": [self.actor1.id],
+        }
+        self.client.force_authenticate(user=self.regular_user)
+        response = self.client.post(self.list_url, data)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_admin_user_can_create_movie(self):
+        data = {
+            "title": "Movie 4",
+            "description": "Description 4",
+            "duration": 180,
+            "genres": [self.genre1.id],
+            "actors": [self.actor1.id],
+        }
+        self.client.force_authenticate(user=self.admin_user)
+        response = self.client.post(self.list_url, data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        movie = Movie.objects.get(id=response.data["id"])
+        self.assertEqual(movie.title, data["title"])
+        self.assertEqual(movie.description, data["description"])
+        self.assertEqual(movie.duration, data["duration"])
+        self.assertEqual(movie.genres.first().name, self.genre1.name)
