@@ -5,7 +5,7 @@ from rest_framework import status
 from rest_framework.test import APIClient
 
 from cinema.models import Actor, Movie, Genre
-from cinema.serializers import MovieListSerializer
+from cinema.serializers import MovieListSerializer, MovieDetailSerializer
 
 
 class MovieTests(TestCase):
@@ -38,6 +38,39 @@ class MovieTests(TestCase):
     def test_deny_access(self):
         res = self.client.get(reverse("cinema:movie-list"))
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+        res = self.client.post(reverse("cinema:movie-list"))
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+        res = self.client.get(reverse("cinema:movie-detail", args=[1]))
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+        res = self.client.get(reverse("cinema:movie-upload-image", args=[1]))
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+        res = self.client.delete(reverse("cinema:movie-detail", args=[1,]))
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_user_access(self):
+        self.client.force_authenticate(self.user)
+
+        res = self.client.get(reverse("cinema:movie-upload-image", args=[1]))
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+
+        res = self.client.delete(reverse("cinema:movie-detail", args=[1,]))
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_admin_access(self):
+        self.client.force_authenticate(self.superuser)
+
+        res = self.client.get(reverse("cinema:movie-list"))
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+
+        res = self.client.get(reverse("cinema:movie-detail", args=[1]))
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+
+        res = self.client.delete(reverse("cinema:movie-detail", args=[1, ]))
+        self.assertEqual(res.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def test_movie_list(self):
         self.client.force_authenticate(self.user)
@@ -93,3 +126,13 @@ class MovieTests(TestCase):
         self.client.force_authenticate(self.superuser)
         res = self.client.post(reverse("cinema:movie-list"), data)
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+
+    def test_movie_detail(self):
+        self.client.force_authenticate(self.user)
+        res = self.client.get(reverse("cinema:movie-detail", args=[1,]))
+
+        serializer = MovieDetailSerializer(Movie.objects.get(id=1))
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+
+        self.assertEqual(res.data, serializer.data)
