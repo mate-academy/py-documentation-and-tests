@@ -157,3 +157,81 @@ class MovieImageUploadTests(TestCase):
         res = self.client.get(MOVIE_SESSION_URL)
 
         self.assertIn("movie_image", res.data[0].keys())
+
+
+class TestMovieViewSet(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.user = get_user_model().objects.create_user(
+            email="test@example.com",
+            password="test_password"
+        )
+        self.admin_user = get_user_model().objects.create_superuser(
+            email="admin@example.com",
+            password="admin_test_password"
+        )
+        self.client.force_authenticate(self.admin_user)
+
+        self.genre1 = sample_genre(name="Action")
+        self.genre2 = sample_genre(name="Comedy")
+        self.actor1 = sample_actor(first_name="Brad", last_name="Pitt")
+        self.actor2 = sample_actor(first_name="Leonardo", last_name="DiCaprio")
+        self.movie1 = sample_movie(
+            title="Inception",
+            description="A sci-fi thriller",
+            duration=148,
+        )
+        self.movie1.genres.add(self.genre1, self.genre2)
+        self.movie1.actors.add(self.actor1, self.actor2)
+
+    def test_list_movies(self):
+        res = self.client.get(MOVIE_URL)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(res.data), 1)
+        self.assertEqual(res.data[0]["title"], "Inception")
+
+    def test_filter_movies_by_title(self):
+        res = self.client.get(MOVIE_URL, {"title": "Inception"})
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(res.data), 1)
+        self.assertEqual(res.data[0]["title"], "Inception")
+
+    def test_filter_movies_by_genres(self):
+        res = self.client.get(MOVIE_URL, {"genres": f"{self.genre1.id},{self.genre2.id}"})
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(res.data), 1)
+
+    def test_filter_movies_by_actors(self):
+        res = self.client.get(MOVIE_URL, {"actors": f"{self.actor1.id},{self.actor2.id}"})
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(res.data), 1)
+
+    def test_retrieve_movie_detail(self):
+        url = detail_url(self.movie1.id)
+        res = self.client.get(url)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data["title"], self.movie1.title)
+
+    def test_create_movie_as_admin(self):
+        payload = {
+            "title": "Titanic",
+            "description": "A romantic tragedy",
+            "duration": 195,
+            "genres": [self.genre1.id],
+            "actors": [self.actor1.id],
+        }
+        res = self.client.post(MOVIE_URL, payload)
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(Movie.objects.count(), 2)
+
+    def test_create_movie_as_non_admin(self):
+        self.client.force_authenticate(self.user)
+        payload = {
+            "title": "Forbidden Movie",
+            "description": "This should not be allowed",
+            "duration": 90,
+            "genres": [self.genre1.id],
+            "actors": [self.actor1.id],
+        }
+        res = self.client.post(MOVIE_URL, payload)
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
