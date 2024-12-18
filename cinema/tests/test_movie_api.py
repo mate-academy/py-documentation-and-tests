@@ -6,7 +6,7 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 
-from rest_framework.test import APIClient
+from rest_framework.test import APIClient, APITestCase
 from rest_framework import status
 
 from cinema.models import Movie, MovieSession, CinemaHall, Genre, Actor
@@ -157,3 +157,46 @@ class MovieImageUploadTests(TestCase):
         res = self.client.get(MOVIE_SESSION_URL)
 
         self.assertIn("movie_image", res.data[0].keys())
+
+def sample_movie(**params):
+    defaults = {
+        "title": "Sample Movie",
+        "description": "Sample Description",
+        "duration": 120,
+    }
+    defaults.update(params)
+    return Movie.objects.create(**defaults)
+
+
+class MovieViewSetTests(APITestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.user = get_user_model().objects.create_user(
+            email="user@cinema.com", password="testpass"
+        )
+        self.client.force_authenticate(self.user)
+        self.movie = sample_movie()
+
+    def test_list_movies(self):
+        """Test retrieving a list of movies"""
+        res = self.client.get(MOVIE_URL)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+
+    def test_filter_movies_by_title(self):
+        """Test filtering movies by title"""
+        sample_movie(title="Action Movie")
+        res = self.client.get(MOVIE_URL, {"title": "Action"})
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(res.data), 1)
+        self.assertEqual(res.data[0]["title"], "Action Movie")
+
+    def test_filter_movies_by_genres(self):
+        """Test filtering movies by genres"""
+        genre = Genre.objects.create(name="Comedy")
+        movie = sample_movie(title="Comedy Movie")
+        movie.genres.add(genre)
+
+        res = self.client.get(MOVIE_URL, {"genres": f"{genre.id}"})
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(res.data), 1)
+        self.assertEqual(res.data[0]["title"], "Comedy Movie")
