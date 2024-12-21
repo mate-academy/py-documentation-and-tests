@@ -1,13 +1,13 @@
-import tempfile
 import os
+import tempfile
 
 from PIL import Image
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
-
-from rest_framework.test import APIClient
 from rest_framework import status
+from rest_framework.test import APIClient, APITestCase
+from rest_framework_simplejwt.tokens import AccessToken
 
 from cinema.models import Movie, MovieSession, CinemaHall, Genre, Actor
 
@@ -157,3 +157,165 @@ class MovieImageUploadTests(TestCase):
         res = self.client.get(MOVIE_SESSION_URL)
 
         self.assertIn("movie_image", res.data[0].keys())
+
+
+class MovieSessionViewSetTestCase(APITestCase):
+
+    def setUp(self):
+        # Створення користувача
+        self.user = get_user_model().objects.create_user(
+            email="testuser@example.com",
+            password="password123"
+        )
+        # Генерація JWT-токена
+        self.token = str(AccessToken.for_user(self.user))
+
+    def get_auth_headers(self):
+        """Метод для отримання заголовків авторизації."""
+        return {"Authorization": f"Bearer {self.token}"}
+
+    def test_filter_by_date(self):
+        """Test filtering movie sessions by date"""
+        response = self.client.get(
+            "/api/cinema/movie_sessions/",
+            {"date": "2024-12-25"},
+            HTTP_AUTHORIZATION=self.get_auth_headers()["Authorization"]
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        for session in response.data:
+            session_date = session["show_time"].split("T")[0]
+            self.assertEqual(session_date, "2024-12-25")
+
+    def test_filter_by_movie(self):
+        """Test filtering movie sessions by movie ID"""
+        response = self.client.get(
+            "/api/cinema/movie_sessions/",
+            {"movie": 1},
+            HTTP_AUTHORIZATION=self.get_auth_headers()["Authorization"]
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        for session in response.data:
+            self.assertEqual(session["movie"], 1)
+
+    def test_filter_by_date_and_movie(self):
+        """Test filtering movie sessions by both date and movie ID"""
+        response = self.client.get(
+            "/api/cinema/movie_sessions/",
+            {"date": "2024-12-25", "movie": 1},
+            HTTP_AUTHORIZATION=self.get_auth_headers()["Authorization"]
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        for session in response.data:
+            session_date = session["show_time"].split("T")[0]
+            self.assertEqual(session_date, "2024-12-25")
+            self.assertEqual(session["movie"], 1)
+
+    def test_no_filters(self):
+        """Test the movie session list without any filters"""
+        response = self.client.get(
+            "/api/cinema/movie_sessions/",
+            HTTP_AUTHORIZATION=self.get_auth_headers()["Authorization"]
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+
+class MovieViewSetTestCase(APITestCase):
+
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(email="testuser", password="password123")
+
+        response = self.client.post(
+            "/api/user/token/",
+            {"email": "testuser", "password": "password123"},
+        )
+        self.access_token = response.data["access"]
+
+    def get_auth_headers(self):
+        """Helper method to get the authorization headers."""
+        return {"HTTP_AUTHORIZATION": f"Bearer {self.access_token}"}
+
+    def test_filter_by_title(self):
+        """Test filtering movies by title"""
+        response = self.client.get(
+            "/api/cinema/movies/",
+            {"title": "Inception"},
+            **self.get_auth_headers(),
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        for movie in response.data:
+            self.assertIn("Inception", movie["title"])
+
+    def test_filter_by_genres(self):
+        """Test filtering movies by genres"""
+        response = self.client.get(
+            "/api/cinema/movies/",
+            {"genres": "1,2"},
+            **self.get_auth_headers(),
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        for movie in response.data:
+            genre_ids = [genre["id"] for genre in movie["genres"]]
+            self.assertTrue(all(genre_id in genre_ids for genre_id in [1, 2]))
+
+    def test_filter_by_actors(self):
+        """Test filtering movies by actors"""
+        response = self.client.get(
+            "/api/cinema/movies/",
+            {"actors": "1,2"},
+            **self.get_auth_headers(),
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        for movie in response.data:
+            actor_ids = [actor["id"] for actor in movie["actors"]]
+            self.assertTrue(all(actor_id in actor_ids for actor_id in [1, 2]))
+
+    def test_filter_by_multiple_parameters(self):
+        """Test filtering movies by title, genres, and actors"""
+        response = self.client.get(
+            "/api/cinema/movies/",
+            {"title": "Inception", "genres": "1,2", "actors": "1,2"},
+            **self.get_auth_headers(),
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        for movie in response.data:
+            self.assertIn("Inception", movie["title"])
+            genre_ids = [genre["id"] for genre in movie["genres"]]
+            self.assertTrue(all(genre_id in genre_ids for genre_id in [1, 2]))
+            actor_ids = [actor["id"] for actor in movie["actors"]]
+            self.assertTrue(all(actor_id in actor_ids for actor_id in [1, 2]))
+
+    def test_no_filters(self):
+        """Test the movie list without any filters"""
+        response = self.client.get(
+            "/api/cinema/movies/",
+            **self.get_auth_headers(),
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+
+class APISchemaTestCase(APITestCase):
+
+    def setUp(self):
+        # Створення користувача
+        self.user = get_user_model().objects.create_user(email="testuser@example.com", password="password123")
+        # Генерація токена для користувача
+        self.token = str(AccessToken.for_user(self.user))
+
+    def get_auth_headers(self):
+        """Helper method to get the authorization headers."""
+        return {"Authorization": f"Bearer {self.token}"}
+
+    def test_movie_session_schema(self):
+        """Test if the movie session schema includes the date and movie parameters"""
+        response = self.client.get("/api/doc/", HTTP_AUTHORIZATION=self.get_auth_headers()["Authorization"])
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("date", str(response.content))
+        self.assertIn("movie", str(response.content))
+
+    def test_movie_schema(self):
+        """Test if the movie schema includes the title, genres, and actors parameters"""
+        response = self.client.get("/api/doc/", HTTP_AUTHORIZATION=self.get_auth_headers()["Authorization"])
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("title", str(response.content))
+        self.assertIn("genres", str(response.content))
+        self.assertIn("actors", str(response.content))
