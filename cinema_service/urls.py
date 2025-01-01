@@ -12,7 +12,6 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/cinema/", include("cinema.urls", namespace="cinema")),
     path("api/user/", include("user.urls", namespace="user")),
-    path("__debug__/", include("debug_toolbar.urls")),
     path("api/doc/", SpectacularAPIView.as_view(), name="schema"),
     path(
         "api/doc/swagger/",
@@ -23,3 +22,9 @@ urlpatterns = [
         "api/doc/redoc/", SpectacularRedocView.as_view(url_name="schema"), name="redoc"
     ),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+if settings.DEBUG:
+    import debug_toolbar
+    urlpatterns += [
+        path("debug/", include(debug_toolbar.urls)),
+    ]
