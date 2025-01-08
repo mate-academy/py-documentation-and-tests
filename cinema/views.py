@@ -104,7 +104,6 @@ class MovieViewSet(
         """Filtering by title, genres, actors for movie"""
         return super().list(request, *args, **kwargs)
 
-
     def get_queryset(self):
         """Retrieve the movies with filters"""
         title = self.request.query_params.get("title")
@@ -162,14 +161,34 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
         .select_related("movie", "cinema_hall")
         .annotate(
             tickets_available=(
-                F("cinema_hall__rows") * F("cinema_hall__seats_in_row")
-                - Count("tickets")
+                    F("cinema_hall__rows") * F("cinema_hall__seats_in_row")
+                    - Count("tickets")
             )
         )
     )
     serializer_class = MovieSessionSerializer
     authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="date",
+                type=str,
+                required=False,
+                description="Filter movie sessions by date (ex. ?date=2022-01-01)",
+            ),
+            OpenApiParameter(
+                name="movie",
+                type=int,
+                required=False,
+                description="Filter movie sessions by movie id",
+            ),
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        """Filtering by date, movie for movie session"""
+        return super().list(request, *args, **kwargs)
 
     def get_queryset(self):
         date = self.request.query_params.get("date")
