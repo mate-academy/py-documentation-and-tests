@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from django.db.models import F, Count
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import viewsets, mixins, status
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import action
@@ -76,6 +77,33 @@ class MovieViewSet(
     def _params_to_ints(qs):
         """Converts a list of string IDs to a list of integers"""
         return [int(str_id) for str_id in qs.split(",")]
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="title",
+                type=str,
+                required=False,
+                description="Filter movies by title",
+            ),
+            OpenApiParameter(
+                name="genres",
+                type={"type": "array", "items": {"type": "number"}},
+                required=False,
+                description="Filter movies by genre id (ex. ?genres=1,2,3)",
+            ),
+            OpenApiParameter(
+                name="actors",
+                type={"type": "array", "items": {"type": "number"}},
+                required=False,
+                description="Filter movies by actor id (ex. ?actors=1,2,3)",
+            ),
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        """Filtering by title, genres, actors for movie"""
+        return super().list(request, *args, **kwargs)
+
 
     def get_queryset(self):
         """Retrieve the movies with filters"""
