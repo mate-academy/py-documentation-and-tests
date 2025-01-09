@@ -15,9 +15,6 @@ from cinema.serializers import MovieSerializer, MovieListSerializer, MovieDetail
 MOVIE_URL = reverse("cinema:movie-list")
 MOVIE_SESSION_URL = reverse("cinema:moviesession-list")
 
-def detail_url(movie_id):
-    return reverse("cinema:movie-detail", kwargs={"pk": movie_id})
-
 def sample_movie(**params):
     defaults = {
         "title": "Sample movie",
