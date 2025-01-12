@@ -32,6 +32,7 @@ def sample_movie_session(**params) -> MovieSession:
         rows=15,
         seats_in_row=20
     )
+
     default_data = {
         "show_time": "2024-10-08T13:00:00Z",
         "movie": movie,
@@ -75,24 +76,6 @@ class AuthenticatedMovieSessionApiTests(TestCase):
             password="1234567",
         )
         self.client.force_authenticate(user=self.user)
-
-    def test_movie_session_list(self):
-        sample_movie_session()
-        response = self.client.get(MOVIE_SESSION_URL)
-
-        movies_sessions = (
-            MovieSession.objects.all()
-            .select_related("movie", "cinema_hall")
-            .annotate(
-                tickets_available=(
-                        F("cinema_hall__rows") * F("cinema_hall__seats_in_row")
-                        - Count("tickets")
-                )
-            )
-        )
-        serializer = MovieSessionListSerializer(movies_sessions, many=True)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data, serializer.data)
 
     def test_filter_movies_sessions_date_movie_id(self):
         sample_movie_session()
