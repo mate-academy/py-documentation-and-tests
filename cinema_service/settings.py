@@ -94,7 +94,7 @@ DATABASES = {
 AUTH_PASSWORD_VALIDATORS = [
     {
         "NAME": "django.contrib.auth.password_validation."
-        "UserAttributeSimilarityValidator",
+                "UserAttributeSimilarityValidator",
     },
     {
         "NAME": "django.contrib.auth.password_validation." "MinimumLengthValidator",
@@ -134,6 +134,9 @@ MEDIA_ROOT = BASE_DIR / "media"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 REST_FRAMEWORK = {
+    "DEFAULT_PERMISSION_CLASSES": [
+        "cinema.permissions.IsAdminOrIfAuthenticatedReadOnly",
+    ],
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "DEFAULT_THROTTLE_CLASSES": [
         "rest_framework.throttling.AnonRateThrottle",
