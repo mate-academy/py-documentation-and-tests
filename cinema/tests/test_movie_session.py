@@ -48,6 +48,7 @@ def movie_sessions_all_with_taken_tickets():
                     - Count("tickets")
             )
         )
+        .order_by("id")
     )
 
 def detail_url(movie_session_id):
