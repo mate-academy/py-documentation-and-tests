@@ -15,6 +15,44 @@ MOVIE_URL = reverse("cinema:movie-list")
 MOVIE_SESSION_URL = reverse("cinema:moviesession-list")
 
 
+class MovieApiTests(TestCase):
+
+    def setUp(self):
+            """Настройка тестового клиента и аутентификация"""
+            self.client = APIClient()
+            self.user = get_user_model().objects.create_user(
+                "testuser@example.com", "testpassword"
+            )
+            self.client.force_authenticate(self.user)  # 🔥 Авторизуем клиента
+
+    def test_filter_movies_by_title(self):
+        movie1 = sample_movie(title="Interstellar")
+        movie2 = sample_movie(title="Inception")
+
+        res = self.client.get(MOVIE_URL, {"title": "Interstellar"})
+
+        print("Response data:", res.data)
+
+        self.assertEqual(len(res.data), 1)
+        self.assertEqual(res.data[0]["title"], movie1.title)
+
+
+    def test_filter_movies_by_genre(self):
+        genre1 = sample_genre(name="Sci-Fi")
+        genre2 = sample_genre(name="Drama")
+        movie1 = sample_movie(title="Interstellar")
+        movie1.genres.add(genre1)
+        movie2 = sample_movie(title="Titanic")
+        movie2.genres.add(genre2)
+
+        res = self.client.get(MOVIE_URL, {"genres": f"{genre1.id}"})
+
+        print("Response data:", res.data)
+
+        self.assertEqual(len(res.data), 1)
+        self.assertEqual(res.data[0]["title"], movie1.title)
+
+
 def sample_movie(**params):
     defaults = {
         "title": "Sample movie",

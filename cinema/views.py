@@ -27,6 +27,8 @@ from cinema.serializers import (
     MovieImageSerializer,
 )
 
+from drf_spectacular.utils import extend_schema, OpenApiParameter
+
 
 class GenreViewSet(
     mixins.CreateModelMixin,
@@ -72,6 +74,28 @@ class MovieViewSet(
     authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="title",
+                description="Filter by title",
+                required=False,
+                type=str,
+            ),
+            OpenApiParameter(
+                name="genres",
+                description="Filter by genre IDs (comma-separated)",
+                required=False,
+                type=str,
+            ),
+            OpenApiParameter(
+                name="actors",
+                description="Filter by actor IDs (comma-separated)",
+                required=False,
+                type=str,
+            ),
+        ]
+    )
     @staticmethod
     def _params_to_ints(qs):
         """Converts a list of string IDs to a list of integers"""
@@ -143,28 +167,49 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
     authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="date",
+                description="Filter by show date (format: YYYY-MM-DD)",
+                required=False,
+                type=str
+            ),
+            OpenApiParameter(
+                name="movie",
+                description="Filter by movie ID",
+                required=False,
+                type=int
+            ),
+        ]
+    )
     def get_queryset(self):
-        date = self.request.query_params.get("date")
-        movie_id_str = self.request.query_params.get("movie")
-
+        """Retrieve movie sessions with optional filters by date and movie."""
         queryset = self.queryset
 
-        if date:
-            date = datetime.strptime(date, "%Y-%m-%d").date()
-            queryset = queryset.filter(show_time__date=date)
+        date = self.request.query_params.get("date")
+        movie_id = self.request.query_params.get("movie")
 
-        if movie_id_str:
-            queryset = queryset.filter(movie_id=int(movie_id_str))
+        if date:
+            try:
+                date = datetime.strptime(date, "%Y-%m-%d").date()
+                queryset = queryset.filter(show_time__date=date)
+            except ValueError:
+                return queryset.none()
+
+        if movie_id:
+            try:
+                queryset = queryset.filter(movie_id=int(movie_id))
+            except ValueError:
+                return queryset.none()  # Если movie_id не число
 
         return queryset
 
     def get_serializer_class(self):
         if self.action == "list":
             return MovieSessionListSerializer
-
         if self.action == "retrieve":
             return MovieSessionDetailSerializer
-
         return MovieSessionSerializer
 
 
