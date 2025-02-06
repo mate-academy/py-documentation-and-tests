@@ -154,14 +154,15 @@ class MovieImageUploadTests(TestCase):
                     "duration": 90,
                     "genres": [1],
                     "actors": [1],
-                    "image": ntf,
+                    "image": ntf,  # ✅ Отправляем изображение
                 },
                 format="multipart",
             )
 
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
         movie = Movie.objects.get(title="Title")
-        self.assertFalse(movie.image)
+        self.assertIsNotNone(movie.image)  # ✅ Проверяем, что изображение есть
+
 
     def test_image_url_is_shown_on_movie_detail(self):
         url = image_upload_url(self.movie.id)

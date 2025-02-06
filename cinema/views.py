@@ -29,6 +29,45 @@ from cinema.serializers import (
 
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 
+from cinema.utils import params_to_ints
+
+import logging
+
+from rest_framework.authtoken.views import ObtainAuthToken
+from rest_framework.settings import api_settings
+
+logger = logging.getLogger(__name__)
+
+
+class LoginView(ObtainAuthToken):
+    """Вьюха для логина пользователя через токены"""
+    renderer_classes = api_settings.DEFAULT_RENDERER_CLASSES
+
+
+def get_queryset(self):
+
+    queryset = self.queryset
+
+    date = self.request.query_params.get("date")
+    movie_id = self.request.query_params.get("movie")
+
+    if date:
+        try:
+            date = datetime.strptime(date, "%Y-%m-%d").date()
+            queryset = queryset.filter(show_time__date=date)
+        except ValueError:
+            logger.warning(f"Некорректная дата: {date}")  # ✅ Логируем ошибку
+            return queryset.none()
+
+    if movie_id:
+        try:
+            queryset = queryset.filter(movie_id=int(movie_id))
+        except ValueError:
+            logger.warning(f"Некорректный movie_id: {movie_id}")
+            return queryset.none()
+
+    return queryset
+
 
 class GenreViewSet(
     mixins.CreateModelMixin,
@@ -195,12 +234,18 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
                 date = datetime.strptime(date, "%Y-%m-%d").date()
                 queryset = queryset.filter(show_time__date=date)
             except ValueError:
+                logger.warning(
+                    f"Некор дата: {self.request.query_params.get("date")}"
+                )
                 return queryset.none()
 
         if movie_id:
             try:
                 queryset = queryset.filter(movie_id=int(movie_id))
             except ValueError:
+                logger.warning(
+                    f"Некор movie_id: {self.request.query_params.get("movie")}"
+                )
                 return queryset.none()  # Если movie_id не число
 
         return queryset

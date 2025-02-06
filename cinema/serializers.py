@@ -106,7 +106,7 @@ class MovieSessionListSerializer(MovieSessionSerializer):
     cinema_hall_capacity = serializers.IntegerField(
         source="cinema_hall.capacity", read_only=True
     )
-    tickets_available = serializers.IntegerField(read_only=True)
+    tickets_available = serializers.SerializerMethodField()
 
     class Meta:
         model = MovieSession
@@ -120,15 +120,21 @@ class MovieSessionListSerializer(MovieSessionSerializer):
             "tickets_available",
         )
 
+    def get_tickets_available(self, obj):
+        """Вычисляем количество доступных билетов"""
+        total_seats = obj.cinema_hall.rows * obj.cinema_hall.seats_in_row
+        taken_seats = obj.tickets.count()
+        return total_seats - taken_seats
+
 
 class TicketSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
-        data = super(TicketSerializer, self).validate(attrs=attrs)
+        data = super().validate(attrs)
         Ticket.validate_ticket(
             attrs["row"],
             attrs["seat"],
             attrs["movie_session"].cinema_hall,
-            ValidationError
+            ValidationError("This seat is already taken.")
         )
         return data
 
