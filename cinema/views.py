@@ -235,7 +235,8 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
                 queryset = queryset.filter(show_time__date=date)
             except ValueError:
                 logger.warning(
-                    f"Некор дата: {self.request.query_params.get("date")}"
+                    f"Некорректная дата: "
+                    f"{self.request.query_params.get("date")}"
                 )
                 return queryset.none()
 
