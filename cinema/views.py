@@ -1,13 +1,15 @@
 from datetime import datetime
 
 from django.db.models import F, Count
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import viewsets, mixins, status
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
-from rest_framework.viewsets import GenericViewSet, ReadOnlyModelViewSet
+from rest_framework.viewsets import GenericViewSet
 
 from cinema.models import Genre, Actor, CinemaHall, Movie, MovieSession, Order
 from cinema.permissions import IsAdminOrIfAuthenticatedReadOnly
@@ -38,6 +40,20 @@ class GenreViewSet(
     authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
+    @extend_schema(
+        summary="Get list of genres",
+        description="This endpoint return a list of all Genre objects.",
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+    @extend_schema(
+        summary="Create new genre",
+        description="This endpoint creates new Genre object."
+    )
+    def create(self, request, *args, **kwargs):
+        return super().create(request, *args, **kwargs)
+
 
 class ActorViewSet(
     mixins.CreateModelMixin,
@@ -49,6 +65,20 @@ class ActorViewSet(
     authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
+    @extend_schema(
+        summary="Get list of actors",
+        description="This endpoint return a list of Actor objects."
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+    @extend_schema(
+        summary="Create new actor",
+        description="This endpoint creates new Actor object"
+    )
+    def create(self, request, *args, **kwargs):
+        return super().create(request, *args, **kwargs)
+
 
 class CinemaHallViewSet(
     mixins.CreateModelMixin,
@@ -59,6 +89,20 @@ class CinemaHallViewSet(
     serializer_class = CinemaHallSerializer
     authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
+
+    @extend_schema(
+        summary="Get list of cinema halls",
+        description="This endpoint return a list of all CinemaHall objects."
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+    @extend_schema(
+        summary="Create new cinema hall",
+        description="This endpoint creates new CinemaHall object."
+    )
+    def create(self, request, *args, **kwargs):
+        return super().create(request, *args, **kwargs)
 
 
 class MovieViewSet(
@@ -127,6 +171,48 @@ class MovieViewSet(
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    @extend_schema(
+        summary="Get list of movies",
+        description="This endpoint return a list of all Movie objects."
+                    "Available params: title, genres, actors.",
+        parameters=[
+            OpenApiParameter(
+                name="title",
+                type=OpenApiTypes.STR,
+                description="Filtering by title",
+                required=False
+            ),
+            OpenApiParameter(
+                name="genres",
+                type=OpenApiTypes.INT,
+                description="Filtering by genres id",
+                required=False,
+            ),
+            OpenApiParameter(
+                name="actors",
+                type=OpenApiTypes.INT,
+                description="Filtering by actors id",
+                required=False
+            )
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+    @extend_schema(
+        summary="Create a movie",
+        description="This endpoint creates new Movie object."
+    )
+    def create(self, request, *args, **kwargs):
+        return super().create(request, *args, **kwargs)
+
+    @extend_schema(
+        summary="Get a movie",
+        description="This endpoint returns detail info about Movie object."
+    )
+    def retrieve(self, request, *args, **kwargs):
+        return super().retrieve(request, *args, **kwargs)
+
 
 class MovieSessionViewSet(viewsets.ModelViewSet):
     queryset = (
@@ -167,6 +253,63 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
 
         return MovieSessionSerializer
 
+    @extend_schema(
+        summary="Get list of movie sessions",
+        description="This endpoint return a list of all MovieSession objects."
+                    "Available params: date, movie.",
+        parameters=[
+            OpenApiParameter(
+                name="date",
+                type=OpenApiTypes.DATE,
+                description="Filtering by date (format: YYYY-MM-DD).",
+                required=False
+            ),
+            OpenApiParameter(
+                name="movie",
+                type=OpenApiTypes.INT,
+                description="Filtering by movie id",
+                required=False
+            )
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+    @extend_schema(
+        summary="Create new movie session",
+        description="This endpoint create a new MovieSession object"
+    )
+    def create(self, request, *args, **kwargs):
+        return super().create(request, *args, **kwargs)
+
+    @extend_schema(
+        summary="Get a movie session",
+        description="This endpoint returns detail info about MovieSession object."
+    )
+    def retrieve(self, request, *args, **kwargs):
+        return super().retrieve(request, *args, **kwargs)
+
+    @extend_schema(
+        summary="Update movie session",
+        description="This endpoint updates info about MovieSession object."
+    )
+    def update(self, request, *args, **kwargs):
+        return super().update(request, *args, **kwargs)
+
+    @extend_schema(
+        summary="Partial update movie session",
+        description="This endpoint partly updates info about MovieSession object."
+    )
+    def partial_update(self, request, *args, **kwargs):
+        return super().partial_update(request, *args, **kwargs)
+
+    @extend_schema(
+        summary="Delete movie session",
+        description="This endpoint deletes MovieSession objects."
+    )
+    def destroy(self, request, *args, **kwargs):
+        return super().destroy(request, *args, **kwargs)
+
 
 class OrderPagination(PageNumberPagination):
     page_size = 10
@@ -197,3 +340,17 @@ class OrderViewSet(
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
+
+    @extend_schema(
+        summary="Get list of orders",
+        description="This endpoint returns a list of all Orders objects."
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+    @extend_schema(
+        summary="Create new order",
+        description="This endpoint create a new Order object."
+    )
+    def create(self, request, *args, **kwargs):
+        return super().create(request, *args, **kwargs)
