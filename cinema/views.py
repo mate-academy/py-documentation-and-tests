@@ -284,7 +284,8 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
 
     @extend_schema(
         summary="Get a movie session",
-        description="This endpoint returns detail info about MovieSession object."
+        description="This endpoint returns detail info "
+                    "about MovieSession object."
     )
     def retrieve(self, request, *args, **kwargs):
         return super().retrieve(request, *args, **kwargs)
@@ -298,7 +299,8 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
 
     @extend_schema(
         summary="Partial update movie session",
-        description="This endpoint partly updates info about MovieSession object."
+        description="This endpoint partly updates info "
+                    "about MovieSession object."
     )
     def partial_update(self, request, *args, **kwargs):
         return super().partial_update(request, *args, **kwargs)
