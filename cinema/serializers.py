@@ -25,9 +25,8 @@ class ActorSerializer(serializers.ModelSerializer):
         model = Actor
         fields = ("id", "first_name", "last_name", "full_name")
 
-    @extend_schema_field(serializers.CharField)
-    def full_name(self) -> str:
-        return f"{self.instance.first_name} {self.instance.last_name}"
+    def get_full_name(self, obj):
+        return f"{obj.first_name} {obj.last_name}"
 
 
 class CinemaHallSerializer(serializers.ModelSerializer):
@@ -46,7 +45,6 @@ class MovieSerializer(serializers.ModelSerializer):
             "duration",
             "genres",
             "actors",
-            "image"
         )
 
 
