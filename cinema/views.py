@@ -2,6 +2,7 @@ from datetime import datetime
 
 from django.db.models import F, Count
 from drf_spectacular.utils import extend_schema, OpenApiParameter
+from jsonschema.exceptions import ValidationError
 from rest_framework import viewsets, mixins, status
 from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
@@ -127,18 +128,18 @@ class MovieViewSet(
         parameters=[
             OpenApiParameter(
                 "genres",
-                type={"type": "list", "items": {"type": "string"}},
-                description="Filter by genres",
+                type={"type": "string"},
+                description="Filter by genre IDs (comma-separated values, e.g., '1,2,3')",
             ),
             OpenApiParameter(
                 "title",
-                type={"type": "list", "items": {"type": "string"}},
-                description="Filter by titles",
+                type={"type": "string"},
+                description="Filter by movie title (case-insensitive search)",
             ),
             OpenApiParameter(
                 "actors",
-                type={"type": "list", "items": {"type": "string"}},
-                description="Filter by actors",
+                type={"type": "string"},
+                description="Filter by actor IDs (comma-separated values, e.g., '1,2,3')",
             )
         ]
     )
@@ -167,11 +168,17 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
         queryset = self.queryset
 
         if date:
-            date = datetime.strptime(date, "%Y-%m-%d").date()
-            queryset = queryset.filter(show_time__date=date)
+            try:
+                date = datetime.strptime(date, "%Y-%m-%d").date()
+                queryset = queryset.filter(show_time__date=date)
+            except ValueError:
+                raise ValidationError("Invalid date format. Use YYYY-MM-DD.")
 
         if movie_id_str:
-            queryset = queryset.filter(movie_id=int(movie_id_str))
+            try:
+                queryset = queryset.filter(movie_id=int(movie_id_str))
+            except ValueError:
+                raise ValidationError("Movie ID must be an integer.")
 
         return queryset
 
@@ -179,13 +186,13 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
         parameters=[
             OpenApiParameter(
                 "date",
-                type={"type": "list", "items": {"type": "date"}},
-                description="Filter by date",
+                type={"type": "string", "format": "date"},
+                description="Filter by date (format: YYYY-MM-DD)",
             ),
             OpenApiParameter(
                 "movie",
-                type={"type": "list", "items": {"type": "number"}},
-                description="Filter by movie id",
+                type={"type": "integer"},
+                description="Filter by movie ID",
             ),
         ]
     )
