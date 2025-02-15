@@ -123,13 +123,17 @@ class MovieSessionListSerializer(MovieSessionSerializer):
 
 class TicketSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
-        data = super(TicketSerializer, self).validate(attrs=attrs)
-        Ticket.validate_ticket(
-            attrs["row"],
-            attrs["seat"],
-            attrs["movie_session"].cinema_hall,
-            ValidationError
-        )
+        data = super().validate(attrs)
+
+        if not Ticket.validate_ticket(
+                data["row"],
+                data["seat"],
+                data["movie_session"].cinema_hall
+        ):
+            raise ValidationError(
+                "This place has been already taken or unavailable."
+            )
+
         return data
 
     class Meta:
