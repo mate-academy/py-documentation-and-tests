@@ -1,3 +1,4 @@
+from operator import ge
 import tempfile
 import os
 
@@ -43,9 +44,7 @@ def sample_actor(**params):
 
 
 def sample_movie_session(**params):
-    cinema_hall = CinemaHall.objects.create(
-        name="Blue", rows=20, seats_in_row=20
-    )
+    cinema_hall = CinemaHall.objects.create(name="Blue", rows=20, seats_in_row=20)
 
     defaults = {
         "show_time": "2022-06-02 14:00:00",
@@ -157,3 +156,153 @@ class MovieImageUploadTests(TestCase):
         res = self.client.get(MOVIE_SESSION_URL)
 
         self.assertIn("movie_image", res.data[0].keys())
+
+
+class MovieViewSetTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.user = get_user_model().objects.create_superuser(
+            "admin@myproject.com", "password"
+        )
+        self.client.force_authenticate(self.user)
+
+    def test_list_movies(self):
+        sample_movie()
+        sample_movie()
+        res = self.client.get(MOVIE_URL)
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(res.data), 2)
+
+    def test_filter_movies_by_title(self):
+        movie1 = sample_movie(title="Movie 1")
+        movie2 = sample_movie(title="Movie 2")
+        movie3 = sample_movie(title="Movie 3")
+
+        res = self.client.get(MOVIE_URL, {"title": "Movie 1"})
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(res.data), 1)
+        self.assertEqual(res.data[0]["title"], movie1.title)
+
+    def test_filter_movies_by_genres(self):
+        genre1 = sample_genre(name="Genre 1")
+        genre2 = sample_genre(name="Genre 2")
+
+        movie1 = sample_movie()
+        movie1.genres.add(genre1)
+
+        movie2 = sample_movie()
+        movie2.genres.add(genre2)
+
+        movie3 = sample_movie()
+        movie3.genres.add(genre1, genre2)
+
+        res = self.client.get(MOVIE_URL, {"genres": f"{genre1.id},{genre2.id}"})
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(res.data), 3)
+        self.assertIn(movie1.title, [movie["title"] for movie in res.data])
+        self.assertIn(movie2.title, [movie["title"] for movie in res.data])
+        self.assertIn(movie3.title, [movie["title"] for movie in res.data])
+
+    def test_filter_movies_by_actors(self):
+        actor1 = sample_actor(first_name="Actor 1", last_name="Actor 1")
+        actor2 = sample_actor(first_name="Actor 2", last_name="Actor 2")
+
+        movie1 = sample_movie()
+        movie1.actors.add(actor1)
+
+        movie2 = sample_movie()
+        movie2.actors.add(actor2)
+
+        movie3 = sample_movie()
+        movie3.actors.add(actor1, actor2)
+
+        res = self.client.get(MOVIE_URL, {"actors": f"{actor1.id},{actor2.id}"})
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(res.data), 3)
+        self.assertIn(movie1.title, [movie["title"] for movie in res.data])
+        self.assertIn(movie2.title, [movie["title"] for movie in res.data])
+        self.assertIn(movie3.title, [movie["title"] for movie in res.data])
+
+    def test_create_movie_with_genres_and_actors(self):
+        genre1 = sample_genre(name="Genre 1")
+        genre2 = sample_genre(name="Genre 2")
+        actor1 = sample_actor(first_name="Actor 1", last_name="Actor 1")
+        actor2 = sample_actor(first_name="Actor 2", last_name="Actor 2")
+
+        res = self.client.post(
+            MOVIE_URL,
+            {
+                "title": "Movie 1",
+                "description": "Description",
+                "duration": 90,
+                "genres": [genre1.id, genre2.id],
+                "actors": [actor1.id, actor2.id],
+            },
+        )
+
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        movie = Movie.objects.get(title="Movie 1")
+        self.assertEqual(movie.genres.count(), 2)
+        self.assertEqual(movie.actors.count(), 2)
+
+    def test_partial_update_movie(self):
+        movie = sample_movie()
+        movie.genres.add(sample_genre(name="Genre 1"))
+        movie.actors.add(sample_actor(first_name="Actor 1", last_name="Actor 1"))
+
+        url = detail_url(movie.id)
+        res = self.client.patch(url, {"title": "New Title"})
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        movie.refresh_from_db()
+        self.assertEqual(movie.title, "New Title")
+
+    def test_full_update_movie(self):
+        movie = sample_movie()
+        movie.genres.add(sample_genre(name="Genre 1"))
+        movie.actors.add(sample_actor(first_name="Actor 1", last_name="Actor 1"))
+
+        url = detail_url(movie.id)
+        res = self.client.put(
+            url,
+            {
+                "title": "New Title",
+                "description": "New Description",
+                "duration": 120,
+                "genres": [1],
+                "actors": [1],
+            },
+        )
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        movie.refresh_from_db()
+        self.assertEqual(movie.title, "New Title")
+        self.assertEqual(movie.description, "New Description")
+        self.assertEqual(movie.duration, 120)
+        self.assertEqual(movie.genres.count(), 1)
+        self.assertEqual(movie.actors.count(), 1)
+
+    def test_delete_movie(self):
+        movie = sample_movie()
+        url = detail_url(movie.id)
+        res = self.client.delete(url)
+
+        self.assertEqual(res.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(Movie.objects.filter(id=movie.id).exists())
+
+    def test_create_movie_with_invalid_genres(self):
+        genre = sample_genre(name="Genre 1")
+        res = self.client.post(
+            MOVIE_URL,
+            {
+                "title": "Movie 1",
+                "description": "Description",
+                "duration": 90,
+                "genres": [999],
+            },
+        )
+
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
