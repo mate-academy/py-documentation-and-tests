@@ -1,6 +1,8 @@
 import tempfile
 import os
 
+import pytest
+
 from PIL import Image
 from django.contrib.auth import get_user_model
 from django.test import TestCase
@@ -157,3 +159,122 @@ class MovieImageUploadTests(TestCase):
         res = self.client.get(MOVIE_SESSION_URL)
 
         self.assertIn("movie_image", res.data[0].keys())
+
+
+@pytest.fixture
+def api_client():
+    return APIClient()
+
+
+@pytest.fixture
+def regular_user():
+    user = get_user_model().objects.create_user(
+        email="regular@user.com", password="testpass", is_staff=False
+    )
+    return user
+
+
+@pytest.fixture
+def staff_user():
+    user = get_user_model().objects.create_user(
+        email="staff@user.com", password="testpass", is_staff=True
+    )
+    return user
+
+
+@pytest.fixture
+def api_client_staff(api_client, staff_user):
+    api_client.force_authenticate(staff_user)
+    return api_client
+
+
+@pytest.fixture
+def api_client_regular(api_client, regular_user):
+    api_client.force_authenticate(regular_user)
+    return api_client
+
+
+@pytest.fixture(scope="module")
+def movie_list_url():
+    return reverse("cinema:movie-list")
+
+
+@pytest.fixture(scope="function")
+def single_movie_url():
+    def _movie_url(pk):
+        return reverse("cinema:movie-detail", kwargs={"pk": pk})
+
+    return _movie_url
+
+
+@pytest.fixture(scope="function")
+def create_movies():
+    for i in range(1, 4):
+        Movie.objects.create(title=f"Title {i}", description=f"Desc {i}", duration=i)
+
+
+@pytest.fixture
+def movie_data():
+    return {
+        "title": "New Movie",
+        "description": "New Movie Description",
+        "duration": 120,
+        "genres": [sample_genre().id],
+        "actors": [sample_actor().id],
+    }
+
+
+@pytest.mark.django_db
+def test_movie_list_get_by_regular(api_client_regular, movie_list_url, create_movies):
+    movies = Movie.objects.all()
+
+    response = api_client_regular.get(movie_list_url)
+
+    assert response.status_code == 200
+    assert len(response.data) == len(movies)
+
+    for movie_obj, movie_dict in zip(movies, response.data):
+        assert movie_dict["title"] == movie_obj.title
+        assert movie_dict["description"] == movie_obj.description
+        assert movie_dict["duration"] == movie_obj.duration
+
+
+@pytest.mark.django_db
+def test_movie_list_post_by_staff(api_client_staff, movie_data, movie_list_url):
+    data = movie_data
+    response = api_client_staff.post(movie_list_url, data)
+    assert response.status_code == 201
+    assert response.data["title"] == data["title"]
+    assert Movie.objects.filter(title="New Movie").exists()
+
+
+@pytest.mark.django_db
+def test_movie_list_post_by_regular(api_client_regular, movie_data, movie_list_url):
+    data = movie_data
+    response = api_client_regular.post(movie_list_url, data)
+    assert response.status_code == 403
+
+
+@pytest.mark.django_db
+def test_movie_list_post_by_anonymous(api_client, movie_data, movie_list_url):
+    data = movie_data
+    response = api_client.post(movie_list_url, data)
+    assert response.status_code == 401
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "movie_id, expected_title",
+    [
+        (1, "Title 1"),
+        (2, "Title 2"),
+        (3, "Title 3"),
+    ],
+)
+def test_movie_detail_get(
+    api_client_regular, single_movie_url, create_movies, movie_id, expected_title
+):
+    response = api_client_regular.get(single_movie_url(pk=movie_id))
+
+    assert response.status_code == 200
+    assert response.data["title"] == expected_title
