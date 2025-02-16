@@ -166,7 +166,7 @@ class TestUnauthenticatedMovieAccess(TestCase):
     def test_get_movie_list_not_allowed(self):
         res = self.client.get(MOVIE_URL)
 
-        self.assertEqual(res.status_code, 401)
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
 class TestUserAuthenticatedMovieAccess(TestCase):
@@ -192,7 +192,7 @@ class TestUserAuthenticatedMovieAccess(TestCase):
         movies = Movie.objects.all()
         serializer = MovieListSerializer(movies, many=True)
 
-        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(res.data, serializer.data)
 
     def test_get_movie_detail(self):
@@ -200,7 +200,7 @@ class TestUserAuthenticatedMovieAccess(TestCase):
 
         serializer = MovieDetailSerializer(self.movie2)
 
-        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(res.data, serializer.data)
 
     def test_create_movie_not_allowed(self):
@@ -211,7 +211,7 @@ class TestUserAuthenticatedMovieAccess(TestCase):
         }
         res = self.client.post(MOVIE_URL, data=payload)
 
-        self.assertEqual(res.status_code, 403)
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_search_movie_by_title(self):
         movie_to_search = "Test"
@@ -220,7 +220,7 @@ class TestUserAuthenticatedMovieAccess(TestCase):
         movies = Movie.objects.filter(title__icontains=movie_to_search)
         serializer = MovieListSerializer(movies, many=True)
 
-        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(res.data, serializer.data)
 
     def test_filter_by_genres(self):
@@ -234,7 +234,7 @@ class TestUserAuthenticatedMovieAccess(TestCase):
         movies = Movie.objects.filter(genres__id__in=[genre2.id])
         serializer = MovieListSerializer(movies, many=True)
 
-        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(res.data, serializer.data)
 
     def test_filter_by_actors(self):
@@ -245,7 +245,7 @@ class TestUserAuthenticatedMovieAccess(TestCase):
         movies = Movie.objects.filter(actors__id__in=[1])
         serializer = MovieListSerializer(movies, many=True)
 
-        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(res.data, serializer.data)
 
 
@@ -273,4 +273,4 @@ class TestAdminAuthenticatedAccess(TestCase):
             data=payload,
         )
 
-        self.assertEqual(res.status_code, 201)
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
