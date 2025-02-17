@@ -81,7 +81,9 @@ class AuthenticatedMovieSessionAPITest(TestCase):
         serializer_without_movie = MovieSessionListSerializer(session_without_movie)
         serializer_with_movie = MovieSessionListSerializer(session_with_movie)
 
-        self.assertIn(dict(serializer_with_movie.data | {"tickets_available": 300}), res.data)
+        expected_data = serializer_with_movie.data.copy()
+        expected_data.update({"tickets_available": 300})
+        self.assertIn(expected_data, res.data)
         self.assertNotIn(serializer_without_movie.data, res.data)
 
     def test_filter_movie_sessions_by_date(self):
@@ -97,7 +99,9 @@ class AuthenticatedMovieSessionAPITest(TestCase):
         serializer_old = MovieSessionListSerializer(session_old)
         serializer_new = MovieSessionListSerializer(session_new)
 
-        self.assertIn(dict(serializer_new.data | {"tickets_available": 300}), res.data)
+        expected_data = serializer_new.data.copy()
+        expected_data.update({"tickets_available": 300})
+        self.assertIn(expected_data, res.data)
         self.assertNotIn(serializer_old.data, res.data)
 
     def test_retrieve_movie_session_detail(self):
