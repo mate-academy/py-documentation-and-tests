@@ -6,10 +6,11 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 
-from rest_framework.test import APIClient
+from rest_framework.test import APIClient, APITestCase
 from rest_framework import status
 
 from cinema.models import Movie, MovieSession, CinemaHall, Genre, Actor
+from cinema.serializers import MovieListSerializer, MovieDetailSerializer
 
 MOVIE_URL = reverse("cinema:movie-list")
 MOVIE_SESSION_URL = reverse("cinema:moviesession-list")
@@ -66,11 +67,44 @@ def detail_url(movie_id):
     return reverse("cinema:movie-detail", args=[movie_id])
 
 
+class UnauthorizedMovieViewSetTests(APITestCase):
+    def setUp(self):
+        self.genre = sample_genre(name="Horror")
+        self.actor = sample_actor(first_name="Johnny", last_name="Depp")
+
+        self.movie = sample_movie(title="Unauthorized Movie")
+        self.movie.genres.add(self.genre)
+        self.movie.actors.add(self.actor)
+
+    def test_list_movies_unauthorized(self):
+        """Test that unauthorized users can retrieve movie list"""
+        response = self.client.get(MOVIE_URL)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_retrieve_movie_detail_unauthorized(self):
+        """Test that unauthorized users can retrieve movie detail"""
+        detail_url = reverse("cinema:movie-detail", args=[self.movie.id])
+        response = self.client.get(detail_url)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_create_movie_unauthorized(self):
+        """Test that unauthorized users cannot create a movie"""
+        payload = {
+            "title": "New Movie",
+            "description": "New description",
+            "duration": 120,
+        }
+        response = self.client.post(MOVIE_URL, payload)
+
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+
 class MovieImageUploadTests(TestCase):
     def setUp(self):
         self.client = APIClient()
-        self.user = get_user_model().objects.create_superuser(
-            "admin@myproject.com", "password"
+        self.user = get_user_model().objects.create_user(
+            email="test@test.test",
+            password="testpassword",
         )
         self.client.force_authenticate(self.user)
         self.movie = sample_movie()
@@ -78,8 +112,144 @@ class MovieImageUploadTests(TestCase):
         self.actor = sample_actor()
         self.movie_session = sample_movie_session(movie=self.movie)
 
+        self.genre1 = sample_genre(name="Action")
+        self.genre2 = sample_genre(name="Comedy")
+
+        self.actor1 = sample_actor(first_name="Brad", last_name="Pitt")
+        self.actor2 = sample_actor(first_name="Leonardo", last_name="DiCaprio")
+
+        self.movie1 = sample_movie(title="First Movie")
+        self.movie1.genres.add(self.genre1)
+        self.movie1.actors.add(self.actor1)
+
+        self.movie2 = sample_movie(title="Second Movie")
+        self.movie2.genres.add(self.genre2)
+        self.movie2.actors.add(self.actor2)
+
     def tearDown(self):
         self.movie.image.delete()
+
+    def test_image_url_is_shown_on_movie_detail(self):
+        url = image_upload_url(self.movie.id)
+        with tempfile.NamedTemporaryFile(suffix=".jpg") as ntf:
+            img = Image.new("RGB", (10, 10))
+            img.save(ntf, format="JPEG")
+            ntf.seek(0)
+            self.client.post(url, {"image": ntf}, format="multipart")
+        res = self.client.get(detail_url(self.movie.id))
+
+        self.assertIn("image", res.data)
+
+    def test_image_url_is_shown_on_movie_list(self):
+        url = image_upload_url(self.movie.id)
+        with tempfile.NamedTemporaryFile(suffix=".jpg") as ntf:
+            img = Image.new("RGB", (10, 10))
+            img.save(ntf, format="JPEG")
+            ntf.seek(0)
+            self.client.post(url, {"image": ntf}, format="multipart")
+        res = self.client.get(MOVIE_URL)
+
+        self.assertIn("image", res.data[0].keys())
+
+    def test_image_url_is_shown_on_movie_session_detail(self):
+        url = image_upload_url(self.movie.id)
+        with tempfile.NamedTemporaryFile(suffix=".jpg") as ntf:
+            img = Image.new("RGB", (10, 10))
+            img.save(ntf, format="JPEG")
+            ntf.seek(0)
+            self.client.post(url, {"image": ntf}, format="multipart")
+        res = self.client.get(MOVIE_SESSION_URL)
+
+        self.assertIn("movie_image", res.data[0].keys())
+
+    def test_list_movies(self):
+        """Test retrieving a list of movies"""
+        response = self.client.get(MOVIE_URL)
+
+        movies = Movie.objects.all()
+        serializer = MovieListSerializer(movies, many=True)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, serializer.data)
+
+    def test_filter_movies_by_title(self):
+        """Test filtering movies by title"""
+        response = self.client.get(MOVIE_URL, {"title": "First"})
+
+        movies = Movie.objects.filter(title__icontains="First")
+        serializer = MovieListSerializer(movies, many=True)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, serializer.data)
+
+    def test_filter_movies_by_genre(self):
+        """Test filtering movies by genre"""
+        response = self.client.get(MOVIE_URL, {"genres": self.genre1.id})
+
+        movies = Movie.objects.filter(genres__id=self.genre1.id)
+        serializer = MovieListSerializer(movies, many=True)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, serializer.data)
+
+    def test_filter_movies_by_actor(self):
+        """Test filtering movies by actor"""
+        response = self.client.get(MOVIE_URL, {"actors": self.actor1.id})
+
+        movies = Movie.objects.filter(actors__id=self.actor1.id)
+        serializer = MovieListSerializer(movies, many=True)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, serializer.data)
+
+    def test_retrieve_movie_detail(self):
+        """Test retrieving a movie's detail view"""
+        detail_url = reverse("cinema:movie-detail", args=[self.movie1.id])
+        response = self.client.get(detail_url)
+
+        serializer = MovieDetailSerializer(self.movie1)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, serializer.data)
+
+    def test_create_movie_forbidden(self):
+        payload = {
+            "title": "My new movie",
+            "description": "My new movie",
+            "duration": 60,
+        }
+        response = self.client.post(MOVIE_URL, payload)
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
+class AdminMovieViewSetTests(APITestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.user = get_user_model().objects.create_user(
+            email="test@admin.test",
+            password="testpassword",
+            is_staff=True,
+        )
+        self.client.force_authenticate(self.user)
+
+        self.movie = sample_movie()
+        self.genre = sample_genre(name="Sci-Fi")
+        self.actor = sample_actor(first_name="Tom", last_name="Cruise")
+
+    def test_create_movie_admin(self):
+        """Test that admin users can create a movie"""
+        payload = {
+            "title": "Admin Movie",
+            "description": "Admin description",
+            "duration": 130,
+            "genres": [self.genre.id],
+            "actors": [self.actor.id]
+        }
+        response = self.client.post(MOVIE_URL, payload, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertTrue(Movie.objects.filter(title="Admin Movie").exists())
 
     def test_upload_image_to_movie(self):
         """Test uploading an image to movie"""
@@ -124,36 +294,3 @@ class MovieImageUploadTests(TestCase):
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
         movie = Movie.objects.get(title="Title")
         self.assertFalse(movie.image)
-
-    def test_image_url_is_shown_on_movie_detail(self):
-        url = image_upload_url(self.movie.id)
-        with tempfile.NamedTemporaryFile(suffix=".jpg") as ntf:
-            img = Image.new("RGB", (10, 10))
-            img.save(ntf, format="JPEG")
-            ntf.seek(0)
-            self.client.post(url, {"image": ntf}, format="multipart")
-        res = self.client.get(detail_url(self.movie.id))
-
-        self.assertIn("image", res.data)
-
-    def test_image_url_is_shown_on_movie_list(self):
-        url = image_upload_url(self.movie.id)
-        with tempfile.NamedTemporaryFile(suffix=".jpg") as ntf:
-            img = Image.new("RGB", (10, 10))
-            img.save(ntf, format="JPEG")
-            ntf.seek(0)
-            self.client.post(url, {"image": ntf}, format="multipart")
-        res = self.client.get(MOVIE_URL)
-
-        self.assertIn("image", res.data[0].keys())
-
-    def test_image_url_is_shown_on_movie_session_detail(self):
-        url = image_upload_url(self.movie.id)
-        with tempfile.NamedTemporaryFile(suffix=".jpg") as ntf:
-            img = Image.new("RGB", (10, 10))
-            img.save(ntf, format="JPEG")
-            ntf.seek(0)
-            self.client.post(url, {"image": ntf}, format="multipart")
-        res = self.client.get(MOVIE_SESSION_URL)
-
-        self.assertIn("movie_image", res.data[0].keys())

@@ -1,13 +1,14 @@
 from datetime import datetime
 
 from django.db.models import F, Count
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import viewsets, mixins, status
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
-from rest_framework.viewsets import GenericViewSet, ReadOnlyModelViewSet
+from rest_framework.viewsets import GenericViewSet
 
 from cinema.models import Genre, Actor, CinemaHall, Movie, MovieSession, Order
 from cinema.permissions import IsAdminOrIfAuthenticatedReadOnly
@@ -69,7 +70,6 @@ class MovieViewSet(
 ):
     queryset = Movie.objects.prefetch_related("genres", "actors")
     serializer_class = MovieSerializer
-    authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
     @staticmethod
@@ -109,6 +109,27 @@ class MovieViewSet(
             return MovieImageSerializer
 
         return MovieSerializer
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                "title",
+                description="Movie title",
+            ),
+            OpenApiParameter(
+                "genres",
+                type={"type": "list", "items": {"type": "integer"}},
+                description="Movie genres",
+            ),
+            OpenApiParameter(
+                "actors",
+                type={"type": "list", "items": {"type": "integer"}},
+                description="Movie actors",
+            ),
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
 
     @action(
         methods=["POST"],
@@ -166,6 +187,23 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
             return MovieSessionDetailSerializer
 
         return MovieSessionSerializer
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                "date",
+                type="date",
+                description="Session date (format: YYYY-MM-DD)",
+            ),
+            OpenApiParameter(
+                "movie",
+                type={"type": "list", "items": {"type": "integer"}},
+                description="Movie id",
+            ),
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
 
 
 class OrderPagination(PageNumberPagination):
