@@ -1,5 +1,8 @@
 from datetime import datetime
 
+from typing import *
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 from django.db.models import F, Count
 from rest_framework import viewsets, mixins, status
 from rest_framework.authentication import TokenAuthentication
@@ -127,6 +130,34 @@ class MovieViewSet(
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="title",
+                location=OpenApiTypes.STR,
+                description="filter movies by title ",
+                required=False,
+            ),
+            OpenApiParameter(
+                name="genres",
+                type={"type": "array", "items": {"type": "string"}},
+                location=OpenApiTypes.STR,
+                description="filter movies by genres ",
+                required=False,
+            ),
+            OpenApiParameter(
+                name="actors",
+                type={"type": "array", "items":{"type": "string"}},
+                location=OpenApiTypes.STR,
+                description="filter movies by actors ",
+                required=False,
+            ),
+        ]
+    )
+    def list(self, request: Any,
+             *args: Any,
+             **kwargs: Any) -> Response:
+        return super().list(request, *args, **kwargs)
 
 class MovieSessionViewSet(viewsets.ModelViewSet):
     queryset = (
@@ -167,6 +198,27 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
 
         return MovieSessionSerializer
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="date",
+                type=OpenApiTypes.DATE,
+                description="filter movies by date ",
+                required=False,
+
+            ),
+            OpenApiParameter(
+                name="movie",
+                type=OpenApiTypes.INT,
+                description="filter movies by movie id ",
+                required=False,
+            ),
+        ]
+    )
+    def list(self, request: Any,
+             *args: Any,
+             **kwargs: Any) -> Response:
+        return super().list(request, *args, **kwargs)
 
 class OrderPagination(PageNumberPagination):
     page_size = 10
