@@ -1,6 +1,9 @@
 from datetime import datetime
 
 from django.db.models import F, Count
+from drf_spectacular.utils import (extend_schema,
+                                   OpenApiParameter,
+                                   extend_schema_view)
 from rest_framework import viewsets, mixins, status
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import action
@@ -61,6 +64,45 @@ class CinemaHallViewSet(
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
 
+@extend_schema_view(
+    list=extend_schema(
+        summary="Get the list of movies",
+        description="Allows fetching a list of movies "
+                    "with filters for title, genres, and actors.",
+        parameters=[
+            OpenApiParameter(
+                "title",
+                description="Search by part of the movie title",
+                required=False,
+                type=str,
+            ),
+            OpenApiParameter(
+                "genres",
+                description="List of genre IDs separated by commas",
+                required=False,
+                type=str,
+            ),
+            OpenApiParameter(
+                "actors",
+                description="List of actor IDs separated by commas",
+                required=False,
+                type=str,
+            ),
+        ],
+        responses={200: MovieListSerializer},
+    ),
+    retrieve=extend_schema(
+        summary="Get movie details",
+        description="Returns detailed information about a movie by its ID.",
+        responses={200: MovieDetailSerializer},
+    ),
+    create=extend_schema(
+        summary="Create a new movie",
+        description="Only admins can create a movie.",
+        request=MovieSerializer,
+        responses={201: MovieSerializer},
+    ),
+)
 class MovieViewSet(
     mixins.ListModelMixin,
     mixins.CreateModelMixin,
@@ -110,6 +152,13 @@ class MovieViewSet(
 
         return MovieSerializer
 
+    @extend_schema(
+        summary="Upload image for a movie",
+        description="Allows admins to upload an image for a specific movie.",
+        request=MovieImageSerializer,
+        responses={200: MovieImageSerializer},
+        methods=["POST"],
+    )
     @action(
         methods=["POST"],
         detail=True,
@@ -128,6 +177,38 @@ class MovieViewSet(
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+@extend_schema_view(
+    list=extend_schema(
+        summary="List all movie sessions",
+        description="Allows retrieving a list of movie sessions.",
+        parameters=[
+            OpenApiParameter(
+                "date",
+                description="Search by movie date",
+                type=str,
+                required=False,
+            ),
+            OpenApiParameter(
+                "movie",
+                description="List of movie separated by commas",
+                type=str,
+                required=False,
+            ),
+        ],
+        responses={200: MovieSessionListSerializer},
+    ),
+    retrieve=extend_schema(
+        summary="Get movie session details",
+        description="Returns detailed information "
+                    "about a movie session by its ID.",
+        responses={200: MovieSessionDetailSerializer},
+    ),
+    create=extend_schema(
+        summary="Create a new movie session",
+        description="Only admins can create a movie session.",
+        request=MovieSessionSerializer,
+    ),
+)
 class MovieSessionViewSet(viewsets.ModelViewSet):
     queryset = (
         MovieSession.objects.all()
