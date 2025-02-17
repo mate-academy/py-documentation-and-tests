@@ -225,7 +225,7 @@ class MovieImageUploadTests(TestCase):
 
 class AdminMovieViewSetTests(APITestCase):
     def setUp(self):
-        self.client = self.client
+        self.client = APIClient()
         self.user = get_user_model().objects.create_user(
             email="test@admin.test",
             password="testpassword",
