@@ -10,6 +10,7 @@ from rest_framework.test import APIClient
 from rest_framework import status
 
 from cinema.models import Movie, MovieSession, CinemaHall, Genre, Actor
+from cinema.serializers import MovieSerializer, MovieListSerializer, MovieDetailSerializer
 
 MOVIE_URL = reverse("cinema:movie-list")
 MOVIE_SESSION_URL = reverse("cinema:moviesession-list")
@@ -157,3 +158,53 @@ class MovieImageUploadTests(TestCase):
         res = self.client.get(MOVIE_SESSION_URL)
 
         self.assertIn("movie_image", res.data[0].keys())
+
+    def test_filtering_movies_by_title(self):
+        test_movie = sample_movie(
+            title="Test Movie",
+        )
+
+        res = self.client.get(
+            MOVIE_URL,
+            {"title": test_movie.title},
+        )
+
+        serializer_movie_title = MovieListSerializer(test_movie)
+
+        self.assertIn(serializer_movie_title.data, res.data)
+
+    def test_filtering_movies_by_genres(self):
+        test_genre = sample_genre(name="test1")
+        test_movie = sample_movie(
+            title="Test Movie",
+        )
+        test_movie.genres.add(test_genre)
+
+        res = self.client.get(
+            MOVIE_URL,
+            {"genres": f"{test_genre.id}"},
+        )
+
+        serializer_movie_title = MovieListSerializer(test_movie)
+
+        self.assertIn(serializer_movie_title.data, res.data)
+
+    def test_filtering_movies_by_actors(self):
+        test_actor = sample_actor(
+            first_name="test1",
+            last_name="test1"
+        )
+        test_movie = sample_movie(
+            title="Test Movie",
+        )
+        test_movie.actors.add(test_actor)
+
+        res = self.client.get(
+            MOVIE_URL,
+            {"actors": f"{test_actor.id}"},
+        )
+
+        serializer_movie_title = MovieListSerializer(test_movie)
+
+        self.assertIn(serializer_movie_title.data, res.data)
+
