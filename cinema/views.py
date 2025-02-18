@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from django.db.models import F, Count
+from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import viewsets, mixins, status
 from rest_framework.authentication import TokenAuthentication
@@ -132,18 +133,24 @@ class MovieViewSet(
         parameters=[
             OpenApiParameter(
                 name="title",
-                type={"type": "array", "items": {"type": "integer"}},
-                description="Filter by title id",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
+                required=False,
+                description="Filter by title"
             ),
             OpenApiParameter(
                 name="genres",
-                type={"type": "array", "items": {"type": "integer"}},
-                description="Filter by genres id",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
+                required=False,
+                description="Filter by genres",
             ),
             OpenApiParameter(
                 name="actors",
-                type={"type": "array", "items": {"type": "integer"}},
-                description="Filter by actors id",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
+                required=False,
+                description="Filter by actors",
             ),
         ]
     )
@@ -194,11 +201,14 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
         parameters=[
             OpenApiParameter(
                 name="date",
-                type={"type": "array", "items": {"type": "integer"}},
-                description="Filter by date id",
+                type=OpenApiTypes.DATE,
+                location=OpenApiParameter.QUERY,
+                required=False,
+                description="Дата у форматі YYYY-MM-DD"
             ),
+
             OpenApiParameter(
-                name="movie ",
+                name="movie",
                 type={"type": "array", "items": {"type": "integer"}},
                 description="Filter by movie id",
             ),

@@ -24,6 +24,16 @@ class UnauthenticationCinemaApiTest(TestCase):
         res = self.client.get(MOVIE_URL)
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
 
+    def test_create_movie_unauthorized_fails(self):
+        payload = {
+            "title": "Unauthorized Movie",
+            "description": "Should not be created",
+            "duration": 100,
+        }
+        res = self.client.post(MOVIE_URL, payload, format="json")
+
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
 
 class AuthenticationCinemaApiTest(TestCase):
     def setUp(self):
@@ -91,13 +101,3 @@ class AuthenticationCinemaApiTest(TestCase):
         res = self.client.get(MOVIE_URL, {"actor": "Test actor"})
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(len(res.data), 1)
-
-    def test_create_movie_unauthorized_fails(self):
-        payload = {
-            "title": "Unauthorized Movie",
-            "description": "Should not be created",
-            "duration": 100,
-        }
-        res = self.client.post(MOVIE_URL, payload, format="json")
-
-        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
