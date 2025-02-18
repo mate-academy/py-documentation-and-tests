@@ -101,10 +101,12 @@ movie_list_params = [
     ),
 ]
 
+
 @extend_schema_view(
     list=extend_schema(
         parameters=movie_list_params,
-        description="List movies with optional filters for title, genres, and actors.",
+        description="List movies with optional filters for t"
+                    "itle, genres, and actors.",
     ),
     create=extend_schema(description="Create a new movie."),
     retrieve=extend_schema(description="Retrieve movie details."),
@@ -193,10 +195,12 @@ session_list_params = [
     ),
 ]
 
+
 @extend_schema_view(
     list=extend_schema(
         parameters=session_list_params,
-        description="List movie sessions with optional filters for date and movie.",
+        description="List movie sessions with optional filters "
+                    "for date and movie.",
     ),
     retrieve=extend_schema(description="Retrieve movie session details."),
 )

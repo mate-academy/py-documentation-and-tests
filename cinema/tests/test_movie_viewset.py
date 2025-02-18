@@ -11,7 +11,9 @@ from user.models import User
 
 class MovieViewSetTests(APITestCase):
     def setUp(self):
-        self.user = User.objects.create_user(email="user@test.com", password="testpass123")
+        self.user = User.objects.create_user(
+            email="user@test.com", password="testpass123"
+        )
         refresh = RefreshToken.for_user(self.user)
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {refresh.access_token}")
 
@@ -48,7 +50,9 @@ class MovieViewSetTests(APITestCase):
         url = reverse("cinema:movie-list") + "?title=Action"
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertTrue(any("Action Movie" in movie["title"] for movie in response.data))
+        self.assertTrue(
+            any("Action Movie" in movie["title"] for movie in response.data)
+        )
         self.assertLessEqual(len(response.data), 3)
 
     def test_filter_movies_by_genres(self):
