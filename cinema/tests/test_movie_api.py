@@ -10,6 +10,7 @@ from rest_framework.test import APIClient
 from rest_framework import status
 
 from cinema.models import Movie, MovieSession, CinemaHall, Genre, Actor
+from cinema.serializers import MovieListSerializer, MovieDetailSerializer
 
 MOVIE_URL = reverse("cinema:movie-list")
 MOVIE_SESSION_URL = reverse("cinema:moviesession-list")
@@ -157,3 +158,42 @@ class MovieImageUploadTests(TestCase):
         res = self.client.get(MOVIE_SESSION_URL)
 
         self.assertIn("movie_image", res.data[0].keys())
+
+
+class MovieViewSetTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.admin_user = get_user_model().objects.create_superuser(
+            "admin@myproject.com", "password"
+        )
+        self.movie = sample_movie()
+        self.genre = sample_genre()
+        self.actor = sample_actor()
+
+    def test_retrieve_movies(self):
+        res = self.client.get(MOVIE_URL)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+
+    def test_create_movie(self):
+        payload = {
+            "title": "New Movie",
+            "description": "New description",
+            "duration": 120,
+            "genres": [self.genre.id],
+            "actors": [self.actor.id],
+        }
+        res = self.client.post(MOVIE_URL, payload)
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+
+    def test_movie_detail(self):
+        url = detail_url(self.movie.id)
+        res = self.client.get(url)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+
+    def test_update_movie(self):
+        url = detail_url(self.movie.id)
+        payload = {"title": "Updated Title"}
+        res = self.client.patch(url, payload)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.movie.refresh_from_db()
+        self.assertEqual(self.movie.title, payload["title"])
