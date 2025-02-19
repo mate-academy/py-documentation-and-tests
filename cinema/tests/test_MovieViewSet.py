@@ -11,7 +11,7 @@ from cinema.serializers import MovieListSerializer, MovieDetailSerializer
 MOVIE_URL = reverse("cinema:movie-list")
 
 
-class AnonymousUserTestBusAPI(TestCase):
+class UnauthenticatedUserMovieViewSetTest(TestCase):
     def setUp(self):
         self.client = APIClient()
 
@@ -22,7 +22,7 @@ class AnonymousUserTestBusAPI(TestCase):
         )
 
 
-class AuthenticatedUserTestBusAPI(TestCase):
+class AuthenticatedUserMovieViewSetTest(TestCase):
     def setUp(self):
         self.client = APIClient()
         self.user = get_user_model().objects.create_user(
@@ -158,7 +158,7 @@ class AuthenticatedUserTestBusAPI(TestCase):
         self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
 
 
-class AdminBusTests(TestCase):
+class AdminMovieViewSetTests(TestCase):
     def setUp(self):
         self.client = APIClient()
         self.admin = get_user_model().objects.create_user(
