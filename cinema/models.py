@@ -50,8 +50,8 @@ class Movie(models.Model):
     title = models.CharField(max_length=255)
     description = models.TextField()
     duration = models.IntegerField()
-    genres = models.ManyToManyField(Genre)
-    actors = models.ManyToManyField(Actor)
+    genres = models.ManyToManyField(Genre, blank=True)
+    actors = models.ManyToManyField(Actor, blank=True)
     image = models.ImageField(null=True, upload_to=movie_image_file_path)
 
     class Meta:
@@ -106,10 +106,12 @@ class Ticket(models.Model):
             if not (1 <= ticket_attr_value <= count_attrs):
                 raise error_to_raise(
                     {
-                        ticket_attr_name: f"{ticket_attr_name} "
-                        f"number must be in available range: "
-                        f"(1, {cinema_hall_attr_name}): "
-                        f"(1, {count_attrs})"
+                        ticket_attr_name: (
+                            f"{ticket_attr_name} "
+                            f"number must be in available range: "
+                            f"(1, {cinema_hall_attr_name}): "
+                            f"(1, {count_attrs})"
+                        )
                     }
                 )
 
