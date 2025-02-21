@@ -139,7 +139,7 @@ class MovieViewSet(
                 name="actors",
                 type={"type": "array", "items": {"type": "number"}},
                 description="Filter by movie actors",
-            )
+            ),
         ]
     )
     def list(self, request, *args, **kwargs):

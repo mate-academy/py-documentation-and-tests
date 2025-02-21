@@ -246,10 +246,7 @@ class MovieAdminTests(TestCase):
         movie = Movie.objects.get(id=res.data["id"])
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
         for key in payload:
-            self.assertEqual(
-                payload[key],
-                getattr(movie, key)
-            )
+            self.assertEqual(payload[key], getattr(movie, key))
 
     def test_movie_create_full_info(self):
         genre = sample_genre()
