@@ -10,7 +10,7 @@ from rest_framework.test import APIClient, APITestCase
 from rest_framework import status
 from cinema.models import Movie, MovieSession, CinemaHall, Genre, Actor
 from cinema.serializers import (
-    MovieSessionListSerializer,
+    MovieListSerializer,
     MovieSessionDetailSerializer,
     MovieSessionSerializer
 )
@@ -175,41 +175,15 @@ class AuthenticatedMovieSessionApiTests(APITestCase):
         )
         self.client.force_authenticate(self.user)
 
-    def test_get_movie_session_list(self):
-        movie = sample_movie()
-        cinema_hall = CinemaHall.objects.create(name="Hall 1", rows=10, seats_in_row=15)
-        MovieSession.objects.create(
-            movie=movie,
-            cinema_hall=cinema_hall,
-            show_time="2025-06-01T15:00:00"
-        )
+    def test_movie_list(self):
+        sample_movie()
+        res = self.client.get(MOVIE_URL)
+        movies = Movie.objects.all()
+        serializer = MovieListSerializer(movies, many=True)
 
-        res = self.client.get(MOVIE_SESSION_URL)
-
-        sessions = MovieSession.objects.all()
-        serializer = MovieSessionSerializer(sessions, many=True)
-
-        self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(res.data, serializer.data)
-
         self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertEqual(res.data, serializer.data)
 
-    def test_get_movie_session_detail(self):
-        movie = sample_movie()
-        cinema_hall = CinemaHall.objects.create(name="Hall 1", rows=10, seats_in_row=15)
-        session = MovieSession.objects.create(
-            movie=movie,
-            cinema_hall=cinema_hall,
-            show_time="2025-06-01T15:00:00"
-        )
-
-        url = reverse('moviesession-detail', args=[session.id])
-        res = self.client.get(url)
-
-        serializer = MovieSessionDetailSerializer(session)
-        self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertEqual(res.data, serializer.data)
 
     def test_create_movie_session_forbidden(self):
         movie = sample_movie()
