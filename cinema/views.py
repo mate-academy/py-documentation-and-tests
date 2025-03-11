@@ -1,17 +1,17 @@
 from datetime import datetime
 
 from django.db.models import F, Count
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import viewsets, mixins, status
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
-from rest_framework.viewsets import GenericViewSet, ReadOnlyModelViewSet
+from rest_framework.viewsets import GenericViewSet
 
 from cinema.models import Genre, Actor, CinemaHall, Movie, MovieSession, Order
 from cinema.permissions import IsAdminOrIfAuthenticatedReadOnly
-
 from cinema.serializers import (
     GenreSerializer,
     ActorSerializer,
@@ -98,6 +98,29 @@ class MovieViewSet(
 
         return queryset.distinct()
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                "title",
+                type=str,
+                description="Filter by title part(ex. ?title=venom)",
+                required=False,
+            ),
+            OpenApiParameter(
+                "genres",
+                type={"type": "list", "items": {"type": "number"}},
+                description="Filter by genre id(ex. ?genres=2,3)"
+            ),
+            OpenApiParameter(
+                "actors",
+                type={"type": "list", "items": {"type": "number"}},
+                description="Filter by actor id(ex. ?actors=2,3)"
+            ),
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
     def get_serializer_class(self):
         if self.action == "list":
             return MovieListSerializer
@@ -134,8 +157,8 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
         .select_related("movie", "cinema_hall")
         .annotate(
             tickets_available=(
-                F("cinema_hall__rows") * F("cinema_hall__seats_in_row")
-                - Count("tickets")
+                    F("cinema_hall__rows") * F("cinema_hall__seats_in_row")
+                    - Count("tickets")
             )
         )
     )
@@ -157,6 +180,25 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(movie_id=int(movie_id_str))
 
         return queryset
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                "date",
+                type=str,
+                description="Filter by date(ex. ?date=2025-3-5)",
+                required=False,
+            ),
+            OpenApiParameter(
+                "movie",
+                type=int,
+                description="Filter by movie(ex. ?movie=2)",
+                required=False,
+            ),
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
 
     def get_serializer_class(self):
         if self.action == "list":
