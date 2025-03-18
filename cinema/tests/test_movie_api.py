@@ -11,6 +11,7 @@ from rest_framework import status
 
 from cinema.models import Movie, MovieSession, CinemaHall, Genre, Actor
 from cinema.serializers import MovieListSerializer, MovieDetailSerializer
+from cinema.views import MovieViewSet
 
 MOVIE_URL = reverse("cinema:movie-list")
 MOVIE_SESSION_URL = reverse("cinema:moviesession-list")
@@ -111,7 +112,7 @@ class AuthenticatedMovieApiTest(TestCase):
         serializer1 = MovieListSerializer(movie1)
         serializer2 = MovieListSerializer(movie2)
         
-        self.asserIn(serializer1.data, res.data)
+        self.assertIn(serializer1.data, res.data)
         self.assertNotIn(serializer2.data, res.data)
 
     def test_filter_movies_by_genre_and_actors(self):
@@ -130,7 +131,7 @@ class AuthenticatedMovieApiTest(TestCase):
         )
         serializer_only = MovieListSerializer(movie_only)
         
-        self.aasertIn(serializer_with_genre_and_actor.data, res.data)
+        self.assertIn(serializer_with_genre_and_actor.data, res.data)
         self.assertNotIn(serializer_only.data, res.data)
 
     def test_search_movie_detail(self):
