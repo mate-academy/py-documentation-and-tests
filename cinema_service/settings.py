@@ -48,7 +48,6 @@ INSTALLED_APPS = [
     "cinema",
     "user",
     "drf_spectacular",
-    "djangorestframework-simplejwt",
 ]
 
 MIDDLEWARE = [
