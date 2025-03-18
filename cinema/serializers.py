@@ -130,7 +130,7 @@ class TicketSerializer(serializers.ModelSerializer):
             attrs["movie_session"].cinema_hall,
             ValidationError
         )
-        return data
+        return super().validate(attrs)
 
 
     class Meta:
