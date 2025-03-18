@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     "debug_toolbar",
     "cinema",
     "user",
+    "drf_spectacular",
     "djangorestframework-simplejwt",
 ]
 
