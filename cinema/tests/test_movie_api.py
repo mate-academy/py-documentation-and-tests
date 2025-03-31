@@ -229,7 +229,7 @@ class AuthorizedUserMovieSetTests(MovieViewSetTests):
         self.assertNotIn(serializer_movie_3.data, res.data)
 
     def test_movie_list_filter_by_actor(self):
-        res = self.client.get(MOVIE_URL, {"genres": f"{self.actor_1.id}"})
+        res = self.client.get(MOVIE_URL, {"actors": f"{self.actor_1.id}"})
 
         serializer_movie_1 = MovieListSerializer(self.movie_1)
         serializer_movie_2 = MovieListSerializer(self.movie_2)
