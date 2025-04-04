@@ -10,6 +10,7 @@ from rest_framework.test import APIClient
 from rest_framework import status
 
 from cinema.models import Movie, MovieSession, CinemaHall, Genre, Actor
+from cinema.serializers import MovieListSerializer, MovieDetailSerializer
 
 MOVIE_URL = reverse("cinema:movie-list")
 MOVIE_SESSION_URL = reverse("cinema:moviesession-list")
@@ -157,3 +158,90 @@ class MovieImageUploadTests(TestCase):
         res = self.client.get(MOVIE_SESSION_URL)
 
         self.assertIn("movie_image", res.data[0].keys())
+
+
+class UnauthenticatedBusApiTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+
+    def test_auth_required(self):
+        response = self.client.get(MOVIE_URL)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+
+class AuthenticatedBusApiTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.user = get_user_model().objects.create_user(
+            email="test@test.test",
+            password="testpassword",
+        )
+        self.client.force_authenticate(self.user)
+
+    def test_movie_list(self):
+        sample_movie()
+        movie_with_genres = sample_movie()
+        genre_1 = Genre.objects.create(name="Genre 1")
+        genre_2 = Genre.objects.create(name="Genre 2")
+        movie_with_genres.genres.add(genre_1, genre_2)
+        response = self.client.get(MOVIE_URL)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        response = self.client.get(MOVIE_URL)
+        movies = Movie.objects.all()
+        serializer = MovieListSerializer(movies, many=True)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, serializer.data)
+
+    def test_filter_movies_by_genre(self):
+        movie_without_genres = sample_movie()
+        movie_without_genres_1 = sample_movie(title="movie-1")
+        movie_without_genres_2 = sample_movie(title="movie-2")
+        genres_1 = Genre.objects.create(name="Genre 1")
+        genres_2 = Genre.objects.create(name="Genre 2")
+        movie_without_genres_1.genres.add(genres_1)
+        movie_without_genres_2.genres.add(genres_2)
+        response = self.client.get(
+            MOVIE_URL,
+            {"genres": f"{genres_1.id}, {genres_2.id}"},
+        )
+        serializer_without_facilities = MovieListSerializer(
+            movie_without_genres
+        )
+        serializer_bus_facilities_1 = MovieListSerializer(movie_without_genres_1)
+        serializer_bus_facilities_2 = MovieListSerializer(movie_without_genres_2)
+
+        self.assertIn(serializer_bus_facilities_1.data, response.data)
+        self.assertIn(serializer_bus_facilities_2.data, response.data)
+        self.assertNotIn(serializer_without_facilities, response.data)
+
+    def test_retrieve_movie_detail(self):
+        movie = sample_movie()
+        movie.genres.add(Genre.objects.create(name="Genre 1"))
+        url = detail_url(movie.pk)
+        response = self.client.get(url)
+        serializer = MovieDetailSerializer(movie)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, serializer.data)
+
+    def test_filter_movies_by_actors(self):
+        movie_without_actors = sample_movie()
+        movie_without_actors_1 = sample_movie(title="movie-1")
+        movie_without_actors_2 = sample_movie(title="movie-2")
+        actors_1 = Actor.objects.create(first_name="Bob", last_name="Smith")
+        actors_2 = Actor.objects.create(first_name="Nick", last_name="Johnson")
+        movie_without_actors_1.actors.add(actors_1)
+        movie_without_actors_2.actors.add(actors_2)
+        response = self.client.get(
+            MOVIE_URL,
+            {"actors": f"{actors_1.id}, {actors_2.id}"},
+        )
+        serializer_without_facilities = MovieListSerializer(
+            movie_without_actors
+        )
+        serializer_bus_facilities_1 = MovieListSerializer(movie_without_actors_1)
+        serializer_bus_facilities_2 = MovieListSerializer(movie_without_actors_2)
+
+        self.assertIn(serializer_bus_facilities_1.data, response.data)
+        self.assertIn(serializer_bus_facilities_2.data, response.data)
+        self.assertNotIn(serializer_without_facilities, response.data)
+
