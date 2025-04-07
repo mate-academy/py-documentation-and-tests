@@ -49,7 +49,8 @@ class MovieListSerializer(serializers.ModelSerializer):
     genres = serializers.SlugRelatedField(
         many=True,
         read_only=True,
-        slug_field="name"
+        slug_field="name",
+        help_text="List of genres"
     )
     actors = serializers.SlugRelatedField(
         many=True,

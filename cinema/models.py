@@ -49,8 +49,8 @@ class Movie(models.Model):
     title = models.CharField(max_length=255)
     description = models.TextField()
     duration = models.IntegerField()
-    genres = models.ManyToManyField(Genre, blank=True)
-    actors = models.ManyToManyField(Actor, blank=True)
+    genres = models.ManyToManyField(Genre, related_name="movies", blank=True)
+    actors = models.ManyToManyField(Actor, related_name="movies", blank=True)
     image = models.ImageField(null=True, upload_to=movie_image_file_path)
 
     class Meta:
@@ -76,7 +76,8 @@ class Order(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE
+        on_delete=models.CASCADE,
+        related_name="orders",
     )
 
     def __str__(self):

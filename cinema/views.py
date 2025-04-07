@@ -13,7 +13,6 @@ from drf_spectacular.utils import (
     extend_schema_view,
 )
 from drf_spectacular.types import OpenApiTypes
-
 from cinema.serializers import (
     GenreSerializer,
     ActorSerializer,
@@ -63,7 +62,7 @@ class CinemaHallViewSet(
         parameters=[
             OpenApiParameter(
                 name="title",
-                description="Filter by artist",
+                description="Filter by title",
                 required=False,
                 type=str,
             ),
@@ -177,7 +176,7 @@ class MovieViewSet(
             ),
             OpenApiParameter(
                 name="movie",
-                description="Filter by movie title",
+                description="Filter by movie id",
                 required=False,
                 type=str,
             ),
@@ -239,10 +238,6 @@ class OrderViewSet(
     pagination_class = OrderPagination
     permission_classes = (IsAuthenticated,)
 
-    @extend_schema(
-        description="displays user orders and tickets",
-        methods=["GET"]
-    )
     def get_queryset(self):
         return Order.objects.filter(user=self.request.user)
 
