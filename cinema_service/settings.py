@@ -46,7 +46,6 @@ INSTALLED_APPS = [
     "debug_toolbar",
     "cinema",
     "user",
-    "rest_framework.authtoken",
     "drf_spectacular",
 ]
 
