@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from django.db.models import F, Count
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import viewsets, mixins, status
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import action
@@ -127,6 +128,29 @@ class MovieViewSet(
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                "genres",
+                type={"type": "array", "items": {"type": "number"}},
+                description="Filter movies by genres (id)"
+            ),
+            OpenApiParameter(
+                "actors",
+                type={"type": "array", "items": {"type": "number"}},
+                description="Filter movies by actors (id)"
+            ),
+            OpenApiParameter(
+                "title",
+                type={"type": "array", "items": {"type": "string"}},
+                description="Filter movies by title (string)"
+            )
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        """Get list of movies"""
+        return super().list(request, *args, **kwargs)
+
 
 class MovieSessionViewSet(viewsets.ModelViewSet):
     queryset = (
@@ -166,6 +190,24 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
             return MovieSessionDetailSerializer
 
         return MovieSessionSerializer
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                "movie",
+                type={"type": "array", "items": {"type": "number"}},
+                description="Filter movie sessions by movie (id)"
+            ),
+            OpenApiParameter(
+                "date",
+                type={"type": "array", "items": {"type": "date"}},
+                description="Filter movie sessions by date (date format: YYYY-mm-dd)"
+            ),
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        """Get list of movies"""
+        return super().list(request, *args, **kwargs)
 
 
 class OrderPagination(PageNumberPagination):
