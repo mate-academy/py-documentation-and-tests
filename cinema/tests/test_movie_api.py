@@ -310,3 +310,16 @@ class AdminMovieAPITests(TestCase):
         self.assertEqual(Movie.objects.count(), 1)
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
         self.assertEqual(actors.count(), 2)
+
+    def test_movie_delete_not_allowed(self):
+        movie = sample_movie()
+        url = detail_url(movie.id)
+        res = self.client.delete(url)
+        self.assertEqual(res.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def test_movie_update_not_allowed(self):
+        movie = sample_movie()
+        url = detail_url(movie.id)
+        res = self.client.patch(url, {"title": "Try Updated Movie"})
+
+        self.assertEqual(res.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
