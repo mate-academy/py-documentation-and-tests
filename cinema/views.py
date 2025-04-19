@@ -215,7 +215,7 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
             OpenApiParameter(
                 name="movie",
                 type=OpenApiTypes.STR,
-                description="Movies ID",
+                description="Movie ID",
             ),
         ]
     )
