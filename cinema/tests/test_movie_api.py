@@ -275,8 +275,8 @@ class AdminMovieTests(TestCase):
             "title": "Sample movie",
             "description": "Sample description",
             "duration": 90,
-            "genres": str(genre.id),
-            "actors": str(actor.id),
+            "genres": [genre.id],
+            "actors": [actor.id],
         }
 
         res = self.client.post(MOVIE_URL, payload)
