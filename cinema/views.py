@@ -77,14 +77,14 @@ class MovieViewSet(
             ),
             OpenApiParameter(
                 name="genres",
-                type={"type": str, "items": {"type": "number"}},
-                description="Filter by genres",
+                type=str,
+                description="Filter by genres. must be a comma-separated string of ids (e.g., '1,2,3'). ",
                 required=False,
             ),
             OpenApiParameter(
                 name="actors",
-                type={"type": str, "items": {"type": "number"}},
-                description="Filter by actors",
+                type=str,
+                description="Filter by actors,  comma-separated string of ids (e.g., '1,2,3').",
                 required=False,
             ),
         ]
