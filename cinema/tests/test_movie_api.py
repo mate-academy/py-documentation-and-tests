@@ -257,8 +257,8 @@ class AdminMovieTests(TestCase):
             "title": "Title2",
             "description": "Description",
             "duration": 90,
-            "genres": genre.id,
-            "actors": actor.id,
+            "genres": [genre.id],
+            "actors": [actor.id],
         }
         res_post = self.client.post(MOVIE_URL, data=payload, format="multipart")
         self.assertEqual(res_post.status_code, status.HTTP_201_CREATED)

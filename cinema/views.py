@@ -77,13 +77,13 @@ class MovieViewSet(
             ),
             OpenApiParameter(
                 name="genres",
-                type={"type": "array", "items": {"type": "number"}},
+                type={"type": str, "items": {"type": "number"}},
                 description="Filter by genres",
                 required=False,
             ),
             OpenApiParameter(
                 name="actors",
-                type={"type": "array", "items": {"type": "number"}},
+                type={"type": str, "items": {"type": "number"}},
                 description="Filter by actors",
                 required=False,
             ),
