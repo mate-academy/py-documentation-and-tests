@@ -178,7 +178,7 @@ class AuthenticatedTests(TestCase):
             actors=f"{john_cena.pk}"
         )
         third_response = self.get_movie_response(
-            actors=f"{john_cena.pk},{leonardo_dicaprio.pk}"
+            actors=f"{leonardo_dicaprio.pk},{john_cena.pk}"
         )
 
         self.assert_movie_in_response(movie_with_leonardo, first_response)
@@ -188,7 +188,9 @@ class AuthenticatedTests(TestCase):
         self.assert_movie_not_in_response(movie_with_john, first_response)
 
         combined_serializer = MovieListSerializer(
-            [movie_with_leonardo, movie_with_john],
+            [movie_with_john, movie_with_leonardo],
             many=True
         )
+        print("response_data:", third_response.data)
+        print("serializer_data:", combined_serializer.data)
         self.assertEqual(third_response.data, combined_serializer.data)
