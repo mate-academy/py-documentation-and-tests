@@ -155,7 +155,7 @@ class AuthenticatedTests(TestCase):
 
         combined_serializer = MovieListSerializer(
             [action_movie, drama_movie],
-            third_response
+            many=True
         )
         self.assertEqual(combined_serializer.data, third_response.data)
 
