@@ -7,11 +7,12 @@ from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
-from rest_framework.viewsets import GenericViewSet, ReadOnlyModelViewSet
+from rest_framework.viewsets import GenericViewSet
 from drf_spectacular.utils import (
     extend_schema,
     OpenApiParameter,
-    OpenApiExample
+    OpenApiExample,
+    extend_schema_view
 )
 from drf_spectacular.types import OpenApiTypes
 
@@ -34,17 +35,8 @@ from cinema.serializers import (
 )
 
 
-class GenreViewSet(
-    mixins.CreateModelMixin,
-    mixins.ListModelMixin,
-    GenericViewSet,
-):
-    queryset = Genre.objects.all()
-    serializer_class = GenreSerializer
-    authentication_classes = (TokenAuthentication,)
-    permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
-
-    @extend_schema(
+@extend_schema_view(
+    list=extend_schema(
         summary="Get list of genres",
         examples=[
             OpenApiExample(
@@ -61,11 +53,8 @@ class GenreViewSet(
                 ]
             )
         ],
-    )
-    def list(self, request, *args, **kwargs):
-        return super().list(request, *args, **kwargs)
-
-    @extend_schema(
+    ),
+    create=extend_schema(
         summary="Create a genre",
         examples=[
             OpenApiExample(
@@ -85,21 +74,20 @@ class GenreViewSet(
             )
         ],
     )
-    def create(self, request, *args, **kwargs):
-        return super().list(request, *args, **kwargs)
-
-
-class ActorViewSet(
+)
+class GenreViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
     GenericViewSet,
 ):
-    queryset = Actor.objects.all()
-    serializer_class = ActorSerializer
+    queryset = Genre.objects.all()
+    serializer_class = GenreSerializer
     authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
-    @extend_schema(
+
+@extend_schema_view(
+    list=extend_schema(
         summary="Get list of actors",
         examples=[
             OpenApiExample(
@@ -118,11 +106,8 @@ class ActorViewSet(
                 ]
             )
         ],
-    )
-    def list(self, request, *args, **kwargs):
-        return super().list(request, *args, **kwargs)
-
-    @extend_schema(
+    ),
+    create=extend_schema(
         summary="Create an actor",
         examples=[
             OpenApiExample(
@@ -145,21 +130,20 @@ class ActorViewSet(
             )
         ],
     )
-    def create(self, request, *args, **kwargs):
-        return super().list(request, *args, **kwargs)
-
-
-class CinemaHallViewSet(
+)
+class ActorViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
     GenericViewSet,
 ):
-    queryset = CinemaHall.objects.all()
-    serializer_class = CinemaHallSerializer
+    queryset = Actor.objects.all()
+    serializer_class = ActorSerializer
     authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
-    @extend_schema(
+
+@extend_schema_view(
+    list=extend_schema(
         summary="Get list of cinema halls",
         examples=[
             OpenApiExample(
@@ -179,12 +163,9 @@ class CinemaHallViewSet(
                 ]
             )
         ],
-    )
-    def list(self, request, *args, **kwargs):
-        return super().list(request, *args, **kwargs)
-
-    @extend_schema(
-        summary="Create an actor",
+    ),
+    create=extend_schema(
+        summary="Create a cinema hall",
         examples=[
             OpenApiExample(
                 "Request body",
@@ -208,10 +189,164 @@ class CinemaHallViewSet(
             )
         ],
     )
-    def create(self, request, *args, **kwargs):
-        return super().list(request, *args, **kwargs)
+)
+class CinemaHallViewSet(
+    mixins.CreateModelMixin,
+    mixins.ListModelMixin,
+    GenericViewSet,
+):
+    queryset = CinemaHall.objects.all()
+    serializer_class = CinemaHallSerializer
+    authentication_classes = (TokenAuthentication,)
+    permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
 
+@extend_schema_view(
+    list=extend_schema(
+        summary="Get list of movies",
+        parameters=[
+            OpenApiParameter(
+                name="title",
+                description="Filter by movie title",
+                required=False,
+                type=OpenApiTypes.STR,
+            ),
+            OpenApiParameter(
+                name="genres",
+                description="Filter by genres",
+                required=False,
+                type=OpenApiTypes.STR,
+            ),
+            OpenApiParameter(
+                name="actors",
+                description="Filter by actors",
+                required=False,
+                type=OpenApiTypes.STR,
+            )
+        ],
+        examples=[
+            OpenApiExample(
+                "1",
+                response_only=True,
+                value=[
+                    {
+                        "id": 1,
+                        "title": "The Departed",
+                        "description": "An undercover cop and a mole in the"
+                                       " police attempt to identify each other"
+                                       " while infiltrating an Irishgang in"
+                                       " South Boston.",
+                        "duration": 151,
+                        "genres": [
+                            "Crime",
+                            "Drama",
+                            "Thriller"
+                        ],
+                        "actors": [
+                            "Jack Nicholson",
+                            "Leonardo DiCaprio",
+                            "Matt Damon"
+                        ],
+                        "image": None
+                    },
+                    {
+                        "...": "..."
+                    },
+                ]
+            )
+        ],
+    ),
+    create=extend_schema(
+        summary="Create a movie",
+        examples=[
+            OpenApiExample(
+                name="Request body",
+                value={
+                    "title": "string",
+                    "description": "string",
+                    "duration": 148,
+                    "genres": [1, 2, 3],
+                    "actors": [1, 2, 3]
+                },
+                request_only=True
+            ),
+            OpenApiExample(
+                name="Response body",
+                value={
+                    "id": 2,
+                    "title": "string",
+                    "description": "string",
+                    "duration": 148,
+                    "genres": [
+                        "Crime",
+                        "Drama",
+                        "Thriller"
+                    ],
+                    "actors": [
+                        "Leonardo DiCaprio",
+                        "Joseph Gordon-Levitt",
+                        "Elliot Page"
+                    ],
+                    "image": None
+                },
+                response_only=True
+            )
+        ]
+    ),
+    retrieve=extend_schema(
+        summary="Movie detail view",
+        examples=[
+            OpenApiExample(
+                name="Response body",
+                response_only=True,
+                value={
+                    "id": 1,
+                    "title": "The Departed",
+                    "description": "An undercover cop and a mole in the"
+                                   " police attempt to identify each other"
+                                   " while infiltrating an Irishgang in"
+                                   " South Boston.",
+                    "duration": 151,
+                    "genres": [
+                        {
+                            "id": 1,
+                            "name": "Crime"
+                        },
+                        {
+                            "id": 2,
+                            "name": "Drama"
+                        },
+                        {
+                            "id": 3,
+                            "name": "Thriller"
+                        }
+                    ],
+                    "actors": [
+                        {
+                            "id": 1,
+                            "first_name": "Jack",
+                            "last_name": "Nicholson",
+                            "full_name": "Jack Nicholson"
+                        },
+                        {
+                            "id": 2,
+                            "first_name": "Leonardo",
+                            "last_name": "DiCaprio",
+                            "full_name": "Leonardo DiCaprio"
+                        },
+                        {
+                            "id": 3,
+                            "first_name": "Matt",
+                            "last_name": "Damon",
+                            "full_name": "Matt Damon"
+                        }
+                    ],
+                    "image": None
+                }
+            )
+        ]
+    )
+)
 class MovieViewSet(
     mixins.ListModelMixin,
     mixins.CreateModelMixin,
@@ -304,200 +439,9 @@ class MovieViewSet(
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    @extend_schema(
-        summary="Get list of movies",
-        parameters=[
-            OpenApiParameter(
-                name="title",
-                description="Filter by movie title",
-                required=False,
-                type=OpenApiTypes.STR,
-            ),
-            OpenApiParameter(
-                name="genres",
-                description="Filter by genres",
-                required=False,
-                type=OpenApiTypes.STR,
-            ),
-            OpenApiParameter(
-                name="actors",
-                description="Filter by actors",
-                required=False,
-                type=OpenApiTypes.STR,
-            )
-        ],
-        examples=[
-            OpenApiExample(
-                "1",
-                response_only=True,
-                value=[
-                    {
-                        "id": 1,
-                        "title": "The Departed",
-                        "description": "An undercover cop and a mole in the"
-                                       " police attempt to identify each other"
-                                       " while infiltrating an Irishgang in"
-                                       " South Boston.",
-                        "duration": 151,
-                        "genres": [
-                            "Crime",
-                            "Drama",
-                            "Thriller"
-                        ],
-                        "actors": [
-                            "Jack Nicholson",
-                            "Leonardo DiCaprio",
-                            "Matt Damon"
-                        ],
-                        "image": None
-                    },
-                    {
-                        "...": "..."
-                    },
-                ]
-            )
-        ],
-    )
-    def list(self, request, *args, **kwargs):
-        return super().list(request, *args, **kwargs)
 
-    @extend_schema(
-        summary="Create a movie session",
-        examples=[
-            OpenApiExample(
-                name="Request body",
-                value={
-                    "title": "string",
-                    "description": "string",
-                    "duration": 148,
-                    "genres": [1, 2, 3],
-                    "actors": [1, 2, 3]
-                },
-                request_only=True
-            ),
-            OpenApiExample(
-                name="Response body",
-                value={
-                    "id": 2,
-                    "title": "string",
-                    "description": "string",
-                    "duration": 148,
-                    "genres": [
-                        "Crime",
-                        "Drama",
-                        "Thriller"
-                    ],
-                    "actors": [
-                        "Leonardo DiCaprio",
-                        "Joseph Gordon-Levitt",
-                        "Elliot Page"
-                    ],
-                    "image": None
-                },
-                response_only=True
-            )
-        ]
-    )
-    def create(self, request, *args, **kwargs):
-        return super().list(request, *args, **kwargs)
-
-    @extend_schema(
-        summary="Movie detail view",
-        examples=[
-            OpenApiExample(
-                name="Response body",
-                response_only=True,
-                value={
-                    "id": 1,
-                    "title": "The Departed",
-                    "description": "An undercover cop and a mole in the"
-                                   " police attempt to identify each other"
-                                   " while infiltrating an Irishgang in"
-                                   " South Boston.",
-                    "duration": 151,
-                    "genres": [
-                        {
-                            "id": 1,
-                            "name": "Crime"
-                        },
-                        {
-                            "id": 2,
-                            "name": "Drama"
-                        },
-                        {
-                            "id": 3,
-                            "name": "Thriller"
-                        }
-                    ],
-                    "actors": [
-                        {
-                            "id": 1,
-                            "first_name": "Jack",
-                            "last_name": "Nicholson",
-                            "full_name": "Jack Nicholson"
-                        },
-                        {
-                            "id": 2,
-                            "first_name": "Leonardo",
-                            "last_name": "DiCaprio",
-                            "full_name": "Leonardo DiCaprio"
-                        },
-                        {
-                            "id": 3,
-                            "first_name": "Matt",
-                            "last_name": "Damon",
-                            "full_name": "Matt Damon"
-                        }
-                    ],
-                    "image": None
-                }
-            )
-        ]
-    )
-    def retrieve(self, request, *args, **kwargs):
-        return super().retrieve(request, *args, **kwargs)
-
-
-class MovieSessionViewSet(viewsets.ModelViewSet):
-    queryset = (
-        MovieSession.objects.all()
-        .select_related("movie", "cinema_hall")
-        .annotate(
-            tickets_available=(
-                F("cinema_hall__rows") * F("cinema_hall__seats_in_row")
-                - Count("tickets")
-            )
-        )
-    )
-    serializer_class = MovieSessionSerializer
-    authentication_classes = (TokenAuthentication,)
-    permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
-
-    def get_queryset(self):
-        date = self.request.query_params.get("date")
-        movie_id_str = self.request.query_params.get("movie")
-
-        queryset = self.queryset
-
-        if date:
-            date = datetime.strptime(date, "%Y-%m-%d").date()
-            queryset = queryset.filter(show_time__date=date)
-
-        if movie_id_str:
-            queryset = queryset.filter(movie_id=int(movie_id_str))
-
-        return queryset
-
-    def get_serializer_class(self):
-        if self.action == "list":
-            return MovieSessionListSerializer
-
-        if self.action == "retrieve":
-            return MovieSessionDetailSerializer
-
-        return MovieSessionSerializer
-
-    @extend_schema(
+@extend_schema_view(
+    list=extend_schema(
         summary="Get list of movie sessions",
         parameters=[
             OpenApiParameter(
@@ -533,17 +477,11 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
                 ]
             )
         ],
-    )
-    def list(self, request, *args, **kwargs):
-        return super().list(request, *args, **kwargs)
-
-    @extend_schema(
+    ),
+    create=extend_schema(
         summary="Create a movie session",
-    )
-    def create(self, request, *args, **kwargs):
-        return super().list(request, *args, **kwargs)
-
-    @extend_schema(
+    ),
+    retrieve=extend_schema(
         summary="Movie session detail view",
         examples=[
             OpenApiExample(
@@ -595,27 +533,55 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
                 }
             )
         ],
-    )
-    def retrieve(self, request, *args, **kwargs):
-        return super().retrieve(request, *args, **kwargs)
-
-    @extend_schema(
+    ),
+    update=extend_schema(
         summary="Update a movie session",
-    )
-    def update(self, request, *args, **kwargs):
-        return super().update(request, *args, **kwargs)
-
-    @extend_schema(
+    ),
+    partial_update=extend_schema(
         summary="Partial update a movie session",
-    )
-    def partial_update(self, request, *args, **kwargs):
-        return super().partial_update(request, *args, **kwargs)
-
-    @extend_schema(
+    ),
+    destroy=extend_schema(
         summary="Delete a movie session",
     )
-    def destroy(self, request, *args, **kwargs):
-        return super().destroy(request, *args, **kwargs)
+)
+class MovieSessionViewSet(viewsets.ModelViewSet):
+    queryset = (
+        MovieSession.objects.all()
+        .select_related("movie", "cinema_hall")
+        .annotate(
+            tickets_available=(
+                F("cinema_hall__rows") * F("cinema_hall__seats_in_row")
+                - Count("tickets")
+            )
+        )
+    )
+    serializer_class = MovieSessionSerializer
+    authentication_classes = (TokenAuthentication,)
+    permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
+
+    def get_queryset(self):
+        date = self.request.query_params.get("date")
+        movie_id_str = self.request.query_params.get("movie")
+
+        queryset = self.queryset
+
+        if date:
+            date = datetime.strptime(date, "%Y-%m-%d").date()
+            queryset = queryset.filter(show_time__date=date)
+
+        if movie_id_str:
+            queryset = queryset.filter(movie_id=int(movie_id_str))
+
+        return queryset
+
+    def get_serializer_class(self):
+        if self.action == "list":
+            return MovieSessionListSerializer
+
+        if self.action == "retrieve":
+            return MovieSessionDetailSerializer
+
+        return MovieSessionSerializer
 
 
 class OrderPagination(PageNumberPagination):
@@ -623,32 +589,8 @@ class OrderPagination(PageNumberPagination):
     max_page_size = 100
 
 
-class OrderViewSet(
-    mixins.ListModelMixin,
-    mixins.CreateModelMixin,
-    GenericViewSet,
-):
-    queryset = Order.objects.prefetch_related(
-        "tickets__movie_session__movie", "tickets__movie_session__cinema_hall"
-    )
-    serializer_class = OrderSerializer
-    pagination_class = OrderPagination
-    authentication_classes = (TokenAuthentication,)
-    permission_classes = (IsAuthenticated,)
-
-    def get_queryset(self):
-        return Order.objects.filter(user=self.request.user)
-
-    def get_serializer_class(self):
-        if self.action == "list":
-            return OrderListSerializer
-
-        return OrderSerializer
-
-    def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
-
-    @extend_schema(
+@extend_schema_view(
+    list=extend_schema(
         summary="Get a paginated order list",
         examples=[
             OpenApiExample(
@@ -675,11 +617,8 @@ class OrderViewSet(
                 ]
             )
         ]
-    )
-    def list(self, request, *args, **kwargs):
-        return super().list(request, *args, **kwargs)
-
-    @extend_schema(
+    ),
+    create=extend_schema(
         summary="Create an order",
         examples=[
             OpenApiExample(
@@ -735,5 +674,28 @@ class OrderViewSet(
             )
         ]
     )
-    def create(self, request, *args, **kwargs):
-        return super().list(request, *args, **kwargs)
+)
+class OrderViewSet(
+    mixins.ListModelMixin,
+    mixins.CreateModelMixin,
+    GenericViewSet,
+):
+    queryset = Order.objects.prefetch_related(
+        "tickets__movie_session__movie", "tickets__movie_session__cinema_hall"
+    )
+    serializer_class = OrderSerializer
+    pagination_class = OrderPagination
+    authentication_classes = (TokenAuthentication,)
+    permission_classes = (IsAuthenticated,)
+
+    def get_queryset(self):
+        return Order.objects.filter(user=self.request.user)
+
+    def get_serializer_class(self):
+        if self.action == "list":
+            return OrderListSerializer
+
+        return OrderSerializer
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
