@@ -341,6 +341,32 @@ class CinemaHallViewSet(
                 }
             )
         ]
+    ),
+    upload_image=extend_schema(
+        summary="Upload an image",
+        request={
+            "multipart/form-data": {
+                "type": "object",
+                "properties": {
+                    "image": {
+                        "type": "string",
+                        "format": "binary",
+                    }
+                },
+                "required": ["image"],
+            }
+        },
+        examples=[
+            OpenApiExample(
+                name="Response body",
+                value={
+                    "id": 1,
+                    "image": "Image URL"
+                },
+                response_only=True,
+                media_type="application/json",
+            )
+        ],
     )
 )
 class MovieViewSet(
@@ -391,32 +417,6 @@ class MovieViewSet(
 
         return MovieSerializer
 
-    @extend_schema(
-        summary="Upload an image",
-        request={
-            "multipart/form-data": {
-                "type": "object",
-                "properties": {
-                    "image": {
-                        "type": "string",
-                        "format": "binary",
-                    }
-                },
-                "required": ["image"],
-            }
-        },
-        examples=[
-            OpenApiExample(
-                name="Response body",
-                value={
-                    "id": 1,
-                    "image": "Image URL"
-                },
-                response_only=True,
-                media_type="application/json",
-            )
-        ],
-    )
     @action(
         methods=["POST"],
         detail=True,
