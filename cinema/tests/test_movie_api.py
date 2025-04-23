@@ -3,6 +3,7 @@ import os
 
 from PIL import Image
 from django.contrib.auth import get_user_model
+from django.core.management import call_command
 from django.test import TestCase
 from django.urls import reverse
 
@@ -64,6 +65,69 @@ def image_upload_url(movie_id):
 
 def detail_url(movie_id):
     return reverse("cinema:movie-detail", args=[movie_id])
+
+
+class MovieAPITests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.user = get_user_model().objects.create_superuser(
+            "admin@myproject.com", "password"
+        )
+        self.client.force_authenticate(self.user)
+
+        call_command(
+            "loaddata",
+            "cinema_service_db_data.json"
+        )
+
+    def test_get_movie_list(self):
+        response = self.client.get(MOVIE_URL)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_get_movie_by_title(self):
+        response = self.client.get(MOVIE_URL, {"title": "Inception"})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        for movie in response.data:
+            self.assertEqual(movie["title"], "Inception")
+
+    def test_get_movie_by_actor(self):
+        response = self.client.get(
+            MOVIE_URL,
+            {"actors": "2"}
+        )
+        actor_to_test = Actor.objects.get(pk=2)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        for movie in response.data:
+            self.assertTrue(actor_to_test.full_name in movie["actors"])
+
+    def test_get_movie_by_genre(self):
+        response = self.client.get(
+            MOVIE_URL,
+            {"genres": "2"}
+        )
+        actor_to_test = Genre.objects.get(pk=2)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        for movie in response.data:
+            self.assertTrue(actor_to_test.name in movie["genres"])
+
+    def test_post_movie(self):
+        response = self.client.post(
+            MOVIE_URL,
+            {
+                "title": "Sample movie",
+                "description": "Sample description",
+                "duration": 90,
+                "genres": [1, 2, 3],
+                "actors": [1, 2, 3],
+            }
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def test_retrieve_movie(self):
+        url = reverse("cinema:movie-detail", args=[1])
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
 
 
 class MovieImageUploadTests(TestCase):
