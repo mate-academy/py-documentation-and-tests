@@ -105,10 +105,10 @@ class MovieAPITests(TestCase):
             MOVIE_URL,
             {"genres": "2"}
         )
-        actor_to_test = Genre.objects.get(pk=2)
+        genre_to_test = Genre.objects.get(pk=2)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         for movie in response.data:
-            self.assertTrue(actor_to_test.name in movie["genres"])
+            self.assertTrue(genre_to_test.name in movie["genres"])
 
     def test_post_movie(self):
         response = self.client.post(
