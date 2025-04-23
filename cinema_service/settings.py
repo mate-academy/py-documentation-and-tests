@@ -167,7 +167,7 @@ SPECTACULAR_SETTINGS = {
 }
 
 SIMPLE_JWT = {
-   "ACCESS_TOKEN_LIFETIME": timedelta(minutes=1),
-   "REFRESH_TOKEN_LIFETIME": timedelta(minutes=30),
-   "ROTATE_REFRESH_TOKENS": True
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=1),
+    "REFRESH_TOKEN_LIFETIME": timedelta(minutes=30),
+    "ROTATE_REFRESH_TOKENS": True
 }
