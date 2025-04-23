@@ -185,7 +185,7 @@ class AuthenticatedTests(TestCase):
         self.assert_movie_in_response(movie_with_john, second_response)
 
         self.assert_movie_not_in_response(movie_with_leonardo, second_response)
-        self.assert_movie_in_response(movie_with_john, first_response)
+        self.assert_movie_not_in_response(movie_with_john, first_response)
 
         combined_serializer = MovieListSerializer(
             [movie_with_leonardo, movie_with_john],
