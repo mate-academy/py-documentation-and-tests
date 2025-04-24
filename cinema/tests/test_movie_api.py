@@ -175,14 +175,11 @@ class MovieViewSetUnauthenticatedUserTests(TestCase):
         self.assertEqual(serializer.data, [])
 
     def test_item_retrieve_movie_user(self):
-        item = Movie.objects.create(title="Test", duration="222")
+        item = Movie.objects.create(title="Test", duration=222)
         url = reverse("cinema:movie-detail", args=[item.id])
         res = self.client.get(url)
 
-        serializer = MovieDetailSerializer(item)
-
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
-        self.assertNotEquals(serializer.data, res.data)
 
 
 class MoveViewSetAuthenticatedUser(TestCase):
@@ -205,7 +202,7 @@ class MoveViewSetAuthenticatedUser(TestCase):
         self.assertEqual(serializer.data, res.data)
 
     def test_item_retrieve_movie_user(self):
-        item = Movie.objects.create(title="Test", duration="222")
+        item = Movie.objects.create(title="Test", duration=222)
         url = reverse("cinema:movie-detail", args=[item.id])
         res = self.client.get(url)
 
