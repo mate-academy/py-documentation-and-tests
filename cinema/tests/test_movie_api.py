@@ -267,3 +267,4 @@ class MovieViewSetTest(TestCase):
         }
         response = self.client.post(self.list_url, payload, format="json")
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
