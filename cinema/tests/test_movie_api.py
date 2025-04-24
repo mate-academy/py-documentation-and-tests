@@ -10,6 +10,7 @@ from rest_framework.test import APIClient
 from rest_framework import status
 
 from cinema.models import Movie, MovieSession, CinemaHall, Genre, Actor
+from cinema.serializers import MovieListSerializer, MovieDetailSerializer
 
 MOVIE_URL = reverse("cinema:movie-list")
 MOVIE_SESSION_URL = reverse("cinema:moviesession-list")
@@ -157,3 +158,58 @@ class MovieImageUploadTests(TestCase):
         res = self.client.get(MOVIE_SESSION_URL)
 
         self.assertIn("movie_image", res.data[0].keys())
+
+
+class MovieViewSetUnauthenticatedUserTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+
+    def test_items_list_movie(self):
+        url = MOVIE_URL
+        res = self.client.get(url)
+
+        items = Movie.objects.all()
+        serializer = MovieListSerializer(items, many=True)
+
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(serializer.data, [])
+
+    def test_item_retrieve_movie_user(self):
+        item = Movie.objects.create(title="Test", duration="222")
+        url = reverse("cinema:movie-detail", args=[item.id])
+        res = self.client.get(url)
+
+        serializer = MovieDetailSerializer(item)
+
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertNotEquals(serializer.data, res.data)
+
+
+class MoveViewSetAuthenticatedUser(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.user = get_user_model().objects.create_user(
+            email="test@test.com",
+            password="test123",
+        )
+        self.client.force_authenticate(self.user)
+
+    def test_items_list_movie_user(self):
+        url = MOVIE_URL
+        res = self.client.get(url)
+
+        items = Movie.objects.all()
+        serializer = MovieListSerializer(items, many=True)
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(serializer.data, res.data)
+
+    def test_item_retrieve_movie_user(self):
+        item = Movie.objects.create(title="Test", duration="222")
+        url = reverse("cinema:movie-detail", args=[item.id])
+        res = self.client.get(url)
+
+        serializer = MovieDetailSerializer(item)
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(serializer.data, res.data)
