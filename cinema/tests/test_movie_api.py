@@ -168,11 +168,7 @@ class MovieViewSetUnauthenticatedUserTests(TestCase):
         url = MOVIE_URL
         res = self.client.get(url)
 
-        items = Movie.objects.all()
-        serializer = MovieListSerializer(items, many=True)
-
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
-        self.assertEqual(serializer.data, [])
 
     def test_item_retrieve_movie_user(self):
         item = Movie.objects.create(title="Test", duration=222)
