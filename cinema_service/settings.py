@@ -160,7 +160,7 @@ REST_FRAMEWORK = {
 
 SPECTACULAR_SETTINGS = {
     "TITLE": "Cinema API",
-    "DESCRIPTION": "API for managing cinema entities",
+    "DESCRIPTION": "API for managing cinema",
     "VERSION": "1.0.0",
 }
 
