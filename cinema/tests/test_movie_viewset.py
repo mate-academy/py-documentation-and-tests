@@ -146,6 +146,9 @@ class MovieViewSetTests(TestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.movie1.refresh_from_db()
+
+        self.assertIn("image", response.data)
+        self.assertTrue(response.data["image"])
         self.assertTrue(self.movie1.image)
 
         if os.path.exists(self.movie1.image.path):

@@ -51,11 +51,10 @@ class MovieListSerializer(serializers.ModelSerializer):
         read_only=True,
         slug_field="name"
     )
-    actors = serializers.SlugRelatedField(
-        many=True,
-        read_only=True,
-        slug_field="full_name",
-    )
+    actors = serializers.SerializerMethodField(method_name="get_actors")
+
+    def get_actors(self, obj):
+        return [actor.full_name for actor in obj.actors.all()]
 
     class Meta:
         model = Movie
@@ -174,6 +173,20 @@ class OrderSerializer(serializers.ModelSerializer):
             for ticket_data in tickets_data:
                 Ticket.objects.create(order=order, **ticket_data)
             return order
+
+    def update(self, instance, validated_data):
+        with transaction.atomic():
+            tickets_data = validated_data.pop('tickets', None)
+            for attr, value in validated_data.items():
+                setattr(instance, attr, value)
+            instance.save()
+
+            if tickets_data is not None:
+                instance.tickets.all().delete()
+                for ticket_data in tickets_data:
+                    Ticket.objects.create(order=instance, **ticket_data)
+
+            return instance
 
 
 class OrderListSerializer(OrderSerializer):
