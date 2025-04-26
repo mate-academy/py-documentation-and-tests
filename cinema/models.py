@@ -1,10 +1,13 @@
 import os
 import uuid
 
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
-from django.conf import settings
+from django.db.models.constraints import UniqueConstraint
 from django.utils.text import slugify
+
+import cinema
 
 
 class CinemaHall(models.Model):
@@ -50,8 +53,8 @@ class Movie(models.Model):
     title = models.CharField(max_length=255)
     description = models.TextField()
     duration = models.IntegerField()
-    genres = models.ManyToManyField(Genre)
-    actors = models.ManyToManyField(Actor)
+    genres = models.ManyToManyField(Genre, related_name="movies")
+    actors = models.ManyToManyField(Actor, related_name="movies")
     image = models.ImageField(null=True, upload_to=movie_image_file_path)
 
     class Meta:
@@ -139,5 +142,10 @@ class Ticket(models.Model):
         )
 
     class Meta:
-        unique_together = ("movie_session", "row", "seat")
+        constraints = [
+            UniqueConstraint(
+                fields=["row", "seat", "movie_session"],
+                name="unique_row_seat_movie_session",
+            ),
+        ]
         ordering = ["row", "seat"]
