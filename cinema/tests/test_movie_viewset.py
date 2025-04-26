@@ -40,7 +40,7 @@ class UnauthenticatedMovieApiTests(TestCase):
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
-class AuthenticatedBusApiTests(TestCase):
+class AuthenticatedMovieApiTests(TestCase):
     def setUp(self):
         self.client = APIClient()
         self.user = User.objects.create_user(
