@@ -52,9 +52,10 @@ class CinemaHallViewSet(
 
 
 class MovieViewSet(
-    ReadOnlyModelViewSet,
+    mixins.ListModelMixin,
     mixins.CreateModelMixin,
-    GenericViewSet,
+    mixins.RetrieveModelMixin,
+    viewsets.GenericViewSet,
 ):
     queryset = Movie.objects.prefetch_related("genres", "actors")
     serializer_class = MovieSerializer
@@ -166,7 +167,8 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
             OpenApiParameter(
                 "movie",
                 description="Filter by id movie (ex. ?movie=1)",
-                type={"array": "integer", "items": {"type": "number"}},
+                type=int,
+                required=False
             )
         ]
     )
