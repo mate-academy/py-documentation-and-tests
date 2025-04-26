@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from django.db.models import F, Count
+from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiExample
 from rest_framework import viewsets, mixins, status
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import action
@@ -77,6 +78,38 @@ class MovieViewSet(
         """Converts a list of string IDs to a list of integers"""
         return [int(str_id) for str_id in qs.split(",")]
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="title",
+                description="Filter by movie title (case-insensitive contains)",
+                required=False,
+                type=str,
+            ),
+            OpenApiParameter(
+                name="genres",
+                description="Filter by genre IDs (comma-separated)",
+                required=False,
+                type={"type": "array", "items": {"type": "number"}},
+                many=True,
+            ),
+            OpenApiParameter(
+                name="actors",
+                description="Filter by actor IDs (comma-separated)",
+                required=False,
+                type={"type": "array", "items": {"type": "number"}},
+                many=True,
+            ),
+        ],
+        examples=[
+            OpenApiExample(
+                "Example 1",
+                summary="Filter by title",
+                description='Filter movies containing "avengers" in title',
+                value={"title": "avengers"},
+            ),
+        ],
+    )
     def get_queryset(self):
         """Retrieve the movies with filters"""
         title = self.request.query_params.get("title")
@@ -98,6 +131,29 @@ class MovieViewSet(
 
         return queryset.distinct()
 
+    @extend_schema(
+        request=MovieSerializer,
+        responses={201: MovieSerializer},
+        examples=[
+            OpenApiExample(
+                "Example request",
+                value={
+                    "title": "New Movie",
+                    "description": "Movie description",
+                    "duration": 120,
+                    "genres": [1, 2],
+                    "actors": [1, 3],
+                },
+            )
+        ],
+    )
+    def create(self, request, *args, **kwargs):
+        return super().create(request, *args, **kwargs)
+
+    @extend_schema(responses=MovieDetailSerializer)
+    def retrieve(self, request, *args, **kwargs):
+        return super().retrieve(request, *args, **kwargs)
+
     def get_serializer_class(self):
         if self.action == "list":
             return MovieListSerializer
@@ -110,6 +166,11 @@ class MovieViewSet(
 
         return MovieSerializer
 
+    @extend_schema(
+        request=MovieImageSerializer,
+        responses={200: MovieImageSerializer},
+        description="Upload image for specific movie",
+    )
     @action(
         methods=["POST"],
         detail=True,
@@ -143,6 +204,30 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
     authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="date",
+                description="Filter by date (YYYY-MM-DD format)",
+                required=False,
+                type=str,
+            ),
+            OpenApiParameter(
+                name="movie",
+                description="Filter by movie ID",
+                required=False,
+                type=int
+            ),
+        ],
+        examples=[
+            OpenApiExample(
+                "Example 1",
+                summary="Filter by date",
+                description="Get sessions for specific date",
+                value={"date": "2023-12-31"},
+            ),
+        ],
+    )
     def get_queryset(self):
         date = self.request.query_params.get("date")
         movie_id_str = self.request.query_params.get("movie")
@@ -157,6 +242,20 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(movie_id=int(movie_id_str))
 
         return queryset
+
+    @extend_schema(responses=MovieSessionListSerializer)
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+    @extend_schema(responses=MovieSessionDetailSerializer)
+    def retrieve(self, request, *args, **kwargs):
+        return super().retrieve(request, *args, **kwargs)
+
+    @extend_schema(
+        request=MovieSessionSerializer, responses={201: MovieSessionSerializer}
+    )
+    def create(self, request, *args, **kwargs):
+        return super().create(request, *args, **kwargs)
 
     def get_serializer_class(self):
         if self.action == "list":
