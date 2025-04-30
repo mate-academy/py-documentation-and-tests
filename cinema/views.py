@@ -120,7 +120,7 @@ class CinemaHallViewSet(
 @extend_schema(
     summary="List, retrieve, or create movies",
     description="Supports filtering by title, genres, and actors. "
-                "dmins can create and upload images.",
+                "Admins can create and upload images.",
 )
 class MovieViewSet(
     mixins.ListModelMixin,
