@@ -1,13 +1,15 @@
 from datetime import datetime
 
 from django.db.models import F, Count
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import viewsets, mixins, status
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
-from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from rest_framework.permissions import IsAuthenticated, IsAdminUser, AllowAny
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet, ReadOnlyModelViewSet
+from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from cinema.models import Genre, Actor, CinemaHall, Movie, MovieSession, Order
 from cinema.permissions import IsAdminOrIfAuthenticatedReadOnly
@@ -35,7 +37,7 @@ class GenreViewSet(
 ):
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
-    authentication_classes = (TokenAuthentication,)
+    authentication_classes = (JWTAuthentication, TokenAuthentication)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
 
@@ -46,7 +48,7 @@ class ActorViewSet(
 ):
     queryset = Actor.objects.all()
     serializer_class = ActorSerializer
-    authentication_classes = (TokenAuthentication,)
+    authentication_classes = (JWTAuthentication, TokenAuthentication)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
 
@@ -57,7 +59,7 @@ class CinemaHallViewSet(
 ):
     queryset = CinemaHall.objects.all()
     serializer_class = CinemaHallSerializer
-    authentication_classes = (TokenAuthentication,)
+    authentication_classes = (JWTAuthentication, TokenAuthentication)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
 
@@ -69,14 +71,40 @@ class MovieViewSet(
 ):
     queryset = Movie.objects.prefetch_related("genres", "actors")
     serializer_class = MovieSerializer
-    authentication_classes = (TokenAuthentication,)
-    permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
+    authentication_classes = (JWTAuthentication, TokenAuthentication)
+
+    def get_permissions(self):
+        if self.action in ["list", "retrieve"]:
+            return [AllowAny()]
+        return [IsAdminOrIfAuthenticatedReadOnly()]
 
     @staticmethod
     def _params_to_ints(qs):
         """Converts a list of string IDs to a list of integers"""
         return [int(str_id) for str_id in qs.split(",")]
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="title",
+                description="Фільтрація за назвою (неточний пошук)",
+                required=False,
+                type=str,
+            ),
+            OpenApiParameter(
+                name="genres",
+                description="Фільтрація за жанрами. Приклад: ?genres=1,2",
+                required=False,
+                type={"type": "string", "format": "comma-separated"},
+            ),
+            OpenApiParameter(
+                name="actors",
+                description="Фільтрація за акторами. Приклад: ?actors=1,2",
+                required=False,
+                type={"type": "string", "format": "comma-separated"},
+            ),
+        ]
+    )
     def get_queryset(self):
         """Retrieve the movies with filters"""
         title = self.request.query_params.get("title")
@@ -110,6 +138,10 @@ class MovieViewSet(
 
         return MovieSerializer
 
+    @extend_schema(
+        description="Завантаження зображення для фільму",
+        responses={200: MovieImageSerializer},
+    )
     @action(
         methods=["POST"],
         detail=True,
@@ -140,9 +172,29 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
         )
     )
     serializer_class = MovieSessionSerializer
-    authentication_classes = (TokenAuthentication,)
-    permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
+    authentication_classes = (JWTAuthentication, TokenAuthentication)
 
+    def get_permissions(self):
+        if self.action in ["list", "retrieve"]:
+            return [AllowAny()]
+        return [IsAdminOrIfAuthenticatedReadOnly()]
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="date",
+                description="Фільтрація за датою. Формат: YYYY-MM-DD",
+                required=False,
+                type=str,
+            ),
+            OpenApiParameter(
+                name="movie",
+                description="Фільтрація за ID фільму",
+                required=False,
+                type=int,
+            ),
+        ]
+    )
     def get_queryset(self):
         date = self.request.query_params.get("date")
         movie_id_str = self.request.query_params.get("movie")
@@ -183,7 +235,7 @@ class OrderViewSet(
     )
     serializer_class = OrderSerializer
     pagination_class = OrderPagination
-    authentication_classes = (TokenAuthentication,)
+    authentication_classes = (JWTAuthentication, TokenAuthentication)
     permission_classes = (IsAuthenticated,)
 
     def get_queryset(self):
