@@ -10,6 +10,7 @@ from rest_framework.test import APIClient
 from rest_framework import status
 
 from cinema.models import Movie, MovieSession, CinemaHall, Genre, Actor
+from cinema.serializers import MovieListSerializer, MovieDetailSerializer
 
 MOVIE_URL = reverse("cinema:movie-list")
 MOVIE_SESSION_URL = reverse("cinema:moviesession-list")
@@ -66,6 +67,153 @@ def detail_url(movie_id):
     return reverse("cinema:movie-detail", args=[movie_id])
 
 
+class PublicMovieApiTests(TestCase):
+    """Test unauthenticated movie API access"""
+
+    def setUp(self):
+        self.client = APIClient()
+        self.genre = sample_genre()
+        self.actor = sample_actor()
+
+    def test_auth_not_required(self):
+        """Test that authentication is not required for GET"""
+        res = self.client.get(MOVIE_URL)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+
+    def test_create_movie_login_required(self):
+        """Test that login is required for creating a movie"""
+        payload = {
+            "title": "Новий фільм",
+            "description": "Опис фільму",
+            "duration": 90,
+        }
+        res = self.client.post(MOVIE_URL, payload)
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+
+class PrivateMovieApiTests(TestCase):
+    """Test authenticated movie API access"""
+
+    def setUp(self):
+        self.client = APIClient()
+        self.user = get_user_model().objects.create_user(
+            "test@test.com",
+            "testpass",
+        )
+        self.client.force_authenticate(self.user)
+        self.genre = sample_genre()
+        self.actor = sample_actor()
+
+    def test_list_movies(self):
+        """Test retrieving a list of movies"""
+        sample_movie()
+        sample_movie(title="Another movie")
+
+        res = self.client.get(MOVIE_URL)
+
+        movies = Movie.objects.all()
+        serializer = MovieListSerializer(movies, many=True)
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data, serializer.data)
+
+    def test_retrieve_movie_detail(self):
+        """Test retrieving a movie detail"""
+        movie = sample_movie()
+        movie.genres.add(self.genre)
+        movie.actors.add(self.actor)
+
+        url = detail_url(movie.id)
+        res = self.client.get(url)
+
+        serializer = MovieDetailSerializer(movie)
+        self.assertEqual(res.data, serializer.data)
+
+    def test_create_movie_forbidden(self):
+        """Test that regular user can't create a movie"""
+        payload = {
+            "title": "Test movie",
+            "description": "Test description",
+            "duration": 90,
+        }
+        res = self.client.post(MOVIE_URL, payload)
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+
+
+class AdminMovieApiTests(TestCase):
+    """Test movie API for admin user"""
+
+    def setUp(self):
+        self.client = APIClient()
+        self.user = get_user_model().objects.create_superuser(
+            "admin@test.com",
+            "testpass",
+        )
+        self.client.force_authenticate(self.user)
+        self.genre = sample_genre()
+        self.actor = sample_actor()
+
+    def test_create_movie(self):
+        """Test creating a movie as admin"""
+        payload = {
+            "title": "Test movie",
+            "description": "Test description",
+            "duration": 90,
+            "genres": [self.genre.id],
+            "actors": [self.actor.id],
+        }
+        res = self.client.post(MOVIE_URL, payload)
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+
+        movie = Movie.objects.get(id=res.data["id"])
+        for key in ["title", "description", "duration"]:
+            self.assertEqual(payload[key], getattr(movie, key))
+
+    def test_filter_movies_by_genres(self):
+        """Test filtering movies by genres"""
+        movie1 = sample_movie(title="Movie 1")
+        movie2 = sample_movie(title="Movie 2")
+        genre1 = Genre.objects.create(name="Genre 1")
+        genre2 = Genre.objects.create(name="Genre 2")
+        movie1.genres.add(genre1)
+        movie2.genres.add(genre2)
+
+        res = self.client.get(MOVIE_URL, {"genres": f"{genre1.id}"})
+
+        serializer1 = MovieListSerializer(movie1)
+        serializer2 = MovieListSerializer(movie2)
+        self.assertIn(serializer1.data, res.data)
+        self.assertNotIn(serializer2.data, res.data)
+
+    def test_filter_movies_by_actors(self):
+        """Test filtering movies by actors"""
+        movie1 = sample_movie(title="Movie 1")
+        movie2 = sample_movie(title="Movie 2")
+        actor1 = Actor.objects.create(first_name="Actor 1", last_name="Last 1")
+        actor2 = Actor.objects.create(first_name="Actor 2", last_name="Last 2")
+        movie1.actors.add(actor1)
+        movie2.actors.add(actor2)
+
+        res = self.client.get(MOVIE_URL, {"actors": f"{actor1.id}"})
+
+        serializer1 = MovieListSerializer(movie1)
+        serializer2 = MovieListSerializer(movie2)
+        self.assertIn(serializer1.data, res.data)
+        self.assertNotIn(serializer2.data, res.data)
+
+    def test_filter_movies_by_title(self):
+        """Test filtering movies by title"""
+        movie1 = sample_movie(title="Action movie")
+        movie2 = sample_movie(title="Drama movie")
+
+        res = self.client.get(MOVIE_URL, {"title": "action"})
+
+        serializer1 = MovieListSerializer(movie1)
+        serializer2 = MovieListSerializer(movie2)
+        self.assertIn(serializer1.data, res.data)
+        self.assertNotIn(serializer2.data, res.data)
+
+
 class MovieImageUploadTests(TestCase):
     def setUp(self):
         self.client = APIClient()
@@ -114,8 +262,8 @@ class MovieImageUploadTests(TestCase):
                     "title": "Title",
                     "description": "Description",
                     "duration": 90,
-                    "genres": [1],
-                    "actors": [1],
+                    "genres": [self.genre.id],
+                    "actors": [self.actor.id],
                     "image": ntf,
                 },
                 format="multipart",
