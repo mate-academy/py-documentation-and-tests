@@ -138,7 +138,7 @@ class TicketSerializer(serializers.ModelSerializer):
             if not movie_session:
                 missing_fields.append("movie_session")
             raise ValidationError(
-                f"Наступні поля обов'язкові: {", ".join(missing_fields)}"
+                f'Наступні поля обов\'язкові: {", ".join(missing_fields)}'
             )
 
         Ticket.validate_ticket(
