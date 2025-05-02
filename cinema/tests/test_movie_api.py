@@ -43,9 +43,7 @@ def sample_actor(**params):
 
 
 def sample_movie_session(**params):
-    cinema_hall = CinemaHall.objects.create(
-        name="Blue", rows=20, seats_in_row=20
-    )
+    cinema_hall = CinemaHall.objects.create(name="Blue", rows=20, seats_in_row=20)
 
     defaults = {
         "show_time": "2022-06-02 14:00:00",
@@ -157,3 +155,92 @@ class MovieImageUploadTests(TestCase):
         res = self.client.get(MOVIE_SESSION_URL)
 
         self.assertIn("movie_image", res.data[0].keys())
+
+
+class MovieViewSetTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.user = get_user_model().objects.create_user(
+            email="user@example.com", password="password123"
+        )
+        self.admin = get_user_model().objects.create_superuser(
+            email="admin@example.com", password="adminpass123"
+        )
+        self.client.force_authenticate(self.admin)
+
+    def test_list_movies(self):
+        Movie.objects.create(title="Movie A", description="Test A", duration=90)
+        Movie.objects.create(title="Movie B", description="Test B", duration=120)
+
+        self.client.force_authenticate(user=self.user)
+        res = self.client.get(MOVIE_URL)
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(res.data), 2)
+
+    def test_filter_movies_by_title(self):
+        Movie.objects.create(title="Fast Action", description="A", duration=100)
+        Movie.objects.create(title="Love Story", description="B", duration=80)
+        res = self.client.get(MOVIE_URL, {"title": "fast"})
+        self.assertEqual(len(res.data), 1)
+        self.assertEqual(res.data[0]["title"], "Fast Action")
+
+    def test_filter_movies_by_genre_and_actor(self):
+        genre = sample_genre(name="Thriller")
+        actor = sample_actor(first_name="Emma", last_name="Stone")
+        movie = sample_movie(title="Thriller Flick")
+        movie.genres.add(genre)
+        movie.actors.add(actor)
+
+        res = self.client.get(
+            MOVIE_URL,
+            {
+                "genres": str(genre.id),
+                "actors": str(actor.id),
+            },
+        )
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(res.data), 1)
+        self.assertEqual(res.data[0]["title"], "Thriller Flick")
+
+    def test_retrieve_movie_detail(self):
+        movie = sample_movie(title="Detail Movie")
+        url = detail_url(movie.id)
+        res = self.client.get(url)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data["title"], movie.title)
+
+    def test_create_movie_as_admin(self):
+        genre = sample_genre(name="Sci-Fi")
+        actor = sample_actor(first_name="Chris", last_name="Pratt")
+        payload = {
+            "title": "New Movie",
+            "description": "Some description",
+            "duration": 110,
+            "genres": [genre.id],
+            "actors": [actor.id],
+        }
+        res = self.client.post(MOVIE_URL, payload)
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        self.assertTrue(Movie.objects.filter(title="New Movie").exists())
+
+    def test_create_movie_denied_for_normal_user(self):
+        self.client.force_authenticate(user=self.user)
+        payload = {
+            "title": "Blocked Movie",
+            "description": "Should not pass",
+            "duration": 100,
+        }
+        res = self.client.post(MOVIE_URL, payload)
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_upload_image_unauthorized(self):
+        movie = sample_movie(title="No Image Movie")
+        self.client.force_authenticate(user=None)  # Unauthenticated
+        url = image_upload_url(movie.id)
+        with tempfile.NamedTemporaryFile(suffix=".jpg") as ntf:
+            img = Image.new("RGB", (100, 100))
+            img.save(ntf, format="JPEG")
+            ntf.seek(0)
+            res = self.client.post(url, {"image": ntf}, format="multipart")
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
