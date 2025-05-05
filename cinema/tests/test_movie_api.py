@@ -249,9 +249,18 @@ class MovieViewSetTests(TestCase):
         movie = Movie.objects.create(title="Image Upload Movie", duration=120)
         upload_url = self.get_movie_image_upload_url(movie.id)
 
-        upload_payload = {}
-        response_non_admin = self.api_client.post(upload_url, upload_payload)
-        self.assertEqual(response_non_admin.status_code, status.HTTP_403_FORBIDDEN)
+        with tempfile.NamedTemporaryFile(suffix=".jpg") as image_file:
+            image = Image.new("RGB", (100, 100))
+            image.save(image_file, format="JPEG")
+            image_file.seek(0)
+
+            upload_payload = {
+                "image": image_file,
+            }
+            response_non_admin = self.api_client.post(
+                upload_url, upload_payload, format="multipart"
+            )
+            self.assertEqual(response_non_admin.status_code, status.HTTP_403_FORBIDDEN)
 
         self.user.is_staff = True
         self.user.save()
