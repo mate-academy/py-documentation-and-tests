@@ -206,8 +206,8 @@ class AuthenticatedMovieApiTests(TestCase):
         payload = {
             "title": "AA 0003 AA",
             "duration": 11,
-            "genres": [sample_genre()],
-            "actors": [sample_actor()],
+            "genres": [sample_genre().id],
+            "actors": [sample_actor().id],
         }
 
         res = self.client.post(MOVIE_URL, payload)
