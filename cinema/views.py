@@ -132,7 +132,7 @@ class MovieViewSet(
         parameters=[
             OpenApiParameter(
                 name="title",
-                type={"type": "array", "items": {"type": "numbers"}},
+                type={"type": "array", "items": {"type": "string"}},
                 description="The title of the movie",
             ),
             OpenApiParameter(
