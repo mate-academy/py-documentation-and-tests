@@ -123,11 +123,23 @@ class MovieSessionListSerializer(MovieSessionSerializer):
 
 class TicketSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
-        data = super(TicketSerializer, self).validate(attrs=attrs)
+        data = super().validate(attrs)
+
+        row = attrs.get("row")
+        seat = attrs.get("seat")
+        movie_session = attrs.get("movie_session")
+
+        if row is None:
+            raise serializers.ValidationError("Row is required")
+        if seat is None:
+            raise serializers.ValidationError("Seat is required")
+        if movie_session is None:
+            raise serializers.ValidationError("Movie session is required")
+
         Ticket.validate_ticket(
-            attrs["row"], 
-            attrs["seat"], 
-            attrs["movie_session"].cinema_hall, 
+            row,
+            seat,
+            movie_session.cinema_hall,
             ValidationError
         )
         return data
