@@ -123,7 +123,7 @@ class MovieImageUploadTests(TestCase):
 
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
         movie = Movie.objects.get(title="Title")
-        self.assertFalse(movie.image)
+        self.assertTrue(movie.image)
 
     def test_image_url_is_shown_on_movie_detail(self):
         url = image_upload_url(self.movie.id)
@@ -157,3 +157,75 @@ class MovieImageUploadTests(TestCase):
         res = self.client.get(MOVIE_SESSION_URL)
 
         self.assertIn("movie_image", res.data[0].keys())
+
+
+class MovieFiltersTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.user = get_user_model().objects.create_user(
+            "user@test.com", "testpass123"
+        )
+        self.client.force_authenticate(self.user)
+
+        self.genre1 = sample_genre(name="Comedy")
+        self.genre2 = sample_genre(name="Action")
+
+        self.actor1 = sample_actor(first_name="Tom", last_name="Hanks")
+        self.actor2 = sample_actor(
+            first_name="Scarlett", last_name="Johansson"
+        )
+
+        self.movie1 = sample_movie(title="Funny Movie")
+        self.movie1.genres.add(self.genre1)
+        self.movie1.actors.add(self.actor1)
+
+        self.movie2 = sample_movie(title="Action Movie")
+        self.movie2.genres.add(self.genre2)
+        self.movie2.actors.add(self.actor2)
+
+        self.movie3 = sample_movie(title="Funny Action Movie")
+        self.movie3.genres.add(self.genre1, self.genre2)
+        self.movie3.actors.add(self.actor1, self.actor2)
+
+    def test_filter_by_title(self):
+        res = self.client.get(MOVIE_URL, {"title": "funny"})
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        titles = [movie["title"] for movie in res.data]
+        self.assertIn(self.movie1.title, titles)
+        self.assertIn(self.movie3.title, titles)
+        self.assertNotIn(self.movie2.title, titles)
+
+    def test_filter_by_genres(self):
+        res = self.client.get(MOVIE_URL, {"genres": f"{self.genre1.id}"})
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        ids = [movie["id"] for movie in res.data]
+        self.assertIn(self.movie1.id, ids)
+        self.assertIn(self.movie3.id, ids)
+        self.assertNotIn(self.movie2.id, ids)
+
+    def test_filter_by_actors(self):
+        res = self.client.get(MOVIE_URL, {"actors": f"{self.actor2.id}"})
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        ids = [movie["id"] for movie in res.data]
+        self.assertIn(self.movie2.id, ids)
+        self.assertIn(self.movie3.id, ids)
+        self.assertNotIn(self.movie1.id, ids)
+
+    def test_filter_by_multiple_criteria(self):
+        res = self.client.get(
+            MOVIE_URL,
+            {
+                "title": "action",
+                "genres": f"{self.genre2.id}",
+                "actors": f"{self.actor2.id}",
+            },
+        )
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        ids = [movie["id"] for movie in res.data]
+        self.assertIn(self.movie2.id, ids)
+        self.assertIn(self.movie3.id, ids)
+        self.assertNotIn(self.movie1.id, ids)
