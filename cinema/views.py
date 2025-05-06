@@ -203,7 +203,7 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
                 required=False,
             ),
             OpenApiParameter(
-                "movie_id_str",
+                "movie",
                 type=str,
                 description="Movie ID to filter by",
                 required=False,
