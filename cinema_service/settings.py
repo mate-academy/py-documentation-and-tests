@@ -47,8 +47,8 @@ INSTALLED_APPS = [
     "debug_toolbar",
     "cinema",
     "user",
-    "drf_spectacular"
-    "rest_framework_simplejwt"
+    "drf_spectacular",
+    "rest_framework_simplejwt",
 ]
 
 MIDDLEWARE = [
