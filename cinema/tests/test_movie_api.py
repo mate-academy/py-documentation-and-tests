@@ -10,6 +10,7 @@ from rest_framework.test import APIClient
 from rest_framework import status
 
 from cinema.models import Movie, MovieSession, CinemaHall, Genre, Actor
+from user.models import User
 
 MOVIE_URL = reverse("cinema:movie-list")
 MOVIE_SESSION_URL = reverse("cinema:moviesession-list")
@@ -157,3 +158,76 @@ class MovieImageUploadTests(TestCase):
         res = self.client.get(MOVIE_SESSION_URL)
 
         self.assertIn("movie_image", res.data[0].keys())
+
+
+class MovieViewSetTests(TestCase):
+    def setUp(self):
+        self.admin = User.objects.create_superuser("admin@example.com", "pass")
+        self.user = User.objects.create_user("user@example.com", "pass")
+
+        self.client = APIClient()
+
+        self.genre1 = Genre.objects.create(name="Action")
+        self.actor1 = Actor.objects.create(
+            first_name="Actor",
+            last_name="Test A"
+        )
+
+        self.movie1 = Movie.objects.create(
+            title="Test Movie 1",
+            description="Test",
+            duration=248
+        )
+        self.movie1.genres.add(self.genre1)
+        self.movie1.actors.add(self.actor1)
+
+    def test_list_movies(self):
+        self.client.force_authenticate(user=self.user)
+        url = reverse("cinema:movie-list")
+        res = self.client.get(url)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(res.data), Movie.objects.count())
+
+    def test_filter_movies_by_title(self):
+        url = reverse("cinema:movie-list")
+        res = self.client.get(url, {"title": "test"})
+        self.assertEqual(len(res.data), 1)
+
+    def test_filter_by_genres(self):
+        url = reverse("cinema:movie-list")
+        res = self.client.get(url, {"genres": str(self.genre1.id)})
+        self.assertEqual(len(res.data), 1)
+
+    def test_filter_by_actors(self):
+        url = reverse("cinema:movie-list")
+        res = self.client.get(url, {"actors": str(self.actor1.id)})
+        self.assertEqual(len(res.data), 1)
+
+    def test_retrieve_movie(self):
+        self.client.force_authenticate(user=self.user)
+        url = reverse("cinema:movie-detail", args=[self.movie1.id])
+        res = self.client.get(url)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertIn("title", res.data)
+
+    def test_create_movie_as_admin(self):
+        self.client.force_authenticate(user=self.admin)
+        payload = {
+            "title": "New Movie",
+            "description": "New Movie Description",
+            "duration": 120,
+            "genres": [self.genre1.id],
+            "actors": [self.actor1.id],
+        }
+        res = self.client.post(
+            reverse("cinema:movie-list"),
+            payload,
+            format="json"
+        )
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+
+    def test_create_movie_as_user_forbidden(self):
+        self.client.force_authenticate(user=self.user)
+        payload = {"title": "Fail Movie"}
+        res = self.client.post(reverse("cinema:movie-list"), payload)
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
