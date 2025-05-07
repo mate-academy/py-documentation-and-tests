@@ -8,6 +8,7 @@ from django.urls import reverse
 
 from rest_framework.test import APIClient
 from rest_framework import status
+from rest_framework_simplejwt.tokens import RefreshToken
 
 from cinema.models import Movie, MovieSession, CinemaHall, Genre, Actor
 from cinema.serializers import MovieDetailSerializer, MovieListSerializer
@@ -176,7 +177,12 @@ class PrivateMovieApiTests(TestCase):
             "testpass123"
         )
         self.client = APIClient()
-        self.client.force_authenticate(self.user)
+        self._authenticate(self.user)
+
+    def _authenticate(self, user):
+        refresh = RefreshToken.for_user(user)
+        access_token = str(refresh.access_token)
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {access_token}")
 
     def test_retrieve_movies(self):
         sample_movie()
@@ -247,7 +253,12 @@ class AdminMovieApiTests(TestCase):
             is_staff=True,
         )
         self.client = APIClient()
-        self.client.force_authenticate(self.admin_user)
+        self._authenticate(self.admin_user)
+
+    def _authenticate(self, user):
+        refresh = RefreshToken.for_user(user)
+        access_token = str(refresh.access_token)
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {access_token}")
 
     def test_create_movie_successful(self):
         genre = sample_genre()
