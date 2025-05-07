@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from django.db.models import F, Count
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import viewsets, mixins, status
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import action
@@ -61,12 +62,16 @@ class CinemaHallViewSet(
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
 
+@extend_schema(tags=["movies"])
 class MovieViewSet(
     mixins.ListModelMixin,
     mixins.CreateModelMixin,
     mixins.RetrieveModelMixin,
     viewsets.GenericViewSet,
 ):
+    """
+    A viewset for viewing and editing movie instances.
+    """
     queryset = Movie.objects.prefetch_related("genres", "actors")
     serializer_class = MovieSerializer
     authentication_classes = (TokenAuthentication,)
@@ -110,6 +115,12 @@ class MovieViewSet(
 
         return MovieSerializer
 
+    @extend_schema(
+        summary="Upload movie image",
+        description="Upload an image for a specific movie",
+        request=MovieImageSerializer,
+        responses={200: MovieImageSerializer},
+    )
     @action(
         methods=["POST"],
         detail=True,
@@ -127,8 +138,56 @@ class MovieViewSet(
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="title",
+                description="Filter by movie title (case-insensitive)",
+                required=False,
+                type=str,
+            ),
+            OpenApiParameter(
+                name="genres",
+                description="Filter by genre IDs (comma-separated)",
+                required=False,
+                type=str,
+            ),
+            OpenApiParameter(
+                name="actors",
+                description="Filter by actor IDs (comma-separated)",
+                required=False,
+                type=str,
+            ),
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        """
+        List all movies with optional filtering.
 
+        You can filter movies by:
+        * title (case-insensitive partial match)
+        * genres (comma-separated list of genre IDs)
+        * actors (comma-separated list of actor IDs)
+        """
+        return super().list(request, *args, **kwargs)
+
+    @extend_schema(
+        responses={
+            200: MovieDetailSerializer,
+        }
+    )
+    def retrieve(self, request, *args, **kwargs):
+        """
+        Retrieve detailed information about a specific movie.
+        """
+        return super().retrieve(request, *args, **kwargs)
+
+
+@extend_schema(tags=["movie sessions"])
 class MovieSessionViewSet(viewsets.ModelViewSet):
+    """
+    A viewset for viewing and editing movie session instances.
+    """
     queryset = (
         MovieSession.objects.all()
         .select_related("movie", "cinema_hall")
@@ -144,6 +203,7 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
     def get_queryset(self):
+        """Retrieve the movie sessions with filters"""
         date = self.request.query_params.get("date")
         movie_id_str = self.request.query_params.get("movie")
 
@@ -166,6 +226,43 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
             return MovieSessionDetailSerializer
 
         return MovieSessionSerializer
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="date",
+                description="Filter by date (YYYY-MM-DD)",
+                required=False,
+                type=str,
+            ),
+            OpenApiParameter(
+                name="movie",
+                description="Filter by movie ID",
+                required=False,
+                type=int,
+            ),
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        """
+        List all movie sessions with optional filtering.
+
+        You can filter movie sessions by:
+        * date (YYYY-MM-DD format)
+        * movie ID
+        """
+        return super().list(request, *args, **kwargs)
+
+    @extend_schema(
+        responses={
+            200: MovieSessionDetailSerializer,
+        }
+    )
+    def retrieve(self, request, *args, **kwargs):
+        """
+        Retrieve detailed information about a specific movie session.
+        """
+        return super().retrieve(request, *args, **kwargs)
 
 
 class OrderPagination(PageNumberPagination):
