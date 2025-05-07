@@ -54,27 +54,27 @@ REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
-    "DEFAULT_THROTTLE_CLASSES": [
-       "rest_framework.throttling.AnonRateThrottle",
-       "rest_framework.throttling.UserRateThrottle"
-    ],
+    "DEFAULT_THROTTLE_CLASSES": (
+        "rest_framework.throttling.AnonRateThrottle",
+        "rest_framework.throttling.UserRateThrottle"
+    ),
     "DEFAULT_THROTTLE_RATES": {
-       "anon": "10/minute",
-       "user": "30/minute"
+        "anon": "10/minute",
+        "user": "30/minute"
     }
 }
 
 SPECTACULAR_SETTINGS = {
-    'TITLE': "Movie API",
-    'DESCRIPTION': "Documentation to work with films",
-    'VERSION': "1.0.0",
-    'SERVE_INCLUDE_SCHEMA': False,
+    "TITLE": "Movie API",
+    "DESCRIPTION": "Documentation to work with films",
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
 }
 
 SIMPLE_JWT = {
-   "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
-   "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
-   "ROTATE_REFRESH_TOKENS": True
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+    "ROTATE_REFRESH_TOKENS": True
 }
 
 MIDDLEWARE = [

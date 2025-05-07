@@ -10,6 +10,7 @@ from rest_framework.test import APIClient
 from rest_framework import status
 
 from cinema.models import Movie, MovieSession, CinemaHall, Genre, Actor
+from cinema.serializers import MovieListSerializer, MovieDetailSerializer
 
 MOVIE_URL = reverse("cinema:movie-list")
 MOVIE_SESSION_URL = reverse("cinema:moviesession-list")
@@ -157,3 +158,57 @@ class MovieImageUploadTests(TestCase):
         res = self.client.get(MOVIE_SESSION_URL)
 
         self.assertIn("movie_image", res.data[0].keys())
+
+
+class MovieViewSetTest(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.user = get_user_model().objects.create_user(
+            email="user@user1.com",
+            password="test123"
+        )
+
+        self.genres = sample_genre()
+        self.actor = sample_actor()
+        self.movie = sample_movie()
+        self.movie.genres.add(self.genres)
+        self.movie.actors.add(self.actor)
+        self.client.force_authenticate(self.user)
+
+    def test_movie_list(self):
+        url = reverse("cinema:movie-list")
+        res = self.client.get(url)
+
+        items = Movie.objects.all()
+        serializer = MovieListSerializer(items, many=True)
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(serializer.data, res.data)
+
+    def test_movie_retrieve(self):
+        url = reverse("cinema:movie-detail", args=[self.movie.id])
+        res = self.client.get(url)
+
+        serializer = MovieDetailSerializer(self.movie)
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(serializer.data, res.data)
+
+    def test_filter_movies_by_title(self):
+        response = self.client.get(reverse("cinema:movie-list"), {"title": "Sample"})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data[0]["title"], "Sample movie")
+
+    def test_filter_movies_by_genres(self):
+        response = self.client.get(reverse("cinema:movie-list"), {"genres": f"{self.genres.id}"})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_retrieve_movie(self):
+        response = self.client.get(reverse("cinema:movie-detail", args=[self.movie.id]))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["title"], self.movie.title)
+
+    def test_create_movie_as_regular_user(self):
+        self.client.force_authenticate(self.user)
+        response = self.client.post(reverse("cinema:movie-list"), {"title": "Sample movie"})
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
