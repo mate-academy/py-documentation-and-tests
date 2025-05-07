@@ -32,6 +32,13 @@ class CinemaHallSerializer(serializers.ModelSerializer):
 
 
 class MovieSerializer(serializers.ModelSerializer):
+    genres = serializers.PrimaryKeyRelatedField(
+        many=True, queryset=Genre.objects.all(), required=False
+    )
+    actors = serializers.PrimaryKeyRelatedField(
+        many=True, queryset=Actor.objects.all(), required=False
+    )
+
     class Meta:
         model = Movie
         fields = (
@@ -124,10 +131,20 @@ class MovieSessionListSerializer(MovieSessionSerializer):
 class TicketSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         data = super(TicketSerializer, self).validate(attrs=attrs)
+
+        row = attrs.get("row")
+        seat = attrs.get("seat")
+        movie_session = attrs.get("movie_session")
+
+        if not all([row, seat, movie_session]):
+            raise ValidationError(
+                "Missing required fields: row, seat, or movie_session"
+            )
+
         Ticket.validate_ticket(
-            attrs["row"], 
-            attrs["seat"], 
-            attrs["movie_session"].cinema_hall, 
+            row,
+            seat,
+            movie_session.cinema_hall,
             ValidationError
         )
         return data
