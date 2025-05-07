@@ -125,9 +125,9 @@ class TicketSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         data = super(TicketSerializer, self).validate(attrs=attrs)
         Ticket.validate_ticket(
-            attrs["row"], 
-            attrs["seat"], 
-            attrs["movie_session"].cinema_hall, 
+            attrs["row"],
+            attrs["seat"],
+            attrs["movie_session"].cinema_hall,
             ValidationError
         )
         return data
@@ -166,12 +166,23 @@ class OrderSerializer(serializers.ModelSerializer):
         model = Order
         fields = ("id", "tickets", "created_at")
 
+    def validate_tickets(self, tickets):
+        if not tickets:
+            raise serializers.ValidationError(
+                "At least one ticket is required"
+            )
+        return tickets
+
     def create(self, validated_data):
+        tickets_data = validated_data.pop("tickets")
+        user = self.context["request"].user
+
         with transaction.atomic():
-            tickets_data = validated_data.pop("tickets")
-            order = Order.objects.create(**validated_data)
+            order = Order.objects.create(user=user)
             for ticket_data in tickets_data:
-                Ticket.objects.create(order=order, **ticket_data)
+                serializer = TicketSerializer(data=ticket_data)
+                serializer.is_valid(raise_exception=True)
+                serializer.save(order=order)
             return order
 
 
