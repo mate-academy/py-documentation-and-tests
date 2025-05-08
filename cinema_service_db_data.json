@@ -236,7 +236,7 @@
     "model": "cinema.moviesession",
     "pk": 1,
     "fields": {
-      "show_time": "2024-10-08T13:00:00Z",
+      "show_time": "2024-10-08T13:00:00",
       "movie": 1,
       "cinema_hall": 1
     }
@@ -245,7 +245,7 @@
     "model": "cinema.moviesession",
     "pk": 2,
     "fields": {
-      "show_time": "2024-10-09T13:00:00Z",
+      "show_time": "2024-10-09T13:00:00",
       "movie": 2,
       "cinema_hall": 2
     }
@@ -254,7 +254,7 @@
     "model": "cinema.moviesession",
     "pk": 3,
     "fields": {
-      "show_time": "2024-10-10T13:00:00Z",
+      "show_time": "2024-10-10T13:00:00",
       "movie": 3,
       "cinema_hall": 3
     }
@@ -263,7 +263,7 @@
     "model": "cinema.moviesession",
     "pk": 4,
     "fields": {
-      "show_time": "2024-10-11T13:00:00Z",
+      "show_time": "2024-10-11T13:00:00",
       "movie": 4,
       "cinema_hall": 4
     }
@@ -272,7 +272,7 @@
     "model": "cinema.moviesession",
     "pk": 5,
     "fields": {
-      "show_time": "2024-10-12T13:00:00Z",
+      "show_time": "2024-10-12T13:00:00",
       "movie": 4,
       "cinema_hall": 1
     }
@@ -281,7 +281,7 @@
     "model": "cinema.moviesession",
     "pk": 6,
     "fields": {
-      "show_time": "2024-10-13T13:00:00Z",
+      "show_time": "2024-10-13T13:00:00",
       "movie": 3,
       "cinema_hall": 2
     }
@@ -290,7 +290,7 @@
     "model": "cinema.moviesession",
     "pk": 7,
     "fields": {
-      "show_time":"2024-10-14T13:00:00Z",
+      "show_time":"2024-10-14T13:00:00",
       "movie": 1,
       "cinema_hall": 3
     }
@@ -299,7 +299,7 @@
     "model": "cinema.moviesession",
     "pk": 8,
     "fields": {
-      "show_time": "2024-10-15T13:00:00Z",
+      "show_time": "2024-10-15T13:00:00",
       "movie": 2,
       "cinema_hall": 4
     }
@@ -308,7 +308,7 @@
     "model": "cinema.order",
     "pk": 1,
     "fields": {
-      "created_at": "2022-08-09T09:06:18.876Z",
+      "created_at": "2022-08-09T09:06:18.876",
       "user": 1
     }
   },
@@ -316,7 +316,7 @@
     "model": "cinema.order",
     "pk": 2,
     "fields": {
-      "created_at": "2022-08-09T09:06:18.876Z",
+      "created_at": "2022-08-09T09:06:18.876",
       "user": 2
     }
   },
@@ -324,7 +324,7 @@
     "model": "cinema.order",
     "pk": 3,
     "fields": {
-      "created_at": "2022-08-09T09:06:18.876Z",
+      "created_at": "2022-08-09T09:06:18.876",
       "user": 1
     }
   },
@@ -332,7 +332,7 @@
     "model": "cinema.order",
     "pk": 4,
     "fields": {
-      "created_at": "2022-08-09T09:06:18.876Z",
+      "created_at": "2022-08-09T09:06:18.876",
       "user": 3
     }
   },
@@ -508,7 +508,7 @@
       "email": "admin.user@cinema.com",
       "is_staff": true,
       "is_active": true,
-      "date_joined": "2022-08-09T09:06:18.876Z",
+      "date_joined": "2022-08-09T09:06:18.876",
       "groups": [],
       "user_permissions": []
     }
@@ -525,7 +525,7 @@
       "email": "ivan.khripko@cinema.com",
       "is_staff": false,
       "is_active": true,
-      "date_joined": "2022-08-09T09:06:18.876Z",
+      "date_joined": "2022-08-09T09:06:18.876",
       "groups": [],
       "user_permissions": []
     }
@@ -542,7 +542,7 @@
       "email": "mykola.hmara@cinema.com",
       "is_staff": false,
       "is_active": true,
-      "date_joined": "2022-08-09T09:06:18.876Z",
+      "date_joined": "2022-08-09T09:06:18.876",
       "groups": [],
       "user_permissions": []
     }
