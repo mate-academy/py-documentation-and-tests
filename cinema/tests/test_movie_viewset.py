@@ -75,15 +75,15 @@ class MovieViewAuthenticatedTest(APITestCase):
         res = self.client.get(BASE_URL, {
             "genres": "1"
         })
-        movies = Movie.objects.filter(genres="1")
+        movies = Movie.objects.filter(genres_id=1)
         serializer = MovieListSerializer(movies, many=True)
         self.assertEqual(res.data, serializer.data)
 
     def test_filter_movies_by_actors(self):
         res = self.client.get(BASE_URL, {
-            "genres": "1"
+            "actors": "1"
         })
-        movies = Movie.objects.filter(genres="1")
+        movies = Movie.objects.filter(actors_id=1)
         serializer = MovieListSerializer(movies, many=True)
         self.assertEqual(res.data, serializer.data)
 
