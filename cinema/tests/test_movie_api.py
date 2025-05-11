@@ -8,7 +8,6 @@ from django.urls import reverse
 
 from rest_framework.test import APIClient
 from rest_framework import status
-from yaml import serialize
 
 from cinema.models import Movie, MovieSession, CinemaHall, Genre, Actor
 from cinema.serializers import MovieSerializer
@@ -163,23 +162,6 @@ class MovieImageUploadTests(TestCase):
         self.assertIn("movie_image", res.data[0].keys())
 
 
-def sample_movie(**params) -> Movie:
-    defaults = {
-        "title": "Title",
-        "description": "Description",
-        "duration": 90,
-        "genres": "Genre",
-        "actors": "Actor",
-        "image": None,
-    }
-    defaults.update(params)
-    return Movie.objects.create(**defaults)
-
-
-def detail_url(movie_id):
-    return reverse("movie-detail", args=(movie_id,))
-
-
 class UnauthenticatedCinemaAPITests(TestCase):
     def setUp(self):
         self.client = APIClient()
@@ -217,13 +199,13 @@ class AuthenticatedCinemaAPITests(TestCase):
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(res.data, serializer.data)
 
-    def create_movie_forbidden(self):
+    def test_create_movie_forbidden(self):
         payload = {
             "title": "Title",
             "description": "Description",
             "duration": 90,
-            "genres": "Genre",
-            "actors": "Actor",
+            "genres": [1,2],
+            "actors": [1,2],
             "image": None,
         }
         res = self.client.post(MOVIE_URL, payload)
@@ -243,8 +225,8 @@ class AdminMovieTest(TestCase):
             "title": "Title",
             "description": "Description",
             "duration": 90,
-            "genres": "Genre",
-            "actors": "Actor",
+            "genres": [1,2],
+            "actors": [1,2],
             "image": None,
         }
 

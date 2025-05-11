@@ -128,17 +128,17 @@ class MovieViewSet(
         parameters=[
             OpenApiParameter(
                 name="title",
-                type={"type": "array", "items": {"type": "string"}},
+                type={"type": "string", "items": {"type": "string"}},
                 description="Filter by title",
             ),
             OpenApiParameter(
                 name="genres",
-                type={"type": "array", "items": {"type": "string"}},
+                type={"type": "string", "items": {"type": "string"}},
                 description="Filter by genres",
             ),
             OpenApiParameter(
                 name="actors",
-                type={"type": "array", "items": {"type": "string"}},
+                type={"type": "string", "items": {"type": "string"}},
                 description="Filter by actors",
             )
         ]
@@ -189,7 +189,7 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
         parameters=[
             OpenApiParameter(
                 name="movie",
-                type={"type": "array", "items": {"type": "string"}},
+                type={"type": "string", "items": {"type": "string"}},
                 description="Filter by movie",
             ),
             OpenApiParameter(
