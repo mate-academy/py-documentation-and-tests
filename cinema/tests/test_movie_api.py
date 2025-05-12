@@ -157,3 +157,42 @@ class MovieImageUploadTests(TestCase):
         res = self.client.get(MOVIE_SESSION_URL)
 
         self.assertIn("movie_image", res.data[0].keys())
+
+    def test_upload_large_image(self):
+        """Test uploading a large image (edge case)"""
+        url = image_upload_url(self.movie.id)
+        with tempfile.NamedTemporaryFile(suffix=".jpg") as ntf:
+            img = Image.new("RGB", (5000, 5000))  # велике зображення
+            img.save(ntf, format="JPEG")
+            ntf.seek(0)
+            res = self.client.post(url, {"image": ntf}, format="multipart")
+
+        self.movie.refresh_from_db()
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertTrue(os.path.exists(self.movie.image.path))
+
+    def test_upload_non_image_file(self):
+        """Test that uploading a non-image file fails"""
+        url = image_upload_url(self.movie.id)
+        with tempfile.NamedTemporaryFile(suffix=".txt", mode="w+") as ntf:
+            ntf.write("not an image")
+            ntf.seek(0)
+            res = self.client.post(url, {"image": ntf}, format="multipart")
+
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_non_admin_cannot_upload_image(self):
+        """Test that non-admin user cannot upload an image"""
+        self.client.logout()
+        user = get_user_model().objects.create_user("user@test.com", "password")
+        self.client.force_authenticate(user)
+
+        url = image_upload_url(self.movie.id)
+        with tempfile.NamedTemporaryFile(suffix=".jpg") as ntf:
+            img = Image.new("RGB", (10, 10))
+            img.save(ntf, format="JPEG")
+            ntf.seek(0)
+            res = self.client.post(url, {"image": ntf}, format="multipart")
+
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+
