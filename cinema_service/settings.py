@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     "cinema",
     "user",
     "drf_spectacular",
+    "rest_framework_simplejwt",
 ]
 
 MIDDLEWARE = [

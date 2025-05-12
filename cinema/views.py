@@ -203,15 +203,15 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
     @extend_schema(
         parameters=[
             OpenApiParameter(
-                name="data",
-                description="Filter by movie data (format: YYYY-MM-DD)",
+                name="date",
+                description="Filter by movie date (format: YYYY-MM-DD)",
                 required=False,
                 type=str,
                 location=OpenApiParameter.QUERY,
             ),
             OpenApiParameter(
                 name="movie",
-                description="Filter by movie ID(s). Example: ?movie=1",
+                description="Filter by movie ID. Example: ?movie=1",
                 required=False,
                 type=int,
                 location=OpenApiParameter.QUERY

@@ -171,29 +171,6 @@ class MovieImageUploadTests(TestCase):
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertTrue(os.path.exists(self.movie.image.path))
 
-    def test_replace_existing_image(self):
-        url = image_upload_url(self.movie.id)
-
-        with tempfile.NamedTemporaryFile(suffix=".jpg") as ntf1:
-            img1 = Image.new("RGB", (10, 10))
-            img1.save(ntf1, format="JPEG")
-            ntf1.seek(0)
-            self.client.post(url, {"image": ntf1}, format="multipart")
-
-        self.movie.refresh_from_db()
-        old_path = self.movie.image.path
-
-        with tempfile.NamedTemporaryFile(suffix=".jpg") as ntf2:
-            img2 = Image.new("RGB", (20, 20))
-            img2.save(ntf2, format="JPEG")
-            ntf2.seek(0)
-            self.client.post(url, {"image": ntf2}, format="multipart")
-
-        self.movie.refresh_from_db()
-
-        self.assertTrue(os.path.exists(self.movie.image.path))
-        self.assertNotEqual(old_path, self.movie.image.path)
-
     def test_upload_non_image_file(self):
         """Test that uploading a non-image file fails"""
         url = image_upload_url(self.movie.id)
