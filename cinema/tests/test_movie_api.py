@@ -3,13 +3,15 @@ import os
 
 from PIL import Image
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Permission
 from django.test import TestCase
 from django.urls import reverse
 
-from rest_framework.test import APIClient
+from rest_framework.test import APIClient, APITestCase
 from rest_framework import status
 
 from cinema.models import Movie, MovieSession, CinemaHall, Genre, Actor
+from cinema.serializers import MovieSerializer, MovieListSerializer, MovieDetailSerializer
 
 MOVIE_URL = reverse("cinema:movie-list")
 MOVIE_SESSION_URL = reverse("cinema:moviesession-list")
@@ -157,3 +159,61 @@ class MovieImageUploadTests(TestCase):
         res = self.client.get(MOVIE_SESSION_URL)
 
         self.assertIn("movie_image", res.data[0].keys())
+
+
+class MovieViewSetTestCase(APITestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.user = get_user_model().objects.create_user(
+            email="testuser@example.com", password="password123"
+        )
+        self.user.is_staff = True
+        self.user.save()
+        self.client.force_authenticate(self.user)
+        self.movie1 = Movie.objects.create(
+            title="Movie 1", description="Description 1", duration=120
+        )
+        self.movie2 = Movie.objects.create(
+            title="Movie 2", description="Description 2", duration=90
+        )
+        self.valid_data = {
+            "title": "New Movie",
+            "description": "New Description",
+            "duration": 100,
+        }
+        self.invalid_data = {
+            "title": "",
+            "description": "Invalid Description",
+            "duration": -50,
+        }
+
+    def test_list_movies(self):
+        url = reverse("cinema:movie-list")
+        response = self.client.get(url)
+        movies = Movie.objects.all()
+        serializer = MovieListSerializer(movies, many=True)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, serializer.data)
+
+    def test_retrieve_movie(self):
+        url = reverse("cinema:movie-detail", args=[self.movie1.id])
+        response = self.client.get(url)
+        serializer = MovieDetailSerializer(self.movie1)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, serializer.data)
+
+    def test_create_movie(self):
+        url = reverse("cinema:movie-list")
+        self.valid_data["genres"] = [sample_genre().id]
+        self.valid_data["actors"] = [sample_actor().id]
+        response = self.client.post(url, data=self.valid_data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(Movie.objects.count(), 3)
+        self.assertEqual(Movie.objects.last().title, "New Movie")
+
+    def test_create_movie_invalid(self):
+        url = reverse("cinema:movie-list")
+        self.invalid_data["genres"] = [sample_genre().id]
+        self.invalid_data["actors"] = [sample_actor().id]
+        response = self.client.post(url, data=self.invalid_data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
