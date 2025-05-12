@@ -204,16 +204,18 @@ class MovieViewSetTestCase(APITestCase):
 
     def test_create_movie(self):
         url = reverse("cinema:movie-list")
-        self.valid_data["genres"] = [sample_genre().id]
-        self.valid_data["actors"] = [sample_actor().id]
-        response = self.client.post(url, data=self.valid_data)
+        valid_data = self.valid_data.copy()
+        valid_data["genres"] = [sample_genre().id]
+        valid_data["actors"] = [sample_actor().id]
+        response = self.client.post(url, data=valid_data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(Movie.objects.count(), 3)
         self.assertEqual(Movie.objects.last().title, "New Movie")
 
     def test_create_movie_invalid(self):
         url = reverse("cinema:movie-list")
-        self.invalid_data["genres"] = [sample_genre().id]
-        self.invalid_data["actors"] = [sample_actor().id]
-        response = self.client.post(url, data=self.invalid_data)
+        invalid_data = self.invalid_data.copy()
+        invalid_data["genres"] = [sample_genre().id]
+        invalid_data["actors"] = [sample_actor().id]
+        response = self.client.post(url, data=invalid_data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
