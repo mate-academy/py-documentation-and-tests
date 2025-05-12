@@ -234,5 +234,14 @@ class AdminMovieTest(TestCase):
         movie = Movie.objects.get(id=res.data["id"])
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
 
-        for key in payload:
+        for key in ["title", "description", "duration"]:
             self.assertEqual(payload[key], getattr(movie, key))
+
+        self.assertCountEqual(
+            payload["genres"],
+            movie.genres.values_list("id", flat=True)
+        )
+        self.assertCountEqual(
+            payload["actors"],
+            movie.actors.values_list("id", flat=True)
+        )
