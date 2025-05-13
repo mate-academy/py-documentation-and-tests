@@ -106,7 +106,7 @@ class MovieViewSet(
         genres = self.request.query_params.get("genres")
         actors = self.request.query_params.get("actors")
 
-        queryset = self.queryset
+        queryset = self.queryset.order_by("id")
 
         if title:
             queryset = queryset.filter(title__icontains=title)

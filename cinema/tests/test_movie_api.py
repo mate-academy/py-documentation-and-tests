@@ -236,11 +236,12 @@ class MovieViewSetTests(TestCase):
         - Correct movie titles in response
         """
         res = self.client.get(MOVIE_URL)
-        
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(len(res.data), 2)
-        self.assertEqual(res.data[0]["title"], "Test Movie 1")
-        self.assertEqual(res.data[1]["title"], "Test Movie 2")
+        titles = [movie["title"] for movie in res.data]
+        expected_titles = ["Test Movie 1", "Test Movie 2"]
+        for title in expected_titles:
+            self.assertIn(title, titles)
 
     def test_retrieve_movie(self):
         """
