@@ -11,6 +11,7 @@ from rest_framework.viewsets import GenericViewSet, ReadOnlyModelViewSet
 
 from cinema.models import Genre, Actor, CinemaHall, Movie, MovieSession, Order
 from cinema.permissions import IsAdminOrIfAuthenticatedReadOnly
+from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiTypes
 
 from cinema.serializers import (
     GenreSerializer,
@@ -77,13 +78,35 @@ class MovieViewSet(
         """Converts a list of string IDs to a list of integers"""
         return [int(str_id) for str_id in qs.split(",")]
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="title",
+                type=OpenApiTypes.STR,
+                description="Filter by movie title",
+                required=False,
+            ),
+            OpenApiParameter(
+                name="genres",
+                type=OpenApiTypes.STR,
+                description="Filter by genre IDs (comma-separated)",
+                required=False,
+            ),
+            OpenApiParameter(
+                name="actors",
+                type=OpenApiTypes.STR,
+                description="Filter by actor IDs (comma-separated)",
+                required=False,
+            ),
+        ]
+    )
     def get_queryset(self):
         """Retrieve the movies with filters"""
         title = self.request.query_params.get("title")
         genres = self.request.query_params.get("genres")
         actors = self.request.query_params.get("actors")
 
-        queryset = self.queryset
+        queryset = self.queryset.order_by("id")
 
         if title:
             queryset = queryset.filter(title__icontains=title)
@@ -143,6 +166,22 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
     authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="date",
+                type=OpenApiTypes.DATE,
+                description="Filter by date (YYYY-MM-DD)",
+                required=False,
+            ),
+            OpenApiParameter(
+                name="movie",
+                type=OpenApiTypes.INT,
+                description="Filter by movie ID",
+                required=False,
+            ),
+        ]
+    )
     def get_queryset(self):
         date = self.request.query_params.get("date")
         movie_id_str = self.request.query_params.get("movie")
