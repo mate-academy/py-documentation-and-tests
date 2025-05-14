@@ -7,7 +7,8 @@ from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
-from rest_framework.viewsets import GenericViewSet, ReadOnlyModelViewSet
+from rest_framework.viewsets import GenericViewSet
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 
 from cinema.models import Genre, Actor, CinemaHall, Movie, MovieSession, Order
 from cinema.permissions import IsAdminOrIfAuthenticatedReadOnly
@@ -77,6 +78,30 @@ class MovieViewSet(
         """Converts a list of string IDs to a list of integers"""
         return [int(str_id) for str_id in qs.split(",")]
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="title",
+                description="filter by title",
+                required=False,
+                type=str
+            ),
+            OpenApiParameter(
+                name="genres",
+                description="filter by genres",
+                required=False,
+                type=str
+            ),
+            OpenApiParameter(
+                name="actors",
+                description="filter by actors",
+                required=False,
+                type=str
+            )
+        ],
+        responses={200: MovieListSerializer(many=True)}
+
+    )
     def get_queryset(self):
         """Retrieve the movies with filters"""
         title = self.request.query_params.get("title")
@@ -110,6 +135,11 @@ class MovieViewSet(
 
         return MovieSerializer
 
+    @extend_schema(
+        summary="Load image to a film",
+        request=MovieImageSerializer,
+        responses={200: MovieImageSerializer}
+    )
     @action(
         methods=["POST"],
         detail=True,
@@ -143,6 +173,22 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
     authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="date",
+                description="filter by date",
+                required=False,
+                type=datetime,
+            ),
+            OpenApiParameter(
+                name="movie",
+                description="filter by movie",
+                required=False,
+                type=int
+            )
+        ]
+    )
     def get_queryset(self):
         date = self.request.query_params.get("date")
         movie_id_str = self.request.query_params.get("movie")
