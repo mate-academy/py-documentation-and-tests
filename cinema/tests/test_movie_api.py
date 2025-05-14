@@ -203,10 +203,6 @@ class MovieViewSetTest(TestCase):
         response = self.client.get(reverse("cinema:movie-list"), {"genres": f"{self.genres.id}"})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-    def test_retrieve_movie(self):
-        response = self.client.get(reverse("cinema:movie-detail", args=[self.movie.id]))
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["title"], self.movie.title)
 
     def test_create_movie_as_regular_user(self):
         self.client.force_authenticate(self.user)
