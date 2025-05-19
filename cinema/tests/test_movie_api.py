@@ -188,7 +188,7 @@ class MovieViewSetTests(TestCase):
 
     def test_if_genres_id_in_query_params(self):
         url = MOVIE_URL
-        response = self.client.get(url, {"genres": self.movie.genres.values_list("id", flat=True) })
+        response = self.client.get(url, {"genres": list(self.movie.genres.values_list("id", flat=True)) })
 
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.status_code, 200)
@@ -196,7 +196,7 @@ class MovieViewSetTests(TestCase):
 
     def test_if_actors_id_in_query_params(self):
         url = MOVIE_URL
-        response = self.client.get(url, {"actors": self.movie.actors.values_list("id", flat=True) })
+        response = self.client.get(url, {"actors": list(self.movie.actors.values_list("id", flat=True)) })
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 1)
