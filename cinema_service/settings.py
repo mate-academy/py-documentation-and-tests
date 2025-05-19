@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "rest_framework.authtoken",
     "debug_toolbar",
+    "rest_framework_simplejwt",
     "drf_spectacular",
     "cinema",
     "user",
