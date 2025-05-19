@@ -10,6 +10,7 @@ from rest_framework.test import APIClient
 from rest_framework import status
 
 from cinema.models import Movie, MovieSession, CinemaHall, Genre, Actor
+from cinema.serializers import MovieListSerializer
 
 MOVIE_URL = reverse("cinema:movie-list")
 MOVIE_SESSION_URL = reverse("cinema:moviesession-list")
@@ -157,3 +158,47 @@ class MovieImageUploadTests(TestCase):
         res = self.client.get(MOVIE_SESSION_URL)
 
         self.assertIn("movie_image", res.data[0].keys())
+
+
+class MovieViewSetTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.user = get_user_model().objects.create_superuser(
+            "testing@gmail.com", "1qazcde3dusygfuaygoiajoa8282"
+        )
+        self.client.force_authenticate(self.user)
+        self.movie = sample_movie()
+        self.genre = sample_genre()
+        self.actor = sample_actor()
+        self.movie_session = sample_movie_session(movie=self.movie)
+
+
+    def test_if_movie_title_in_query_params(self):
+        url = MOVIE_URL
+        response = self.client.get(url, { "movie": self.movie.title })
+
+        items = Movie.objects.filter(title=self.movie.title)
+        serializer = MovieListSerializer(items, many=True)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, self.movie.title)
+        self.assertEqual(response.data, serializer.data)
+        self.assertEqual(len(response.data), 1)
+        self.assertContains(response, "Sample movie")
+
+    def test_if_genres_id_in_query_params(self):
+        url = MOVIE_URL
+        response = self.client.get(url, {"genres": self.movie.genres.values_list("id", flat=True) })
+
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Sample movie")
+
+    def test_if_actors_id_in_query_params(self):
+        url = MOVIE_URL
+        response = self.client.get(url, actors=self.movie.actors.values_list("id", flat=True))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
+        self.assertContains(response, "Sample movie")
+

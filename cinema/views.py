@@ -1,13 +1,14 @@
 from datetime import datetime
 
 from django.db.models import F, Count
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import viewsets, mixins, status
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
-from rest_framework.viewsets import GenericViewSet, ReadOnlyModelViewSet
+from rest_framework.viewsets import GenericViewSet
 
 from cinema.models import Genre, Actor, CinemaHall, Movie, MovieSession, Order
 from cinema.permissions import IsAdminOrIfAuthenticatedReadOnly
@@ -38,6 +39,25 @@ class GenreViewSet(
     authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
+    @extend_schema(
+        summary="Create Genre",
+        description="It needs to create: name",
+        methods=["POST"],
+        tags=["genre"]
+    )
+    def create(self, request, *args, **kwargs):
+        return super().create(request, *args, **kwargs)
+
+    @extend_schema(
+        summary="Get all Genres",
+        description="It shows the list with all Genres in format: "
+                    "{ id, name }",
+        methods=["GET"],
+        tags=["genre"]
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
 
 class ActorViewSet(
     mixins.CreateModelMixin,
@@ -49,6 +69,25 @@ class ActorViewSet(
     authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
+    @extend_schema(
+        summary="Get all Actors",
+        description="Get all Actors in format: "
+                    "id, first_name, last_name, full_name",
+        methods=["GET"],
+        tags=["actor"]
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+    @extend_schema(
+        summary="Create Actor",
+        description="It needs for create: first_name, last_name, full_name",
+        tags=["actor"],
+        methods=["POST"]
+    )
+    def create(self, request, *args, **kwargs):
+        return super().create(request, *args, **kwargs)
+
 
 class CinemaHallViewSet(
     mixins.CreateModelMixin,
@@ -59,6 +98,26 @@ class CinemaHallViewSet(
     serializer_class = CinemaHallSerializer
     authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
+
+    @extend_schema(
+        summary="Get all Cinema Halls ",
+        description="Get all cinema halls in format: "
+                    "{ id, name, rows, seats_in_row, capacity }",
+        methods=["GET"],
+        tags=["cinema_hall"],
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+    @extend_schema(
+        summary="Create Cinema Hall",
+        description="It needs to create: "
+                    "{ name, rows, seats_in_row, capacity }",
+        methods=["POST"],
+        tags=["cinema_hall"]
+    )
+    def create(self, request, *args, **kwargs):
+        return super().create(request, *args, **kwargs)
 
 
 class MovieViewSet(
@@ -110,6 +169,12 @@ class MovieViewSet(
 
         return MovieSerializer
 
+    @extend_schema(
+        summary="Upload Image",
+        description="It takes images in all formats",
+        tags=["movie"],
+        methods=["POST"]
+    )
     @action(
         methods=["POST"],
         detail=True,
@@ -126,6 +191,58 @@ class MovieViewSet(
             return Response(serializer.data, status=status.HTTP_200_OK)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @extend_schema(
+        summary="Get all Movies",
+        description="Get all movies in format: "
+                    "{ id, title, description, duration, genres, actors }",
+        tags=["movie"],
+        methods=["GET"],
+        parameters=[
+            OpenApiParameter(
+                name="title",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                required=False,
+                description="Filtering by title",
+            ),
+            OpenApiParameter(
+                name="genres",
+                type=int,
+                location=OpenApiParameter.QUERY,
+                required=False,
+                description="Filtering by genres"
+            ),
+            OpenApiParameter(
+                name="actors",
+                type=int,
+                location=OpenApiParameter.QUERY,
+                required=False,
+                description="Filtering by actors"
+            )
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+    @extend_schema(
+        summary="Retrieve Movie",
+        description="It can retrieve the movie by id",
+        tags=["movie"],
+        methods=["GET"],
+    )
+    def retrieve(self, request, *args, **kwargs):
+        return super().retrieve(request, *args, **kwargs)
+
+    @extend_schema(
+        summary="Create Movie",
+        description="It needs to create "
+                    "{ title, description, duration, genres, actors }",
+        tags=["movie"],
+        methods=["POST"],
+    )
+    def create(self, request, *args, **kwargs):
+        return super().create(request, *args, **kwargs)
 
 
 class MovieSessionViewSet(viewsets.ModelViewSet):
@@ -167,6 +284,102 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
 
         return MovieSessionSerializer
 
+    @extend_schema(
+        summary="Get all Movie Sessions",
+        description="Get all movie Sessions in format: { "
+                    "id, "
+                    "show_time, "
+                    "movie_title, "
+                    "movie_image, "
+                    "cinema_hall_name, "
+                    "cinema_hall_capacity, "
+                    "tickets_available "
+                    "}",
+        tags=["movie_session"],
+        methods=["GET"],
+        parameters=[
+            OpenApiParameter(
+                name="date",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="Filtering by show time",
+                required=False,
+                default="2024-10-15"
+            ),
+            OpenApiParameter(
+                name="movie",
+                type=int,
+                location=OpenApiParameter.QUERY,
+                description="Filtering by { movie.id }",
+                required=False,
+                default=2
+            )
+        ],
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+    @extend_schema(
+        summary="Create Movie Session",
+        description="It needs to create: { "
+                    "id, "
+                    "show_time, "
+                    "movie_title, "
+                    "movie_image, "
+                    "cinema_hall_name, "
+                    "cinema_hall_capacity, "
+                    "tickets_available "
+                    "}",
+        tags=["movie_session"],
+        methods=["POST"]
+    )
+    def create(self, request, *args, **kwargs):
+        return super().create(request, *args, **kwargs)
+
+    @extend_schema(
+        summary="Retrieve Movie Session",
+        description="Retrieve Movie Session by id",
+        tags=["movie_session"],
+        methods=["GET"]
+    )
+    def retrieve(self, request, *args, **kwargs):
+        return super().retrieve(request, *args, **kwargs)
+
+    @extend_schema(
+        summary="Update Movie Session",
+        description=" It can update the Movie Session be fields: { "
+                    "id, "
+                    "show_time, "
+                    "movie_title, "
+                    "movie_image, "
+                    "cinema_hall_name, "
+                    "cinema_hall_capacity, "
+                    "tickets_available "
+                    "}",
+        methods=["PUT"],
+        tags=["movie_session"]
+    )
+    def update(self, request, *args, **kwargs):
+        return super().update(request, *args, **kwargs)
+
+    @extend_schema(
+        summary="Partial Update Movie Session",
+        description="It can update Movie Session by not all fields",
+        methods=["PATCH"],
+        tags=["movie_session"]
+    )
+    def partial_update(self, request, *args, **kwargs):
+        return super().partial_update(request, *args, **kwargs)
+
+    @extend_schema(
+        summary="Destroy Movie Session",
+        description="It can delete movie session by { id }",
+        tags=["movie_session"],
+        methods=["DELETE"]
+    )
+    def destroy(self, request, *args, **kwargs):
+        return super().destroy(*args, **kwargs)
+
 
 class OrderPagination(PageNumberPagination):
     page_size = 10
@@ -197,3 +410,21 @@ class OrderViewSet(
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
+
+    @extend_schema(
+        summary="Get Orders list",
+        description="It get orders in format: { id, tickets, created_at }",
+        methods=["GET"],
+        tags=["order"]
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+    @extend_schema(
+        summary="Create Order",
+        description="It needs to create: { tickets }",
+        tags=["order"],
+        methods=["POST"]
+    )
+    def create(self, request, *args, **kwargs):
+        return super().create(request, *args, **kwargs)
