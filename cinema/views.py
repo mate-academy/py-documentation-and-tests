@@ -378,7 +378,7 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
         methods=["DELETE"]
     )
     def destroy(self, request, *args, **kwargs):
-        return super().destroy(*args, **kwargs)
+        return super().destroy(request, *args, **kwargs)
 
 
 class OrderPagination(PageNumberPagination):
