@@ -6,7 +6,7 @@
   - Password: `1qazcde3`
 
 In this task you will add tests and some advanced things to your project:
-1. Add Swagger documentation for the whole project. 
+1. Add Swagger documentation for the whole project. pip install drf-spectacular
 It should include all query params described, such as:
    - filtering by title, genres, actors for movie
    - filtering by date, movie for movie session
