@@ -315,8 +315,8 @@ class AdminMovieTests(TestCase):
         "title": "Povodyr",
         "description": "Nice film",
         "duration": 122,
-        "actors": actor.id,
-        "genres": genre.id,
+        "actors": [actor.id],
+        "genres": [genre.id],
         }
 
         res = self.client.post(MOVIE_URL, payload)
