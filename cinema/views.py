@@ -85,7 +85,7 @@ class MovieViewSet(
         genres = self.request.query_params.get("genres")
         actors = self.request.query_params.get("actors")
 
-        queryset = self.queryset
+        queryset = super().get_queryset()
 
         if title:
             queryset = queryset.filter(title__icontains=title)
@@ -180,7 +180,7 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
         date = self.request.query_params.get("date")
         movie_id_str = self.request.query_params.get("movie")
 
-        queryset = self.queryset
+        queryset = super().get_queryset()
 
         if date:
             date = datetime.strptime(date, "%Y-%m-%d").date()
@@ -242,7 +242,8 @@ class OrderViewSet(
     permission_classes = (IsAuthenticated,)
 
     def get_queryset(self):
-        return Order.objects.filter(user=self.request.user)
+        queryset = super().get_queryset()
+        return queryset.filter(user=self.request.user)
 
     def get_serializer_class(self):
         if self.action == "list":
