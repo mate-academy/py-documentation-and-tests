@@ -41,28 +41,41 @@ class MovieViewSetTests(APITestCase):
         self.movie2.genres.add(self.genre2)
         self.movie2.actors.add(self.actor2)
 
+    def _get_results(self, res):
+        if isinstance(res.data, dict):
+            return res.data.get("results", [])
+        return res.data
+
     def test_list_movies(self):
         res = self.client.get(MOVIES_URL)
         self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(res.data), 2)
+
+        results = self._get_results(res)
+        self.assertEqual(len(results), 2)
 
     def test_filter_movies_by_title(self):
         res = self.client.get(MOVIES_URL, {"title": "Avengers"})
         self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertEqual(res.data[0]["title"], "Avengers")
-        self.assertEqual(len(res.data), 1)
+
+        results = self._get_results(res)
+        self.assertEqual(results[0]["title"], "Avengers")
+        self.assertEqual(len(results), 1)
 
     def test_filter_by_genres(self):
         res = self.client.get(MOVIES_URL, {"genres": f"{self.genre1.id}"})
         self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertEqual(res.data[0]["title"], self.movie1.title)
-        self.assertEqual(len(res.data), 1)
+
+        results = self._get_results(res)
+        self.assertEqual(results[0]["title"], self.movie1.title)
+        self.assertEqual(len(results), 1)
 
     def test_filter_by_actors(self):
         res = self.client.get(MOVIES_URL, {"actors": f"{self.actor2.id}"})
         self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertEqual(res.data[0]["title"], self.movie2.title)
-        self.assertEqual(len(res.data), 1)
+
+        results = self._get_results(res)
+        self.assertEqual(results[0]["title"], self.movie2.title)
+        self.assertEqual(len(results), 1)
 
     def test_movie_detail(self):
         url = reverse("cinema:movie-detail", args=[self.movie1.id])
@@ -71,6 +84,6 @@ class MovieViewSetTests(APITestCase):
         self.assertEqual(res.data["title"], self.movie1.title)
 
     def test_unauthenticated_user_cannot_access_list(self):
-        self.client.force_authenticate(user=None)  # remove auth
+        self.client.force_authenticate(user=None)
         res = self.client.get(MOVIES_URL)
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
