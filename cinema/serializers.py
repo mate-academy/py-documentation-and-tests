@@ -1,7 +1,6 @@
 from django.db import transaction
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
-
 from cinema.models import (
     Genre,
     Actor,
@@ -41,11 +40,11 @@ class MovieSerializer(serializers.ModelSerializer):
             "duration",
             "genres",
             "actors",
+            "image",
         )
 
 
 class MovieListSerializer(serializers.ModelSerializer):
-
     genres = serializers.SlugRelatedField(
         many=True, read_only=True, slug_field="name"
     )
