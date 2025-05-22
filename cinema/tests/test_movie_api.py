@@ -10,6 +10,7 @@ from rest_framework.test import APIClient
 from rest_framework import status
 
 from cinema.models import Movie, MovieSession, CinemaHall, Genre, Actor
+from cinema.serializers import MovieSerializer
 
 MOVIE_URL = reverse("cinema:movie-list")
 MOVIE_SESSION_URL = reverse("cinema:moviesession-list")
@@ -281,3 +282,39 @@ class AdminMovieTests(TestCase):
         res = self.client.delete(url)
 
         self.assertEqual(res.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def test_upload_movie_image(self):
+        movie = sample_movie()
+        url = reverse("cinema:movie-upload-image", args=[movie.id])
+
+        with tempfile.NamedTemporaryFile(suffix=".jpg") as ntf:
+            img = Image.new("RGB", (100, 100))
+            img.save(ntf, format="JPEG")
+            ntf.seek(0)
+            self.client.post(url, {"image": ntf}, format="multipart")
+        res = self.client.get(MOVIE_SESSION_URL)
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+
+class MovieSerializerTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.user = get_user_model().objects.create_user(
+            email="testuser@example.com",
+            password="testpass123"
+        )
+        self.client.force_authenticate(self.user)
+
+        self.movie = Movie.objects.create(
+            title="Test Movie",
+            description="Test Desc",
+            duration=120,
+        )
+
+    def test_movie_serializer(self):
+        serializer = MovieSerializer(self.movie)
+        data = serializer.data
+
+        self.assertEqual(data["title"], self.movie.title)
+        self.assertEqual(data["description"], self.movie.description)
+        self.assertEqual(data["duration"], self.movie.duration)
