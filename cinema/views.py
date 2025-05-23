@@ -166,7 +166,7 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
     )
     serializer_class = MovieSessionSerializer
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
-    filter_fields = ["date"]
+    filterset_fields = ["movie", "date"]
 
     def get_queryset(self):
         date = self.request.query_params.get("date")
@@ -187,14 +187,14 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
         parameters=[
             OpenApiParameter(
                 name="date",
-                type=int,
+                type=str,
                 description="Filter by movie date",
                 required=False,
             ),
             OpenApiParameter(
                 name="movie",
-                type=str,
-                description="Filter by movie title",
+                type=int,
+                description="Filter by movie ID",
                 required=False,
             ),
         ]

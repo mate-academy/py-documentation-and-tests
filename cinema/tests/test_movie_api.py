@@ -8,6 +8,7 @@ from django.urls import reverse
 
 from rest_framework.test import APIClient
 from rest_framework import status
+from rest_framework_simplejwt.tokens import RefreshToken
 
 from cinema.models import Movie, MovieSession, CinemaHall, Genre, Actor
 from cinema.serializers import MovieSerializer
@@ -160,13 +161,38 @@ class MovieImageUploadTests(TestCase):
         self.assertIn("movie_image", res.data[0].keys())
 
 
+def get_tokens_for_user(user):
+    refresh = RefreshToken.for_user(user)
+    return {
+        "refresh": str(refresh),
+        "access": str(refresh.access_token),
+    }
+
+
 class MovieViewTests(TestCase):
     def setUp(self):
+        self.client = APIClient()
+        self.user = get_user_model().objects.create_superuser(
+            email="test@gmail.com",
+            password="testpassword",
+        )
+        tokens = get_tokens_for_user(self.user)
+        self.access_token = tokens['access']
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.access_token}')
+
         self.genre1 = Genre.objects.create(name="Action")
-        self.movie1 = Movie.objects.create(title="Test Movie")
-        self.movie1.genres.add(self.genre1)
         self.actor = Actor.objects.create(first_name="Tom", last_name="Hanks")
-        self.movie = Movie.objects.create(title="Saving Private Ryan")
+        self.movie1 = Movie.objects.create(
+            title="Test Movie",
+            description="Test Movie Description",
+            duration=90
+        )
+        self.movie1.genres.add(self.genre1)
+        self.movie = Movie.objects.create(
+            title="Saving Private Ryan",
+            description="Saving Private Ryan Description",
+            duration=90
+        )
         self.movie.actors.add(self.actor)
 
     def test_filter_by_title(self):
@@ -187,6 +213,12 @@ class MovieViewTests(TestCase):
         titles = [movie["title"] for movie in data]
         self.assertIn(self.movie.title, titles)
 
+    def test_authenticated_access(self):
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.access_token}')
+        url = reverse("cinema:movie-list")
+        res = self.client.get(url)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+
 
 class UnauthenticatedMovieViewTests(TestCase):
     def setUp(self):
@@ -205,13 +237,13 @@ class AuthenticatedMovieViewTests(TestCase):
         )
         self.client.force_authenticate(self.user)
 
-    def sample_movie(self):
+    def sample_movie(self, **params):
         defaults = {
             "title": "Test Movie",
             "description": "Test Movie Description",
             "duration": 90,
         }
-        defaults.update(defaults)
+        defaults.update(params)
         return Movie.objects.create(**defaults)
 
 
