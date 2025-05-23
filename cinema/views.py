@@ -69,7 +69,6 @@ class MovieViewSet(
     queryset = Movie.objects.prefetch_related("genres", "actors")
     serializer_class = MovieSerializer
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
-    filterset_fields = ["title", "genres", "actors"]
 
     @staticmethod
     def _params_to_ints(qs):
@@ -166,7 +165,7 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
     )
     serializer_class = MovieSessionSerializer
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
-    filterset_fields = ["movie", "date"]
+
 
     def get_queryset(self):
         date = self.request.query_params.get("date")
