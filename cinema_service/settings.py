@@ -119,6 +119,29 @@ AUTH_USER_MODEL = "user.User"
 # Internationalization
 # https://docs.djangoproject.com/en/4.0/topics/i18n/
 
+REST_FRAMEWORK = {
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "DEFAULT_THROTTLE_CLASSES": [
+        "rest_framework.throttling.UserRateThrottle",
+        "rest_framework.throttling.AnonRateThrottle",
+    ],
+
+    "DEFAULT_THROTTLE_RATES": {
+        "anon": "10/minute",
+        "user": "30/minute",
+    },
+}
+
+REST_FRAMEWORK["DEFAULT_AUTHENTICATION_CLASSES"] = [
+    "rest_framework_simplejwt.authentication.JWTAuthentication",
+]
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "My Cinema API",
+    "DESCRIPTION": "Project for managing movies and movie sessions.",
+    "VERSION": "1.0.0",
+}
+
 LANGUAGE_CODE = "en-us"
 
 TIME_ZONE = "UTC"
