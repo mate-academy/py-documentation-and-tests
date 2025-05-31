@@ -201,7 +201,7 @@ class MovieSessionViewSet(
             OpenApiParameter(
                 "movie",
                 type=str,
-                description="Filter by movie (ex ?movie=movie_name)"
+                description="Filter by movie id (ex ?movie_id=1)"
             ),
         ]
     )

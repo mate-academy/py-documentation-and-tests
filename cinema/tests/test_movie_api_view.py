@@ -17,7 +17,7 @@ def sample_movie(**params) -> Movie:
     defaults = {
         "title": "Test",
         "description": "Test description",
-        "duration": "12",
+        "duration": 12,
     }
     defaults.update(params)
     return Movie.objects.create(**defaults)
