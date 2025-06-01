@@ -64,14 +64,10 @@ class Movie(models.Model):
 class MovieSession(models.Model):
     show_time = models.DateTimeField()
     movie = models.ForeignKey(
-        Movie,
-        on_delete=models.CASCADE,
-        related_name="movie_sessions"
+        Movie, on_delete=models.CASCADE, related_name="movie_sessions"
     )
     cinema_hall = models.ForeignKey(
-        CinemaHall,
-        on_delete=models.CASCADE,
-        related_name="movie_sessions"
+        CinemaHall, on_delete=models.CASCADE, related_name="movie_sessions"
     )
 
     class Meta:
@@ -98,9 +94,7 @@ class Order(models.Model):
 
 class Ticket(models.Model):
     movie_session = models.ForeignKey(
-        MovieSession,
-        on_delete=models.CASCADE,
-        related_name="tickets"
+        MovieSession, on_delete=models.CASCADE, related_name="tickets"
     )
     order = models.ForeignKey(
         Order,
@@ -121,9 +115,9 @@ class Ticket(models.Model):
                 raise error_to_raise(
                     {
                         ticket_attr_name: f"{ticket_attr_name} "
-                        f"number must be in available range: "
-                        f"(1, {cinema_hall_attr_name}): "
-                        f"(1, {count_attrs})"
+                                          f"number must be in available range: "
+                                          f"(1, {cinema_hall_attr_name}): "
+                                          f"(1, {count_attrs})"
                     }
                 )
 
@@ -136,21 +130,22 @@ class Ticket(models.Model):
         )
 
     def save(
-        self,
-        *args,
-        force_insert=False,
-        force_update=False,
-        using=None,
-        update_fields=None,
+            self,
+            *args,
+            force_insert=False,
+            force_update=False,
+            using=None,
+            update_fields=None,
     ):
         self.full_clean()
         return super(Ticket, self).save(
-            force_insert, force_update, using, update_fields
+            force_insert, force_update, using, update_fields, *args,
         )
 
     def __str__(self):
         return (
-            f"{str(self.movie_session)} (row: {self.row}, seat: {self.seat})"
+            f"{str(self.movie_session)} "
+            f"(row: {self.row}, seat: {self.seat})"
         )
 
     class Meta:
