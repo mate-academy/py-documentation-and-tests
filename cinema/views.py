@@ -7,7 +7,9 @@ from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
-from rest_framework.viewsets import GenericViewSet, ReadOnlyModelViewSet
+from rest_framework.viewsets import GenericViewSet
+
+from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiTypes
 
 from cinema.models import Genre, Actor, CinemaHall, Movie, MovieSession, Order
 from cinema.permissions import IsAdminOrIfAuthenticatedReadOnly
@@ -61,6 +63,27 @@ class CinemaHallViewSet(
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
 
+@extend_schema(
+    parameters=[
+        OpenApiParameter(
+            name="title",
+            description="Filter movies by title substring (case-insensitive)",
+            type=OpenApiTypes.STR,
+        ),
+        OpenApiParameter(
+            name="genres",
+            description="Comma-separated list of genre IDs",
+            type=OpenApiTypes.INT,
+            many=True,
+        ),
+        OpenApiParameter(
+            name="actors",
+            description="Comma-separated list of actor IDs",
+            type=OpenApiTypes.INT,
+            many=True,
+        ),
+    ]
+)
 class MovieViewSet(
     mixins.ListModelMixin,
     mixins.CreateModelMixin,
@@ -128,6 +151,20 @@ class MovieViewSet(
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+@extend_schema(
+    parameters=[
+        OpenApiParameter(
+            name="date",
+            description="Filter sessions by show date (YYYY-MM-DD)",
+            type=OpenApiTypes.DATE,
+        ),
+        OpenApiParameter(
+            name="movie",
+            description="Filter sessions by movie ID",
+            type=OpenApiTypes.INT,
+        ),
+    ]
+)
 class MovieSessionViewSet(viewsets.ModelViewSet):
     queryset = (
         MovieSession.objects.all()
