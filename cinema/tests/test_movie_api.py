@@ -16,8 +16,10 @@ from cinema.serializers import MovieListSerializer, MovieDetailSerializer
 MOVIE_URL = reverse("cinema:movie-list")
 MOVIE_SESSION_URL = reverse("cinema:moviesession-list")
 
+
 def detail_url(movie_id):
     return reverse("cinema:movie-detail", args=[movie_id])
+
 
 def sample_movie(**params):
     defaults = {
@@ -54,8 +56,8 @@ class MovieTest(TestCase):
         genres_1 = Genre.objects.create(name="Genre1")
         genres_2 = Genre.objects.create(name="Drama")
         movie_with_genres_and_actors.genres.add(genres_1, genres_2)
-        actors_1 = Actor.objects.create(name="Actor1")
-        actors_2 = Actor.objects.create(name="Anna")
+        actors_1 = Actor.objects.create(first_name="Actor1", last_name="One")
+        actors_2 = Actor.objects.create(first_name="Anna", last_name="Smith")
         movie_with_genres_and_actors.actors.add(actors_1, actors_2)
 
         res = self.client.get(MOVIE_URL)  # get a list of data from url
@@ -63,7 +65,7 @@ class MovieTest(TestCase):
         serializer = MovieListSerializer(movie, many=True)
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertEqual(res.data["results"], serializer.data)
+        self.assertEqual(res.data, serializer.data)
 
     def test_filter_movies_by_genres(self):
         movie_with_genres = sample_movie()
@@ -134,7 +136,8 @@ class AdminMovieAPITests(TestCase):
         self.client = APIClient()
         self.user = get_user_model().objects.create_user(
             "admin@gmail.com",
-            "testpassword123", is_staff=True,
+            "testpassword123",
+            is_staff=True,
         )
         self.client.force_authenticate(self.user)
 
@@ -150,9 +153,6 @@ class AdminMovieAPITests(TestCase):
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
         for key in payload:
             self.assertEqual(payload[key], getattr(movie, key))
-
-
-
 
 
 def sample_genre(**params):

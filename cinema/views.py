@@ -116,8 +116,8 @@ class MovieViewSet(
         parameters=[
             OpenApiParameter(
                 "title",
-                type={"type": "array", "items": {"type": "number"}},
-                description="Filter by title id (ex. ?title=1,2)",
+                type=str,
+                description="Filter by title",
                 required=False,
             ),
             OpenApiParameter(
@@ -196,11 +196,11 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
         parameters=[
             OpenApiParameter(
                 "date",
-                type={"type": "array", "items": {"type": "number"}},
-                description="Filter by date id (ex. ?date=1,2)",
+                type=str,
+                description="Filter by date (ex. ?date=YYYY-MM-DD)",
             ),
             OpenApiParameter(
-                "movie_id_str",
+                "movie",
                 type={"type": "array", "items": {"type": "number"}},
                 description="Filter by movie_id_str id (ex. ?movie_id_str=1,2)",
             ),
