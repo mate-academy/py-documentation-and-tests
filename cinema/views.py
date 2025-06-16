@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from django.db.models import F, Count
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import viewsets, mixins, status
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import action
@@ -127,6 +128,30 @@ class MovieViewSet(
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                "title",
+                type=str,
+                description="The title of the movie",
+                required=False,
+            ),
+            OpenApiParameter(
+                "genres",
+                type=str,
+                description="The genres of the movie",
+                required=False,
+            ),
+            OpenApiParameter(
+                "actors",
+                type=str,
+                description="The actors of the movie",
+            ),
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
 
 class MovieSessionViewSet(viewsets.ModelViewSet):
     queryset = (
@@ -166,6 +191,23 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
             return MovieSessionDetailSerializer
 
         return MovieSessionSerializer
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                "date",
+                type=str,
+                description="The date of the movie",
+            ),
+            OpenApiParameter(
+                "movie",
+                type=str,
+                description="The movie to show",
+            ),
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
 
 
 class OrderPagination(PageNumberPagination):
