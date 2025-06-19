@@ -129,34 +129,34 @@ class MovieViewSet(
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-@swagger_auto_schema(manual_parameters=[
-    openapi.Parameter(
-        name='title',
-        in_=openapi.IN_QUERY,
-        description='Filter by movie title (partial match)',
-        type=openapi.TYPE_STRING,
-        required=False,
-        example='Star'
-    ),
-    openapi.Parameter(
-        name='genres',
-        in_=openapi.IN_QUERY,
-        description='Filter by genres (ids separated by commas, e.g. "1,3")',
-        type=openapi.TYPE_STRING,
-        required=False,
-        example='1,3'
-    ),
-    openapi.Parameter(
-        name='actors',
-        in_=openapi.IN_QUERY,
-        description='Filter by actors (ids separated by commas, e.g. "4,7")',
-        type=openapi.TYPE_STRING,
-        required=False,
-        example='4,7'
-    ),
-])
-def list(self, request, *args, **kwargs):
-    return super().list(request, *args, **kwargs) 
+    @swagger_auto_schema(manual_parameters=[
+        openapi.Parameter(
+            name='title',
+            in_=openapi.IN_QUERY,
+            description='Filter by movie title (partial match)',
+            type=openapi.TYPE_STRING,
+            required=False,
+            example='Star'
+        ),
+        openapi.Parameter(
+            name='genres',
+            in_=openapi.IN_QUERY,
+            description='Filter by genres (ids separated by commas, e.g. "1,3")',
+            type=openapi.TYPE_STRING,
+            required=False,
+            example='1,3'
+        ),
+        openapi.Parameter(
+            name='actors',
+            in_=openapi.IN_QUERY,
+            description='Filter by actors (ids separated by commas, e.g. "4,7")',
+            type=openapi.TYPE_STRING,
+            required=False,
+            example='4,7'
+        ),
+    ])
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs) 
 
 
 class MovieSessionViewSet(viewsets.ModelViewSet):
@@ -198,26 +198,26 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
 
         return MovieSessionSerializer
     
-@swagger_auto_schema(manual_parameters=[
-    openapi.Parameter(
-        name='date',
-        in_=openapi.IN_QUERY,
-        description='Filter by session date (YYYY-MM-DD format)',
-        type=openapi.TYPE_STRING,
-        required=False,
-        example='2025-06-19'
-    ),
-    openapi.Parameter(
-        name='movie',
-        in_=openapi.IN_QUERY,
-        description='Filter by movie ID',
-        type=openapi.TYPE_INTEGER,
-        required=False,
-        example=5
-    ),
-])
-def list(self, request, *args, **kwargs):
-    return super().list(request, *args, **kwargs)
+    @swagger_auto_schema(manual_parameters=[
+        openapi.Parameter(
+            name='date',
+            in_=openapi.IN_QUERY,
+            description='Filter by session date (YYYY-MM-DD format)',
+            type=openapi.TYPE_STRING,
+            required=False,
+            example='2025-06-19'
+        ),
+        openapi.Parameter(
+            name='movie',
+            in_=openapi.IN_QUERY,
+            description='Filter by movie ID',
+            type=openapi.TYPE_INTEGER,
+            required=False,
+            example=5
+        ),
+    ])
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
 
 
 class OrderPagination(PageNumberPagination):
