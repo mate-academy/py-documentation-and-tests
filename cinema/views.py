@@ -27,6 +27,9 @@ from cinema.serializers import (
     MovieImageSerializer,
 )
 
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
+from rest_framework_simplejwt.authentication import JWTAuthentication
 
 class GenreViewSet(
     mixins.CreateModelMixin,
@@ -69,7 +72,7 @@ class MovieViewSet(
 ):
     queryset = Movie.objects.prefetch_related("genres", "actors")
     serializer_class = MovieSerializer
-    authentication_classes = (TokenAuthentication,)
+    authentication_classes = (JWTAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
     @staticmethod
@@ -127,6 +130,14 @@ class MovieViewSet(
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    @swagger_auto_schema(manual_parameters=[
+        openapi.Parameter('title', openapi.IN_QUERY, description="Фільтр за назвою", type=openapi.TYPE_STRING),
+        openapi.Parameter('genres', openapi.IN_QUERY, description="Фільтр за жанрами (id через кому)", type=openapi.TYPE_STRING),
+        openapi.Parameter('actors', openapi.IN_QUERY, description="Фільтр за акторами (id через кому)", type=openapi.TYPE_STRING),
+    ])
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
 
 class MovieSessionViewSet(viewsets.ModelViewSet):
     queryset = (
@@ -140,7 +151,7 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
         )
     )
     serializer_class = MovieSessionSerializer
-    authentication_classes = (TokenAuthentication,)
+    authentication_classes = (JWTAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
     def get_queryset(self):
@@ -166,6 +177,13 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
             return MovieSessionDetailSerializer
 
         return MovieSessionSerializer
+    
+    @swagger_auto_schema(manual_parameters=[
+        openapi.Parameter('date', openapi.IN_QUERY, description="Фільтр за датою (YYYY-MM-DD)", type=openapi.TYPE_STRING),
+        openapi.Parameter('movie', openapi.IN_QUERY, description="Фільтр за ID фільму", type=openapi.TYPE_INTEGER),
+    ])
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
 
 
 class OrderPagination(PageNumberPagination):
