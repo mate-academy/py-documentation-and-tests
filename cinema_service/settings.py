@@ -47,6 +47,8 @@ INSTALLED_APPS = [
     "debug_toolbar",
     "cinema",
     "user",
+    "drf_spectacular",
+    "rest_framework_simplejwt"
 ]
 
 MIDDLEWARE = [
@@ -140,3 +142,32 @@ MEDIA_ROOT = BASE_DIR / "media"
 # https://docs.djangoproject.com/en/4.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+
+REST_FRAMEWORK = {
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+    ),
+    "DEFAULT_THROTTLE_CLASSES": (
+        "rest_framework.throttling.UserRateThrottle",
+        "rest_framework.throttling.AnonRateThrottle",
+    ),
+    "DEFAULT_THROTTLE_RATES": {
+        "user": "30/minute",
+        "anon": "10/minute",
+    },
+    "DEFAULT_PAGINATION_CLASS":
+        "rest_framework.pagination.PageNumberPagination",
+    "PAGE_SIZE": 10,
+    "DEFAULT_PERMISSION_CLASSES": (
+        "cinema.permissions.IsAdminOrIfAuthenticatedReadOnly",
+    ),
+}
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Cinema API",
+    "DESCRIPTION": "Cinema service API documentation",
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
+}
