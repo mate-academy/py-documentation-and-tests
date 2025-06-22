@@ -1,6 +1,8 @@
 import tempfile
 import os
 
+from urllib.parse import urlencode
+
 from PIL import Image
 from django.contrib.auth import get_user_model
 from django.test import TestCase
@@ -8,8 +10,10 @@ from django.urls import reverse
 
 from rest_framework.test import APIClient
 from rest_framework import status
+from rest_framework_simplejwt.tokens import RefreshToken
 
 from cinema.models import Movie, MovieSession, CinemaHall, Genre, Actor
+from cinema.serializers import MovieListSerializer
 
 MOVIE_URL = reverse("cinema:movie-list")
 MOVIE_SESSION_URL = reverse("cinema:moviesession-list")
@@ -65,7 +69,7 @@ def image_upload_url(movie_id):
 def detail_url(movie_id):
     return reverse("cinema:movie-detail", args=[movie_id])
 
-
+# test_post_image_to_movie_list is not my job!!!
 class MovieImageUploadTests(TestCase):
     def setUp(self):
         self.client = APIClient()
@@ -157,3 +161,90 @@ class MovieImageUploadTests(TestCase):
         res = self.client.get(MOVIE_SESSION_URL)
 
         self.assertIn("movie_image", res.data[0].keys())
+
+
+class MovieViewSetUnauthorizedTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+
+    def test_unauthorized_request(self):
+        res = self.client.get(MOVIE_URL)
+
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+
+class MovieViewSetAuthorizedTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.user = get_user_model().objects.create_user(
+            email="test@test.test",
+            password="testPassword123",
+        )
+
+        refresh = RefreshToken.for_user(self.user)
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {refresh.access_token}')
+
+    def test_authorized_get_request(self):
+        movie = sample_movie(title="to_found")
+        sample_movie(title="movie_that_will_not_be_found")
+
+        genre = sample_genre()
+        movie.genres.add(genre)
+
+        actor = sample_actor()
+        movie.actors.add(actor)
+
+        movies = Movie.objects.filter(
+            title__icontains="to_found",
+            genres__id__in=[genre.id],
+            actors__id__in=[actor.id],
+        ).distinct()
+        serializer = MovieListSerializer(movies, many=True)
+
+        query_params = {
+            "title": "to_found",
+            "genres": ",".join([str(genre.id)]),
+            "actors": ",".join([str(actor.id)]),
+        }
+
+        url = f"{MOVIE_URL}?{urlencode(query_params)}"
+        res = self.client.get(url)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data, serializer.data)
+
+    def test_authorized_post_request(self):
+        payload = {
+            "title": "test_title",
+            "description": "test_description",
+            "duration": 90,
+        }
+        res = self.client.post(MOVIE_URL, payload, format="json")
+        self.assertNotEqual(res.status_code, status.HTTP_201_CREATED)
+
+
+class MovieViewSetAdminTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.user = get_user_model().objects.create_user(
+            email="test@test.test",
+            password="testPassword123",
+            is_staff=True,
+        )
+        self.client.force_login(self.user)
+
+    def test_admin_post_request(self):
+        genre = sample_genre()
+        actor = sample_actor()
+        payload = {
+            "title": "test_title",
+            "description": "test_description",
+            "duration": 90,
+            "genres": [genre.id],
+            "actors": [actor.id],
+        }
+        res = self.client.post(MOVIE_URL, payload, format="json")
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+
+        movie = Movie.objects.get(title="test_title")
+        self.assertEqual(movie.title, payload["title"])
+        self.assertEqual(movie.description, payload["description"])
