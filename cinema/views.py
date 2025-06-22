@@ -125,31 +125,30 @@ class MovieViewSet(
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
-@extend_schema(
-    parameters=[
-        OpenApiParameter(
-            "title",
-            type=str,
-            description="Filter by movie title",
-            required=False,
-        ),
-        OpenApiParameter(
-            "genres",
-            type={"type": "list", "items": {"type": "number"}},
-            description="Filter by genre IDs (comma-separated list)",
-            required=False
-        ),
-        OpenApiParameter(
-            "actors",
-            type={"type": "list", "items": {"type": "number"}},
-            description="Filter by actor IDs (comma-separated list)",
-            required=False
-        )
-    ]
-)
-def list(self, request, *args, **kwargs):
-    return super().list(request, *args, **kwargs)
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                "title",
+                type=str,
+                description="Filter by movie title",
+                required=False,
+            ),
+            OpenApiParameter(
+                "genres",
+                type={"type": "list", "items": {"type": "number"}},
+                description="Filter by genre IDs (comma-separated list)",
+                required=False
+            ),
+            OpenApiParameter(
+                "actors",
+                type={"type": "list", "items": {"type": "number"}},
+                description="Filter by actor IDs (comma-separated list)",
+                required=False
+            )
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
 
 
 class MovieSessionViewSet(viewsets.ModelViewSet):
