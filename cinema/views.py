@@ -180,9 +180,11 @@ class MovieViewSet(
     destroy=extend_schema(summary="Delete a movie session", tags=["Movie Sessions"]),
 )
 class MovieSessionViewSet(viewsets.ModelViewSet):
-    queryset = MovieSession.objects.select_related("movie", "cinema_hall").annotate(
-        tickets_available=F("cinema_hall__rows") * F("cinema_hall__seats_in_row")
-        - Count("tickets")
+    queryset = MovieSession.objects.annotate(
+        total_capacity=F("cinema_hall__rows") * F("cinema_hall__seats_in_row"),
+        tickets_sold=Count("tickets")
+    ).annotate(
+        tickets_available=F("total_capacity") - F("tickets_sold")
     )
     serializer_class = MovieSessionSerializer
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
