@@ -15,6 +15,9 @@ MOVIE_URL = reverse("cinema:movie-list")
 MOVIE_SESSION_URL = reverse("cinema:moviesession-list")
 
 
+User = get_user_model()
+
+
 def sample_movie(**params):
     defaults = {
         "title": "Sample movie",
@@ -43,9 +46,7 @@ def sample_actor(**params):
 
 
 def sample_movie_session(**params):
-    cinema_hall = CinemaHall.objects.create(
-        name="Blue", rows=20, seats_in_row=20
-    )
+    cinema_hall = CinemaHall.objects.create(name="Blue", rows=20, seats_in_row=20)
 
     defaults = {
         "show_time": "2022-06-02 14:00:00",
@@ -157,3 +158,58 @@ class MovieImageUploadTests(TestCase):
         res = self.client.get(MOVIE_SESSION_URL)
 
         self.assertIn("movie_image", res.data[0].keys())
+
+
+class MovieViewSetTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+
+        self.admin_user = User.objects.create_user(
+            email="admin@example.com",
+            password="password123",
+        )
+        self.admin_user.is_staff = True
+        self.admin_user.save()
+
+        self.client.force_authenticate(user=self.admin_user)
+
+        self.genre1 = Genre.objects.create(name="Action")
+        self.genre2 = Genre.objects.create(name="Comedy")
+
+        self.actor1 = Actor.objects.create(first_name="Tom", last_name="Hanks")
+        self.actor2 = Actor.objects.create(first_name="Will", last_name="Smith")
+
+        self.movie1 = Movie.objects.create(
+            title="Big Adventure", description="Fun movie", duration=120
+        )
+        self.movie1.genres.add(self.genre1)
+        self.movie1.actors.add(self.actor1)
+
+        self.movie2 = Movie.objects.create(
+            title="Funny Times", description="Comedy hit", duration=90
+        )
+        self.movie2.genres.add(self.genre2)
+        self.movie2.actors.add(self.actor2)
+
+    def test_list_movies(self):
+        response = self.client.get("/api/cinema/movies/")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 2)
+
+    def test_filter_by_title(self):
+        response = self.client.get("/api/cinema/movies/", {"title": "Big"})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["title"], "Big Adventure")
+
+    def test_filter_by_genre(self):
+        response = self.client.get(f"/api/cinema/movies/?genres={self.genre2.id}")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["title"], "Funny Times")
+
+    def test_filter_by_actor(self):
+        response = self.client.get(f"/api/cinema/movies/?actors={self.actor1.id}")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["title"], "Big Adventure")
