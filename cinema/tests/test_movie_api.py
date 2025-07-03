@@ -11,6 +11,7 @@ from rest_framework import status
 
 from cinema.models import Movie, MovieSession, CinemaHall, Genre, Actor
 
+
 MOVIE_URL = reverse("cinema:movie-list")
 MOVIE_SESSION_URL = reverse("cinema:moviesession-list")
 
@@ -155,3 +156,94 @@ class MovieImageUploadTests(TestCase):
         res = self.client.get(MOVIE_SESSION_URL)
 
         self.assertIn("movie_image", res.data[0].keys())
+
+
+class MovieViewSetTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.admin = get_user_model().objects.create_superuser(
+            email="admin@admin.com",
+            password="adminpass"
+        )
+        self.user = get_user_model().objects.create_user(
+            email="user@user.com",
+            password="userpass"
+        )
+
+        # Створюємо дані для фільтрів
+        self.genre1 = Genre.objects.create(name="Action")
+        self.genre2 = Genre.objects.create(name="Drama")
+        self.actor1 = Actor.objects.create(first_name="Tom", last_name="Hanks")
+        self.actor2 = Actor.objects.create(first_name="Meryl", last_name="Streep")
+
+        # Створюємо фільми
+        self.movie1 = Movie.objects.create(
+            title="The Matrix",
+            description="Sci-fi movie",
+            duration=120
+        )
+        self.movie1.genres.add(self.genre1)
+        self.movie1.actors.add(self.actor1)
+
+        self.movie2 = Movie.objects.create(
+            title="Forrest Gump",
+            description="Drama movie",
+            duration=150
+        )
+        self.movie2.genres.add(self.genre2)
+        self.movie2.actors.add(self.actor1, self.actor2)
+
+        self.list_url = reverse("cinema:movie-list")
+        self.detail_url = lambda pk: reverse("cinema:movie-detail", args=[pk])
+
+    def test_list_movies(self):
+        """Список фільмів доступний всім"""
+        response = self.client.get(self.list_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 2)
+
+    def test_filter_by_title(self):
+        """Фільтрація за назвою"""
+        response = self.client.get(self.list_url, {"title": "matrix"})
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["title"], "The Matrix")
+
+    def test_filter_by_genre(self):
+        """Фільтрація за жанром"""
+        response = self.client.get(self.list_url, {"genres": self.genre1.id})
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["title"], "The Matrix")
+
+    def test_filter_by_actor(self):
+        """Фільтрація за актором"""
+        response = self.client.get(self.list_url, {"actors": self.actor2.id})
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["title"], "Forrest Gump")
+
+    def test_retrieve_movie(self):
+        """Перегляд деталей фільма"""
+        url = self.detail_url(self.movie1.id)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["title"], "The Matrix")
+
+    def test_create_movie_admin(self):
+        """Адмін може створювати фільми"""
+        self.client.force_authenticate(self.admin)
+        data = {
+            "title": "New Movie",
+            "description": "New description",
+            "duration": 100,
+            "genres": [self.genre1.id],
+            "actors": [self.actor1.id]
+        }
+        response = self.client.post(self.list_url, data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(Movie.objects.count(), 3)
+
+    def test_create_movie_denied(self):
+        """Не-адмін не може створювати фільми"""
+        self.client.force_authenticate(self.user)
+        data = {"title": "User Movie"}
+        response = self.client.post(self.list_url, data)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
