@@ -107,11 +107,7 @@ class MovieApiTests(TestCase):
         """Test retrieving movies without authentication"""
         response = self.client.get(MOVIE_URL)
         
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 2)
-        self.assertIn("title", response.data[0])
-        self.assertIn("genres", response.data[0])
-        self.assertIn("actors", response.data[0])
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
     
     def test_get_movies_list_authenticated(self):
         """Test retrieving movies with authentication"""
@@ -125,12 +121,7 @@ class MovieApiTests(TestCase):
         """Test retrieving movie detail without authentication"""
         response = self.client.get(detail_url(self.movie1.id))
         
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["title"], self.movie1.title)
-        self.assertEqual(response.data["description"], self.movie1.description)
-        self.assertEqual(response.data["duration"], self.movie1.duration)
-        self.assertIn("genres", response.data)
-        self.assertIn("actors", response.data)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
     
     def test_get_movie_detail_authenticated(self):
         """Test retrieving movie detail with authentication"""
@@ -195,7 +186,8 @@ class MovieApiTests(TestCase):
     
     def test_filter_movies_by_title(self):
         """Test filtering movies by title"""
-        response = self.client.get(MOVIE_URL, {"title": "Movie 1"})
+        self.client.force_authenticate(user=self.user)
+        response = self.client.get(MOVIE_URL, {"title": "Test Movie 1"})
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
@@ -203,7 +195,8 @@ class MovieApiTests(TestCase):
     
     def test_filter_movies_by_title_case_insensitive(self):
         """Test filtering movies by title is case insensitive"""
-        response = self.client.get(MOVIE_URL, {"title": "movie 1"})
+        self.client.force_authenticate(user=self.user)
+        response = self.client.get(MOVIE_URL, {"title": "test movie 1"})
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
@@ -211,6 +204,7 @@ class MovieApiTests(TestCase):
     
     def test_filter_movies_by_genre(self):
         """Test filtering movies by genre"""
+        self.client.force_authenticate(user=self.user)
         response = self.client.get(MOVIE_URL, {"genres": str(self.genre1.id)})
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -219,6 +213,7 @@ class MovieApiTests(TestCase):
     
     def test_filter_movies_by_multiple_genres(self):
         """Test filtering movies by multiple genres"""
+        self.client.force_authenticate(user=self.user)
         response = self.client.get(
             MOVIE_URL, 
             {"genres": f"{self.genre1.id},{self.genre2.id}"}
@@ -229,6 +224,7 @@ class MovieApiTests(TestCase):
     
     def test_filter_movies_by_actor(self):
         """Test filtering movies by actor"""
+        self.client.force_authenticate(user=self.user)
         response = self.client.get(MOVIE_URL, {"actors": str(self.actor1.id)})
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -237,6 +233,7 @@ class MovieApiTests(TestCase):
     
     def test_filter_movies_by_multiple_actors(self):
         """Test filtering movies by multiple actors"""
+        self.client.force_authenticate(user=self.user)
         response = self.client.get(
             MOVIE_URL, 
             {"actors": f"{self.actor1.id},{self.actor2.id}"}
@@ -247,8 +244,9 @@ class MovieApiTests(TestCase):
     
     def test_filter_movies_combined_filters(self):
         """Test filtering movies with multiple filters"""
+        self.client.force_authenticate(user=self.user)
         response = self.client.get(MOVIE_URL, {
-            "title": "Movie 1",
+            "title": "Test Movie 1",
             "genres": str(self.genre1.id),
             "actors": str(self.actor1.id)
         })
@@ -259,6 +257,7 @@ class MovieApiTests(TestCase):
     
     def test_filter_movies_no_results(self):
         """Test filtering movies with no matching results"""
+        self.client.force_authenticate(user=self.user)
         response = self.client.get(MOVIE_URL, {"title": "Non-existent Movie"})
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -266,6 +265,7 @@ class MovieApiTests(TestCase):
     
     def test_invalid_movie_id(self):
         """Test retrieving movie with invalid ID"""
+        self.client.force_authenticate(user=self.user)
         response = self.client.get(detail_url(999))
         
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
