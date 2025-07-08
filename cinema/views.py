@@ -140,8 +140,14 @@ class MovieViewSet(
                 name="genres",
                 description="Filtering by genres IDs.Example: genres=1,2",
                 required=False,
-                type={"type": "list", "items": {"type": "number"}},
+                type=str,
             ),
+            OpenApiParameter(
+                name="actors",
+                description="Filtering by actors IDs.Example: actors=1,2",
+                type=str,
+                required=False,
+            )
         ]
     )
     def list(self, request, *args, **kwargs):
