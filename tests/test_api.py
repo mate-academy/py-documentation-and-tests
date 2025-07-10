@@ -70,20 +70,22 @@ class TestUnauthorizedMovieAPI(APITestCase):
         self.assertEqual(Movie.objects.count(), 1)
 
     def test_movie_put(self):
+        url = movie_detail_url(self.movie.id)
         payload = {
             "title": "Test Movie create",
             "description": "description",
             "duration": 200,
         }
-        res = self.client.post(MOVIE_URL, payload)
+        res = self.client.post(url, payload)
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
         self.assertEqual(Movie.objects.count(), 1)
 
     def test_movie_patch(self):
+        url = movie_detail_url(self.movie.id)
         payload = {
             "title": "Test Movie patch",
         }
-        res = self.client.patch(MOVIE_URL, payload)
+        res = self.client.patch(url, payload)
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
         self.assertEqual(Movie.objects.count(), 1)
         self.assertNotEqual(self.movie.title, payload["title"])
@@ -188,20 +190,22 @@ class TestAuthorizedMovieAPI(APITestCase):
         self.assertEqual(Movie.objects.count(), 1)
 
     def test_movie_put(self):
+        url = movie_detail_url(self.movie.id)
         payload = {
             "title": "Test Movie put",
             "description": "description",
             "duration": 200,
         }
-        res = self.client.put(MOVIE_URL, payload)
+        res = self.client.put(url, payload)
         self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
         self.assertEqual(Movie.objects.count(), 1)
 
     def test_movie_patch(self):
+        url = movie_detail_url(self.movie.id)
         payload = {
             "title": "Test Movie patch",
         }
-        res = self.client.patch(MOVIE_URL, payload)
+        res = self.client.patch(url, payload)
         self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
         self.assertEqual(Movie.objects.count(), 1)
 
@@ -240,6 +244,7 @@ class TestAdminMovieAPI(APITestCase):
         self.assertEqual(Movie.objects.count(), 2)
 
     def test_movie_put_not_allowed(self):
+        url = movie_detail_url(self.movie.id)
         payload = {
             "title": "Test Movie put",
             "description": "description",
@@ -247,7 +252,7 @@ class TestAdminMovieAPI(APITestCase):
             "genres": f"{self.genre.id}",
             "actors": f"{self.actor.id}",
         }
-        res = self.client.put(MOVIE_URL, payload)
+        res = self.client.put(url, payload)
         self.assertEqual(res.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
         self.assertEqual(Movie.objects.count(), 1)
 
