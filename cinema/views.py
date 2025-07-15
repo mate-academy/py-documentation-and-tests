@@ -1,3 +1,5 @@
+from rest_framework.views import APIView
+
 from datetime import datetime
 
 from django.db.models import F, Count
@@ -60,6 +62,16 @@ class CinemaHallViewSet(
     authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
+class MovieDetailView(APIView):
+    def get(self, request, pk):
+        return Response({"id": pk, "title": "Example Movie"})
+
+class MovieListView(APIView):
+    def get(self, request):
+        return Response([
+            {"id": 1, "title": "Movie 1"},
+            {"id": 2, "title": "Movie 2"},
+        ])
 
 class MovieViewSet(
     mixins.ListModelMixin,
