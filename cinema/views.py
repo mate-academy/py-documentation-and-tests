@@ -1,6 +1,8 @@
 from datetime import datetime
 
 from django.db.models import F, Count
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiResponse
 from rest_framework import viewsets, mixins, status
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import action
@@ -69,13 +71,38 @@ class MovieViewSet(
 ):
     queryset = Movie.objects.prefetch_related("genres", "actors")
     serializer_class = MovieSerializer
-    authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
     @staticmethod
     def _params_to_ints(qs):
         """Converts a list of string IDs to a list of integers"""
         return [int(str_id) for str_id in qs.split(",")]
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                "title",
+                OpenApiTypes.STR,
+                description="Title of the movie",
+            ),
+            OpenApiParameter(
+                "genres",
+                OpenApiTypes.STR,
+                description="IDs of genres",
+            ),
+            OpenApiParameter(
+                "actors",
+                OpenApiTypes.STR,
+                description="IDs of actors",
+            ),
+        ],
+        description="Retrieve a list of movies with optional filters for title, genres, and actors.",
+        responses={
+            200: OpenApiResponse(MovieListSerializer),
+            400: OpenApiResponse(
+                description="Bad request",
+            )
+        })
 
     def get_queryset(self):
         """Retrieve the movies with filters"""
@@ -98,6 +125,16 @@ class MovieViewSet(
 
         return queryset.distinct()
 
+    @extend_schema(
+        responses={
+            200: OpenApiResponse(MovieListSerializer),
+            201: OpenApiResponse(MovieSerializer),
+            400: OpenApiResponse(
+                description="Bad request",
+            ),
+        }
+    )
+
     def get_serializer_class(self):
         if self.action == "list":
             return MovieListSerializer
@@ -109,6 +146,17 @@ class MovieViewSet(
             return MovieImageSerializer
 
         return MovieSerializer
+
+    @extend_schema(
+        request=MovieImageSerializer,
+        responses={
+            200: OpenApiResponse(MovieImageSerializer),
+            400: OpenApiResponse(
+                description="Bad request",
+            ),
+        },
+        description="Upload image to specific movie",
+    )
 
     @action(
         methods=["POST"],
@@ -143,6 +191,28 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
     authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                "date",
+                OpenApiTypes.STR,
+                description="Date of the movie session",
+            ),
+            OpenApiParameter(
+                "movie",
+                OpenApiTypes.INT,
+                description="ID of the movie",
+            ),
+        ],
+        description="Retrieve a list of movie sessions with optional filters for date and movie.",
+        responses={
+            200: OpenApiResponse(MovieSessionListSerializer),
+            400: OpenApiResponse(
+                description="Bad request",
+            ),
+        }
+    )
+
     def get_queryset(self):
         date = self.request.query_params.get("date")
         movie_id_str = self.request.query_params.get("movie")
@@ -157,6 +227,17 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(movie_id=int(movie_id_str))
 
         return queryset
+
+    @extend_schema(
+        responses={
+            200: OpenApiResponse(MovieSessionListSerializer),
+            201: OpenApiResponse(MovieSessionSerializer),
+            400: OpenApiResponse(
+                description="Bad request",
+            ),
+        }
+
+    )
 
     def get_serializer_class(self):
         if self.action == "list":
@@ -188,6 +269,33 @@ class OrderViewSet(
 
     def get_queryset(self):
         return Order.objects.filter(user=self.request.user)
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                "user",
+                type=OpenApiTypes.INT,
+                description="Id of the user."
+            )
+        ],
+        description="Or orders that belongs to the user withe the given id",
+        responses={
+            200: OpenApiResponse(OrderListSerializer, description="List of orders"),
+            201: OpenApiResponse(OrderSerializer),
+            400: "Bad request"
+        }
+    )
+
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+    @extend_schema(
+        responses={
+            200: OpenApiResponse(OrderListSerializer),
+            201: OpenApiResponse(OrderSerializer),
+            400: "Bad request"
+        }
+    )
 
     def get_serializer_class(self):
         if self.action == "list":
