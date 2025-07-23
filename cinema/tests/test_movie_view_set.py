@@ -83,7 +83,7 @@ class AuthenticatedMovieApiTest(TestCase):
         serializer = MovieListSerializer(movie_search, many=True)
         self.assertEqual(serializer.data, res.data)
 
-    def test_retrive_movie_by(self):
+    def test_retrieve_movie(self):
         id_movie = self.movie_one.id
         MOVIE_URL_DETAIL = reverse("cinema:movie-detail", kwargs={"pk": id_movie})
         res = self.client.get(MOVIE_URL_DETAIL)
