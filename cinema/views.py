@@ -133,8 +133,8 @@ class MovieViewSet(
         parameters=[
             OpenApiParameter(
                 "title",
-                type={"type": "array", "items": {"type": "number"}},
-                description="List movies by title IDs (e.g. ?movies=1,2)",
+                type={"type": "array", "items": {"type": "string"}},
+                description="List movies by title IDs (e.g. ?title=Inception)",
             ),
             OpenApiParameter(
                 "genres",
@@ -144,7 +144,7 @@ class MovieViewSet(
             ),
             OpenApiParameter(
                 "actors",
-                type={"type": "array", "items": {"type": "string"}},
+                type={"type": "array", "items": {"type": "number"}},
                 description="Filter by actor IDs (e.g. ?actors=1,2)"
             )
         ]
