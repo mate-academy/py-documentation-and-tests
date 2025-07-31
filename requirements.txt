@@ -8,3 +8,4 @@ djangorestframework
 djangorestframework-simplejwt
 drf-spectacular
 Pillow
+drf-yasg>=1.21.5

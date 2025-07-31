@@ -157,3 +157,70 @@ class MovieImageUploadTests(TestCase):
         res = self.client.get(MOVIE_SESSION_URL)
 
         self.assertIn("movie_image", res.data[0].keys())
+
+class MovieFilterAndPermissionTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.user = get_user_model().objects.create_user(
+            "user@test.com", "password"
+        )
+        self.admin = get_user_model().objects.create_superuser(
+            "admin@test.com", "password"
+        )
+        self.genre1 = sample_genre(name="Action")
+        self.genre2 = sample_genre(name="Horror")
+        self.actor1 = sample_actor(first_name="Tom", last_name="Cruise")
+        self.actor2 = sample_actor(first_name="Will", last_name="Smith")
+        self.movie1 = sample_movie(title="Fast", duration=90)
+        self.movie1.genres.add(self.genre1)
+        self.movie1.actors.add(self.actor1)
+        self.movie2 = sample_movie(title="Scary", duration=95)
+        self.movie2.genres.add(self.genre2)
+        self.movie2.actors.add(self.actor2)
+
+    def test_filter_movies_by_title(self):
+        self.client.force_authenticate(self.user)
+        res = self.client.get(MOVIE_URL, {"title": "fast"})
+        self.assertEqual(len(res.data), 1)
+        self.assertEqual(res.data[0]["title"], "Fast")
+
+    def test_filter_movies_by_genres(self):
+        self.client.force_authenticate(self.user)
+        res = self.client.get(MOVIE_URL, {"genres": f"{self.genre1.id}"})
+        self.assertEqual(len(res.data), 1)
+        self.assertEqual(res.data[0]["title"], "Fast")
+
+    def test_filter_movies_by_actors(self):
+        self.client.force_authenticate(self.user)
+        res = self.client.get(MOVIE_URL, {"actors": f"{self.actor2.id}"})
+        self.assertEqual(len(res.data), 1)
+        self.assertEqual(res.data[0]["title"], "Scary")
+
+    def test_unauthenticated_user_cannot_upload_image(self):
+        url = image_upload_url(self.movie1.id)
+        with tempfile.NamedTemporaryFile(suffix=".jpg") as ntf:
+            img = Image.new("RGB", (10, 10))
+            img.save(ntf, format="JPEG")
+            ntf.seek(0)
+            res = self.client.post(url, {"image": ntf}, format="multipart")
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_non_admin_cannot_upload_image(self):
+        self.client.force_authenticate(self.user)
+        url = image_upload_url(self.movie1.id)
+        with tempfile.NamedTemporaryFile(suffix=".jpg") as ntf:
+            img = Image.new("RGB", (10, 10))
+            img.save(ntf, format="JPEG")
+            ntf.seek(0)
+            res = self.client.post(url, {"image": ntf}, format="multipart")
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_authenticated_user_can_view_movies(self):
+        self.client.force_authenticate(self.user)
+        res = self.client.get(MOVIE_URL)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(res.data), 2)
+
+    def test_unauthenticated_user_can_view_movies(self):
+        res = self.client.get(MOVIE_URL)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)

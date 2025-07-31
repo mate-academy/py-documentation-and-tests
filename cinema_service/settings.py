@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     "debug_toolbar",
     "cinema",
     "user",
+    "drf_yasg",
 ]
 
 MIDDLEWARE = [
@@ -140,3 +141,17 @@ MEDIA_ROOT = BASE_DIR / "media"
 # https://docs.djangoproject.com/en/4.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+    ],
+    "DEFAULT_THROTTLE_CLASSES": [
+        "rest_framework.throttling.UserRateThrottle",
+        "rest_framework.throttling.AnonRateThrottle",
+    ],
+    "DEFAULT_THROTTLE_RATES": {
+        "user": "30/minute",
+        "anon": "10/minute",
+    }
+}

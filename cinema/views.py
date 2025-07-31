@@ -1,4 +1,7 @@
 from datetime import datetime
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
+
 
 from django.db.models import F, Count
 from rest_framework import viewsets, mixins, status
@@ -101,14 +104,37 @@ class MovieViewSet(
     def get_serializer_class(self):
         if self.action == "list":
             return MovieListSerializer
-
         if self.action == "retrieve":
             return MovieDetailSerializer
-
         if self.action == "upload_image":
             return MovieImageSerializer
-
         return MovieSerializer
+
+    @swagger_auto_schema(
+        manual_parameters=[
+            openapi.Parameter(
+                "title",
+                openapi.IN_QUERY,
+                description="Filter movies by title (partial match)",
+                type=openapi.TYPE_STRING
+            ),
+            openapi.Parameter(
+                "genres",
+                openapi.IN_QUERY,
+                description="Filter by genre IDs (comma-separated). Example: ?genres=1,2",
+                type=openapi.TYPE_STRING
+            ),
+            openapi.Parameter(
+                "actors",
+                openapi.IN_QUERY,
+                description="Filter by actor IDs (comma-separated). Example: ?actors=5,6",
+                type=openapi.TYPE_STRING
+            ),
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        """List movies with optional filters (title, genres, actors)"""
+        return super().list(request, *args, **kwargs)
 
     @action(
         methods=["POST"],
