@@ -125,19 +125,20 @@ class MovieViewSet(
 
     @extend_schema(
         parameters=[
-            OpenApiParameter(name="actors",
-                             description="Filter by actor.id"
-                                         " (ex. ?actors=1,2)",
+            OpenApiParameter("actors",
+                             type=str,
+                             location=OpenApiParameter.QUERY,
+                             description="Filter movies by actor.id"
+                             ),
+
+            OpenApiParameter("genres",
+                             description="Filter movies by genre.id",
+                             location=OpenApiParameter.QUERY,
                              type=str),
 
-            OpenApiParameter(name="genres",
-                             description="Filter by genre.id "
-                                         "(ex. ?genres=1,2)",
-                             type=str),
-
-            OpenApiParameter(name="title",
-                             description="Filter by title"
-                                         " (ex. ?title=Inception",
+            OpenApiParameter("title",
+                             description="Filter movies by title",
+                             location=OpenApiParameter.QUERY,
                              type=str),
         ]
     )
@@ -186,16 +187,15 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
 
     @extend_schema(
         parameters=[
-            OpenApiParameter(name="date",
-                             description="Filter by data"
-                                         " (ex. ?date=year-month-day)",
-                             type=datetime),
+            OpenApiParameter("date",
+                             description="Filter session by data (YYYY-MM-DD)",
+                             type=datetime,
+                             location=OpenApiParameter.QUERY),
 
-            OpenApiParameter(name="movie",
-                             description="Filter by movie.id"
-                                         " (ex. ?movies=1,2)",
-                             type=str),
-
+            OpenApiParameter("movie",
+                             description="Filter movie_session by movie.id",
+                             type=str,
+                             location=OpenApiParameter.QUERY),
         ]
     )
     def list(self, request, *args, **kwargs):
