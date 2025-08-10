@@ -1,4 +1,3 @@
-import os
 import tempfile
 
 from PIL import Image
@@ -97,8 +96,18 @@ class AuthenticatedMovieTests(TestCase):
         res = self.client.post(MOVIE_URL, payload)
         self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
 
+    def test_upload_image_available_for_staff(self):
+        url = img_upload_url(self.movie1.id)
+        with tempfile.NamedTemporaryFile(suffix=".jpg") as ntf:
+            img = Image.new("RGB", (10, 10))
+            img.save(ntf, format="JPEG")
+            ntf.seek(0)
+            res = self.client.post(url, {"image": ntf}, format="multipart")
+            self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+
 
 class AdminMovieTests(TestCase):
+
     def setUp(self):
         self.client = APIClient()
         self.user = get_user_model().objects.create_user(
@@ -114,7 +123,6 @@ class AdminMovieTests(TestCase):
         self.genre1 = Genre.objects.create(name="test_genre1")
         self.actor1 = Actor.objects.create(first_name="test_first_name1", last_name="test_last_name1")
         self.client.force_authenticate(self.user)
-
 
     def test_create_movie(self):
         payload = {
@@ -143,3 +151,22 @@ class AdminMovieTests(TestCase):
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
         self.assertIn(self.genre1, genres)
         self.assertIn(self.actor1, actors)
+
+    def test_upload_image_available_for_staff(self):
+        url = img_upload_url(self.movie1.id)
+        with tempfile.NamedTemporaryFile(suffix=".jpg") as ntf:
+            img = Image.new("RGB", (10, 10))
+            img.save(ntf, format="JPEG")
+            ntf.seek(0)
+            res = self.client.post(url, {"image": ntf}, format="multipart")
+            self.assertEqual(res.status_code, status.HTTP_200_OK)
+
+
+
+
+
+
+
+
+
+
