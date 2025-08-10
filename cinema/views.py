@@ -128,19 +128,19 @@ class MovieViewSet(
             OpenApiParameter(
                 "title",
                 type=str,
-                description="Filtering by title",
+                description="Filtering by title (e.g., ?title=incept",
                 required=False,
             ),
             OpenApiParameter(
                 "genres",
                 type=str,
-                description="Filtering by genre",
+                description="Filter by genre IDs (e.g., ?genres=1,2)",
                 required=False,
             ),
             OpenApiParameter(
                 "actors",
                 type=str,
-                description="Filtering by actor id",
+                description="Filter by actor IDs (e.g., ?actors=1,2)",
                 required=False,
             )
         ]
