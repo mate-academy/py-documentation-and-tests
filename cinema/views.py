@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from django.db.models import F, Count
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import viewsets, mixins, status
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import action
@@ -127,6 +128,30 @@ class MovieViewSet(
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="title",
+                description="Filter by title",
+                required=False,
+                type={"type": "list", "items": {"type": "number"}},
+            ),
+            OpenApiParameter(
+                name="genres",
+                description="Filter by genres(id)",
+                type={"type": "list", "items": {"type": "number"}},
+            ),
+            OpenApiParameter(
+                name="actors",
+                description="Filter by actors(id)",
+                required=False,
+                type={"type": "list", "items": {"type": "number"}},
+            ),
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
 
 class MovieSessionViewSet(viewsets.ModelViewSet):
     queryset = (
@@ -166,6 +191,23 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
             return MovieSessionDetailSerializer
 
         return MovieSessionSerializer
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="date",
+                description="Filter by date(format: ?date-%Y%m-%d)",
+                type={"type": "list", "items": {"type": "date"}},
+            ),
+            OpenApiParameter(
+                name="movie",
+                description="Filter by movie(id)",
+                type={"type": "list", "items": {"type", "numbers"}},
+            ),
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
 
 
 class OrderPagination(PageNumberPagination):
