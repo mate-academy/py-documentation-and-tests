@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from django.db.models import F, Count
+from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiExample
 from rest_framework import viewsets, mixins, status
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import action
@@ -127,8 +128,37 @@ class MovieViewSet(
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="genres",
+                type={"type": "array", "items": {"type": "number"}},
+                description="Filter of movies by genres",
+            ),
+            OpenApiParameter(
+                name="actors",
+                type={"type": "array", "items": {"type": "number"}},
+                description="Filter of movies by actors",
+            ),
+            OpenApiParameter(
+                name="title",
+                type={"type": "string", "items": {"type": "string"}},
+                description="Filter of movies by title",
+            )
+        ],
+    )
 
-class MovieSessionViewSet(viewsets.ModelViewSet):
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+
+class MovieSessionViewSet(
+    mixins.CreateModelMixin,
+    mixins.RetrieveModelMixin,
+    mixins.UpdateModelMixin,
+    mixins.ListModelMixin,
+    GenericViewSet
+):
     queryset = (
         MovieSession.objects.all()
         .select_related("movie", "cinema_hall")
@@ -166,6 +196,29 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
             return MovieSessionDetailSerializer
 
         return MovieSessionSerializer
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="date",
+                type={"type": "string", "items": {"type": "string"}},
+                description="Filter of MovieSession by date",
+                examples=[
+                    OpenApiExample(
+                        "1993-08-23",
+                    ),
+                ],
+            ),
+            OpenApiParameter(
+                name="movie",
+                type={"type": "array", "items": {"type": "number"}},
+                description="Filter of MovieSession by movie",
+            ),
+        ],
+    )
+
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
 
 
 class OrderPagination(PageNumberPagination):
