@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from django.db.models import F, Count
+from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiExample
 from rest_framework import viewsets, mixins, status
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import action
@@ -197,3 +198,56 @@ class OrderViewSet(
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                "title",
+                type={"type": "list", "items": {"type": "string"}},
+                description="Filter by title(example: ?title=inception)",
+            ),
+            OpenApiParameter(
+                "genres",
+                type={"type": "list", "items": {"type": "number"}},
+                description="Filter by genres id(example: ?genres=2,3)",
+            ),
+            OpenApiParameter(
+                "actors",
+                type={"type": "list", "items": {"type": "number"}},
+                description="Filter by actors id(example: ?actors=4,1)",
+            ),
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        """Only for documentation purposes"""
+        return super().list(request, *args, **kwargs)
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                "movie",
+                type={"type": "number"},
+                description="Filter by movie (id)",
+                examples=[
+                    OpenApiExample(
+                        "Single movie id",
+                        value="1",
+                    )
+                ],
+            ),
+            OpenApiParameter(
+                "date",
+                type={"type": "str"},
+                description="Filter by date in format %Y-%M-%D",
+                examples=[
+                    OpenApiExample(
+                        "Example date 1",
+                        value="2024-10-08",
+                    )
+                ],
+            ),
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        """Only for documentation purposes"""
+        return super().list(request, *args, **kwargs)
