@@ -10,6 +10,7 @@ from rest_framework.test import APIClient
 from rest_framework import status
 
 from cinema.models import Movie, MovieSession, CinemaHall, Genre, Actor
+from user.models import User
 
 MOVIE_URL = reverse("cinema:movie-list")
 MOVIE_SESSION_URL = reverse("cinema:moviesession-list")
@@ -43,9 +44,7 @@ def sample_actor(**params):
 
 
 def sample_movie_session(**params):
-    cinema_hall = CinemaHall.objects.create(
-        name="Blue", rows=20, seats_in_row=20
-    )
+    cinema_hall = CinemaHall.objects.create(name="Blue", rows=20, seats_in_row=20)
 
     defaults = {
         "show_time": "2022-06-02 14:00:00",
@@ -157,3 +156,116 @@ class MovieImageUploadTests(TestCase):
         res = self.client.get(MOVIE_SESSION_URL)
 
         self.assertIn("movie_image", res.data[0].keys())
+
+
+class MovieViewSetTestCase(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.base_url = "/api/cinema/movies/"
+        self.admin_user = User.objects.create_superuser(
+            email="admin@test.com", password="adminpass"
+        )
+        self.regular_user = User.objects.create_user(
+            password="testpass", email="test@test.com"
+        )
+        self.genre = Genre.objects.create(name="Action")
+        self.actor = Actor.objects.create(first_name="John", last_name="Doe")
+        self.movie = Movie.objects.create(
+            title="Test Movie", description="Test Description", duration=120
+        )
+        self.movie.genres.add(self.genre)
+        self.movie.actors.add(self.actor)
+        self.genre_comedy = Genre.objects.create(name="Comedy")
+        self.actor_comedy = Actor.objects.create(first_name="Jane", last_name="Doe")
+        self.comedy_movie = Movie.objects.create(
+            title="Comedy Movie", description="A funny movie", duration=90
+        )
+        self.comedy_movie.genres.add(self.genre_comedy)
+        self.comedy_movie.actors.add(self.actor_comedy)
+
+    def test_list_movies_regular_user(self):
+        self.client.force_authenticate(user=self.regular_user)
+        response = self.client.get(self.base_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 2)
+
+    def test_retrieve_movie_regular_user(self):
+        self.client.force_authenticate(user=self.regular_user)
+        url = f"{self.base_url}{self.movie.id}/"
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["title"], "Test Movie")
+
+    def test_unauthorized_access(self):
+        self.client.logout()
+        response = self.client.get(self.base_url)
+        self.assertEqual(response.status_code, 401)
+
+    def test_create_movie_regular_user(self):
+        self.client.force_authenticate(user=self.admin_user)
+        data = {
+            "title": "New Movie",
+            "description": "New movie description",
+            "duration": 150,
+        }
+        response = self.client.post(self.base_url, data)
+        self.assertEqual(response.status_code, 400)
+
+    def test_create_movie_admin(self):
+        self.client.force_authenticate(user=self.admin_user)
+
+        genre = Genre.objects.create(name="Test Genre")
+        actor = Actor.objects.create(first_name="John", last_name="Doe")
+
+        data = {
+            "title": "New Movie by Admin",
+            "description": "New movie description by Admin",
+            "duration": 150,
+            "genres": [genre.id],
+            "actors": [actor.id],
+        }
+        response = self.client.post(self.base_url, data)
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(Movie.objects.count(), 3)
+
+    def test_update_movie_regular_user(self):
+        self.client.force_authenticate(user=self.admin_user)
+        data = {
+            "title": "Updated Movie",
+            "description": "Updated description",
+            "duration": 130,
+        }
+        url = f"{self.base_url}{self.movie.id}/"
+        response = self.client.put(url, data)
+        self.assertEqual(response.status_code, 405)
+
+    def test_update_movie_admin(self):
+        self.client.force_authenticate(user=self.admin_user)
+        data = {
+            "title": "Updated Movie by Admin",
+            "description": "Updated description by Admin",
+            "duration": 130,
+        }
+        url = f"{self.base_url}{self.movie.id}/"
+        response = self.client.put(url, data)
+        self.assertEqual(response.status_code, 405)
+
+    def test_filter_movies_by_title(self):
+        self.client.force_authenticate(user=self.regular_user)
+        response = self.client.get(f"{self.base_url}?title=Comedy")
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(
+            any(movie["title"] == "Comedy Movie" for movie in response.data)
+        )
+
+    def test_filter_movies_by_genre(self):
+        self.client.force_authenticate(user=self.regular_user)
+        response = self.client.get(f"{self.base_url}?genres={self.genre_comedy.id}")
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(any("Comedy" in movie["genres"] for movie in response.data))
+
+    def test_filter_movies_by_actor(self):
+        self.client.force_authenticate(user=self.regular_user)
+        response = self.client.get(f"{self.base_url}?actors={self.actor_comedy.id}")
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(any("Jane Doe" in movie["actors"] for movie in response.data))
