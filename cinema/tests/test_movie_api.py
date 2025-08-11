@@ -157,3 +157,79 @@ class MovieImageUploadTests(TestCase):
         res = self.client.get(MOVIE_SESSION_URL)
 
         self.assertIn("movie_image", res.data[0].keys())
+
+
+class MovieViewSetTests(TestCase):
+
+    def setUp(self):
+        self.client = APIClient()
+        self.admin_user = get_user_model().objects.create_superuser(
+            "admin@test.com", "password12345"
+        )
+        self.user = get_user_model().objects.create_user(
+            "user@myproject.com", "password"
+        )
+        self.movie = sample_movie()
+
+    def test_authenticated_user_can_list_movies(self):
+        self.client.force_authenticate(self.user)
+        res = self.client.get(MOVIE_URL)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+
+    def test_unauthenticated_user_cannot_list_movies(self):
+        res = self.client.get(MOVIE_URL)
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_admin_can_create_movie_with_valid_data(self):
+        self.client.force_authenticate(self.admin_user)
+        test_actor1 = Actor.objects.create(first_name="Sasha", last_name="Moroz")
+        test_actor2 = Actor.objects.create(first_name="Anna", last_name="Hudz")
+        test_genre1 = Genre.objects.create(name="Comedy")
+        test_genre2 = Genre.objects.create(name="Romantic")
+        payload = {
+            "title": "title",
+            "description": "description",
+            "duration": 120,
+            "actors": [test_actor1.id, test_actor2.id],
+            "genres": [test_genre1.id, test_genre2.id]
+        }
+        res = self.client.post(MOVIE_URL, payload)
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+
+    def test_admin_cannot_create_movie_with_invalid_data(self):
+        self.client.force_authenticate(self.admin_user)
+        payload = {
+            "title": "",
+            "description": "New Description",
+            "duration": 120
+        }
+        res = self.client.post(MOVIE_URL, payload)
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_non_admin_cannot_create_movie(self):
+        self.client.force_authenticate(self.user)
+        payload = {
+            "title": "New Movie",
+            "description": "New Description",
+            "duration": 120
+        }
+        res = self.client.post(MOVIE_URL, payload)
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_unauthenticated_user_cannot_create_movie(self):
+        payload = {
+            "title": "New Movie",
+            "description": "New Description",
+            "duration": 120
+        }
+        res = self.client.post(MOVIE_URL, payload)
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_authenticated_user_can_retrieve_movie(self):
+        self.client.force_authenticate(self.user)
+        res = self.client.get(detail_url(self.movie.id))
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+
+    def test_unauthenticated_user_cannot_retrieve_movie(self):
+        res = self.client.get(detail_url(self.movie.id))
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
