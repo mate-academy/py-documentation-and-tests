@@ -60,7 +60,30 @@ class CinemaHallViewSet(
     authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
+from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiTypes
 
+@extend_schema(
+    parameters=[
+        OpenApiParameter(
+            name="title",
+            description="Filter movies by title (case-insensitive)",
+            required=False,
+            type=OpenApiTypes.STR
+        ),
+        OpenApiParameter(
+            name="genres",
+            description="Filter by comma-separated genre IDs. Example: `1,2,3`",
+            required=False,
+            type=OpenApiTypes.STR
+        ),
+        OpenApiParameter(
+            name="actors",
+            description="Filter by comma-separated actor IDs. Example: `4,5`",
+            required=False,
+            type=OpenApiTypes.STR
+        ),
+    ]
+)
 class MovieViewSet(
     mixins.ListModelMixin,
     mixins.CreateModelMixin,
@@ -110,6 +133,7 @@ class MovieViewSet(
 
         return MovieSerializer
 
+
     @action(
         methods=["POST"],
         detail=True,
@@ -127,7 +151,22 @@ class MovieViewSet(
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
+@extend_schema(
+    parameters=[
+        OpenApiParameter(
+            name="date",
+            description="Filter by session date in format YYYY-MM-DD",
+            required=False,
+            type=OpenApiTypes.DATE
+        ),
+        OpenApiParameter(
+            name="movie",
+            description="Filter by movie ID",
+            required=False,
+            type=OpenApiTypes.INT
+        ),
+    ]
+)
 class MovieSessionViewSet(viewsets.ModelViewSet):
     queryset = (
         MovieSession.objects.all()

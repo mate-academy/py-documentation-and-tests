@@ -157,3 +157,47 @@ class MovieImageUploadTests(TestCase):
         res = self.client.get(MOVIE_SESSION_URL)
 
         self.assertIn("movie_image", res.data[0].keys())
+
+class MovieViewSetFilteringTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.user = get_user_model().objects.create_user(
+            "user@example.com", "password"
+        )
+        self.client.force_authenticate(self.user)
+        self.genre1 = sample_genre(name="Action")
+        self.genre2 = sample_genre(name="Drama")
+        self.actor1 = sample_actor(first_name="Tom", last_name="Hanks")
+        self.actor2 = sample_actor(first_name="Will", last_name="Smith")
+
+        self.movie1 = sample_movie(title="The Great Escape")
+        self.movie1.genres.add(self.genre1)
+        self.movie1.actors.add(self.actor1)
+
+        self.movie2 = sample_movie(title="Love Story")
+        self.movie2.genres.add(self.genre2)
+        self.movie2.actors.add(self.actor2)
+
+    def test_filter_by_title(self):
+        res = self.client.get(MOVIE_URL, {"title": "Escape"})
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(res.data), 1)
+        self.assertEqual(res.data[0]["title"], "The Great Escape")
+
+    def test_filter_by_genres(self):
+        res = self.client.get(MOVIE_URL, {"genres": str(self.genre1.id)})
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(res.data), 1)
+        self.assertEqual(res.data[0]["title"], "The Great Escape")
+
+    def test_filter_by_actors(self):
+        res = self.client.get(MOVIE_URL, {"actors": str(self.actor2.id)})
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(res.data), 1)
+        self.assertEqual(res.data[0]["title"], "Love Story")
+
+    def test_filter_by_multiple_genre_ids(self):
+        ids = f"{self.genre1.id},{self.genre2.id}"
+        res = self.client.get(MOVIE_URL, {"genres": ids})
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(res.data), 2)
