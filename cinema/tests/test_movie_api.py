@@ -46,9 +46,7 @@ def sample_actor(**params):
 
 
 def sample_movie_session(**params):
-    cinema_hall = CinemaHall.objects.create(
-        name="Blue", rows=20, seats_in_row=20
-    )
+    cinema_hall = CinemaHall.objects.create(name="Blue", rows=20, seats_in_row=20)
 
     defaults = {
         "show_time": "2022-06-02 14:00:00",
@@ -201,20 +199,15 @@ class AutenticatedUserApiTests(TestCase):
         movie_with_genres = sample_movie()
         actor1 = sample_actor(first_name="Jef", last_name="Jefferson")
         genre1 = sample_genre(name="Fantasy")
-        movie_with_genres.genres.add(genre1,)
-        movie_with_actors.actors.add(actor1,)
-        res_actor = self.client.get(
-            MOVIE_URL,
-            {"actors": f"{actor1.id}"}
+        movie_with_genres.genres.add(
+            genre1,
         )
-        res_genre = self.client.get(
-            MOVIE_URL,
-            {"genres": f"{genre1.id}"}
+        movie_with_actors.actors.add(
+            actor1,
         )
-        res_title = self.client.get(
-            MOVIE_URL,
-            {"title": "Pirates"}
-        )
+        res_actor = self.client.get(MOVIE_URL, {"actors": f"{actor1.id}"})
+        res_genre = self.client.get(MOVIE_URL, {"genres": f"{genre1.id}"})
+        res_title = self.client.get(MOVIE_URL, {"title": "Pirates"})
 
         serializer_without_attr = MovieListSerializer(movie_without_attr)
         serializer_with_actors = MovieListSerializer(movie_with_actors)
