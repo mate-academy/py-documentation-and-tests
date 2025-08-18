@@ -10,6 +10,7 @@ from rest_framework.test import APIClient
 from rest_framework import status
 
 from cinema.models import Movie, MovieSession, CinemaHall, Genre, Actor
+from cinema.views import MovieViewSet
 
 MOVIE_URL = reverse("cinema:movie-list")
 MOVIE_SESSION_URL = reverse("cinema:moviesession-list")
@@ -157,3 +158,38 @@ class MovieImageUploadTests(TestCase):
         res = self.client.get(MOVIE_SESSION_URL)
 
         self.assertIn("movie_image", res.data[0].keys())
+
+class MovieViewSetTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.user = get_user_model().objects.create_superuser(
+            "admin@myproject.com", "password"
+        )
+        self.client.force_authenticate(self.user)
+        self.genre = sample_genre(name="Sci-Fi")
+        self.actor = sample_actor(first_name="Keanu Reeves")
+        self.movie = sample_movie(
+            title="The Matrix",
+        )
+        self.movie.genres.set([self.genre])
+        self.movie.actors.set([self.actor])
+
+    def test_list_movies(self):
+        res = self.client.get("/api/cinema/movies/")
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.data[0]["title"], self.movie.title)
+
+    def test_filter_by_title(self):
+        res = self.client.get("/api/cinema/movies/", {"title": "Matrix"})
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.data[0]["title"], self.movie.title)
+
+    def test_filter_by_genres(self):
+        res = self.client.get("/api/cinema/movies/", {"genres": str(self.genre.id)})
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.data[0]["id"], self.movie.id)
+
+    def test_filter_by_actors(self):
+        res = self.client.get("/api/cinema/movies/", {"actors": str(self.actor.id)})
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.data[0]["id"], self.movie.id)
