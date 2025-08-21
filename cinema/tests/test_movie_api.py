@@ -3,6 +3,7 @@ import os
 
 from PIL import Image
 from django.contrib.auth import get_user_model
+from django.core.cache import cache
 from django.test import TestCase
 from django.urls import reverse
 
@@ -12,6 +13,7 @@ from rest_framework import status
 from cinema.models import Movie, MovieSession, CinemaHall, Genre, Actor
 from cinema.serializers import MovieListSerializer, MovieDetailSerializer
 
+TOKEN_URL = reverse("user:token_obtain_pair")
 MOVIE_URL = reverse("cinema:movie-list")
 MOVIE_SESSION_URL = reverse("cinema:moviesession-list")
 
@@ -69,6 +71,7 @@ def detail_url(movie_id):
 
 class MovieImageUploadTests(TestCase):
     def setUp(self):
+        cache.clear()
         self.client = APIClient()
         self.user = get_user_model().objects.create_superuser(
             "admin@myproject.com", "password"
@@ -162,6 +165,8 @@ class MovieImageUploadTests(TestCase):
 
 class MovieApiTests(TestCase):
     def setUp(self):
+        cache.clear()
+
         self.unauthenticated_client = APIClient()
 
         self.client = APIClient()
@@ -262,3 +267,34 @@ class MovieApiTests(TestCase):
         self.assertEqual(movie.title, payload["title"])
         self.assertEqual(movie.genres.count(), 2)
         self.assertTrue(self.genre1 in movie.genres.all())
+
+    def test_jwt_authentication_works(self):
+        payload = {"email": self.user.email, "password": "testpass123"}
+        res_token = self.client.post(TOKEN_URL, payload)
+        self.assertEqual(res_token.status_code, status.HTTP_200_OK)
+        token = res_token.data["access"]
+
+        jwt_client = APIClient()
+        jwt_client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
+        res_movies = jwt_client.get(MOVIE_URL)
+
+        self.assertEqual(res_movies.status_code, status.HTTP_200_OK)
+
+    def test_anonymous_throttling_on_public_endpoint(self):
+        payload = {"email": self.user.email, "password": "wrong_password"}
+        for i in range(10):
+            res = self.unauthenticated_client.post(TOKEN_URL, payload)
+            self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+        res = self.unauthenticated_client.post(TOKEN_URL, payload)
+        self.assertEqual(
+            res.status_code, status.HTTP_429_TOO_MANY_REQUESTS
+        )
+
+    def test_authenticated_user_throttling(self):
+        for i in range(30):
+            res = self.client.get(MOVIE_URL)
+            self.assertEqual(res.status_code, status.HTTP_200_OK)
+
+        res = self.client.get(MOVIE_URL)
+        self.assertEqual(res.status_code, status.HTTP_429_TOO_MANY_REQUESTS)

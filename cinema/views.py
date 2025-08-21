@@ -8,6 +8,7 @@ from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
+from rest_framework.throttling import UserRateThrottle
 from rest_framework.viewsets import GenericViewSet
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
@@ -39,6 +40,7 @@ class GenreViewSet(
     serializer_class = GenreSerializer
     authentication_classes = (JWTAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
+    throttle_classes = (UserRateThrottle,)
 
 
 class ActorViewSet(
@@ -50,6 +52,7 @@ class ActorViewSet(
     serializer_class = ActorSerializer
     authentication_classes = (JWTAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
+    throttle_classes = (UserRateThrottle,)
 
 
 class CinemaHallViewSet(
@@ -61,6 +64,7 @@ class CinemaHallViewSet(
     serializer_class = CinemaHallSerializer
     authentication_classes = (JWTAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
+    throttle_classes = (UserRateThrottle,)
 
 
 class MovieViewSet(
@@ -73,6 +77,7 @@ class MovieViewSet(
     serializer_class = MovieSerializer
     authentication_classes = (JWTAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
+    throttle_classes = (UserRateThrottle,)
 
     @staticmethod
     def _params_to_ints(qs):
@@ -175,6 +180,7 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
     serializer_class = MovieSessionSerializer
     authentication_classes = (JWTAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
+    throttle_classes = (UserRateThrottle,)
 
     def get_queryset(self):
         date = self.request.query_params.get("date")
@@ -237,6 +243,7 @@ class OrderViewSet(
     pagination_class = OrderPagination
     authentication_classes = (JWTAuthentication,)
     permission_classes = (IsAuthenticated,)
+    throttle_classes = (UserRateThrottle,)
 
     def get_queryset(self):
         return Order.objects.filter(user=self.request.user)
