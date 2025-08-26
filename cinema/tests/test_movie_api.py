@@ -10,6 +10,7 @@ from rest_framework.test import APIClient
 from rest_framework import status
 
 from cinema.models import Movie, MovieSession, CinemaHall, Genre, Actor
+from cinema.serializers import MovieListSerializer, MovieDetailSerializer
 
 MOVIE_URL = reverse("cinema:movie-list")
 MOVIE_SESSION_URL = reverse("cinema:moviesession-list")
@@ -64,6 +65,131 @@ def image_upload_url(movie_id):
 
 def detail_url(movie_id):
     return reverse("cinema:movie-detail", args=[movie_id])
+
+
+class AuthorizedMovieApiTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.user = get_user_model().objects.create_superuser(
+            "test_admin@test.test",
+            "test_password"
+        )
+        self.client.force_authenticate(self.user)
+        self.movie = sample_movie()
+        self.movie_detail_url = detail_url(self.movie.id)
+        self.genre = sample_genre(name="Fantacy")
+        self.actor = sample_actor(
+            first_name="Brandon",
+            last_name="Cooper"
+        )
+
+    def test_movie_list(self):
+        res = self.client.get(MOVIE_URL)
+        movie = Movie.objects.all()
+        serializer = MovieListSerializer(movie, many=True)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(serializer.data, res.data)
+
+    def test_movie_retrieve(self):
+        res = self.client.get(self.movie_detail_url)
+        serializer = MovieDetailSerializer(self.movie)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(serializer.data, res.data)
+
+    def test_create_movie(self):
+        payload = {
+            "title": "Interstellar",
+            "description": "Some descriprion.",
+            "duration": 100,
+            "genres": [self.genre.id],
+            "actors": [self.actor.id]
+        }
+        res = self.client.post(MOVIE_URL, payload)
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        self.assertTrue(Movie.objects.filter(title="Interstellar").exists())
+
+
+class UnauthorizedMovieApiTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.movie = sample_movie()
+
+    def test_movie_list_unauthorized(self):
+        res = self.client.get(MOVIE_URL)
+        self.assertEqual(
+            res.status_code,
+            status.HTTP_401_UNAUTHORIZED
+        )
+
+    def test_movie_retrieve_unauthorized(self):
+        res = self.client.get(detail_url(self.movie.id))
+        self.assertEqual(
+            res.status_code,
+            status.HTTP_401_UNAUTHORIZED
+        )
+
+
+class MovieFilterApiTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.user = get_user_model().objects.create_superuser(
+            "admin@test.test",
+            "password1234"
+        )
+        self.client.force_authenticate(self.user)
+
+    def _filter_and_check(self, filter_param, obj1, obj2, filter_value):
+        res = self.client.get(MOVIE_URL, {filter_param: filter_value})
+        serializer1 = MovieListSerializer(obj1)
+        serializer2 = MovieListSerializer(obj2)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertIn(serializer1.data, res.data)
+        self.assertNotIn(serializer2.data, res.data)
+
+    def test_movie_filter_by_title(self):
+        movie_1 = sample_movie(
+            title="Interstellar"
+        )
+        movie_2 = sample_movie(
+            title="Titanic"
+        )
+        self._filter_and_check("title", movie_1, movie_2, "Inter")
+
+    def test_movie_filter_by_genre(self):
+        genre_1 = sample_genre(name="Drama")
+        genre_2 = sample_genre(name="Fantacy")
+        movie_1 = sample_movie(
+            title="Titanic"
+        )
+        movie_1.genres.add(genre_1)
+        movie_2 = sample_movie(title="Interstellar")
+        movie_2.genres.add(genre_2)
+        self._filter_and_check(
+            "genres",
+            movie_1,
+            movie_2,
+            f"{genre_1.id}"
+        )
+
+    def test_movie_filter_by_actor(self):
+        actor_1 = sample_actor(
+            first_name="Leonardo",
+            last_name="Di Caprio"
+        )
+        actor_2 = sample_actor(
+            first_name="Joaquin",
+            last_name="Phoenix"
+        )
+        movie_1 = sample_movie(title="Titanic")
+        movie_1.actors.add(actor_1)
+        movie_2 = sample_movie(title="Joker")
+        movie_2.actors.add(actor_2)
+        self._filter_and_check(
+            "actors",
+            movie_1,
+            movie_2,
+            f"{actor_1.id}"
+        )
 
 
 class MovieImageUploadTests(TestCase):
