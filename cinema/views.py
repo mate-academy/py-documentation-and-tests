@@ -3,11 +3,14 @@ from datetime import datetime
 from django.db.models import F, Count
 from rest_framework import viewsets, mixins, status
 from rest_framework.authentication import TokenAuthentication
+from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet, ReadOnlyModelViewSet
+from rest_framework.throttling import UserRateThrottle, AnonRateThrottle
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 
 from cinema.models import Genre, Actor, CinemaHall, Movie, MovieSession, Order
 from cinema.permissions import IsAdminOrIfAuthenticatedReadOnly
@@ -65,12 +68,15 @@ class MovieViewSet(
     mixins.ListModelMixin,
     mixins.CreateModelMixin,
     mixins.RetrieveModelMixin,
+    mixins.UpdateModelMixin,
+    mixins.DestroyModelMixin,
     viewsets.GenericViewSet,
 ):
     queryset = Movie.objects.prefetch_related("genres", "actors")
     serializer_class = MovieSerializer
-    authentication_classes = (TokenAuthentication,)
+    authentication_classes = (JWTAuthentication, TokenAuthentication)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
+    throttle_classes = (UserRateThrottle, AnonRateThrottle)
 
     @staticmethod
     def _params_to_ints(qs):
@@ -97,6 +103,36 @@ class MovieViewSet(
             queryset = queryset.filter(actors__id__in=actors_ids)
 
         return queryset.distinct()
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="title",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="Filter movies by partial title match.",
+            ),
+            OpenApiParameter(
+                name="genres",
+                type={"type": "list", "items": {"type": "integer"}},
+                location=OpenApiParameter.QUERY,
+                description=(
+                    "Comma-separated list of genre IDs to filter movies."
+                ),
+            ),
+            OpenApiParameter(
+                name="actors",
+                type={"type": "list", "items": {"type": "integer"}},
+                location=OpenApiParameter.QUERY,
+                description=(
+                    "Comma-separated list of actor IDs to filter movies."
+                ),
+            ),
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        """List movies with filters and OpenAPI documentation."""
+        return super().list(request, *args, **kwargs)
 
     def get_serializer_class(self):
         if self.action == "list":
@@ -140,9 +176,27 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
         )
     )
     serializer_class = MovieSessionSerializer
-    authentication_classes = (TokenAuthentication,)
+    authentication_classes = (JWTAuthentication, TokenAuthentication)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
+    from drf_spectacular.utils import extend_schema, OpenApiParameter
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="date",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="Filter movie sessions by date (YYYY-MM-DD).",
+            ),
+            OpenApiParameter(
+                name="movie",
+                type=int,
+                location=OpenApiParameter.QUERY,
+                description="Filter movie sessions by movie ID.",
+            ),
+        ]
+    )
     def get_queryset(self):
         date = self.request.query_params.get("date")
         movie_id_str = self.request.query_params.get("movie")
