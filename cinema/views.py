@@ -9,6 +9,8 @@ from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet, ReadOnlyModelViewSet
 
+from drf_spectacular.utils import extend_schema, OpenApiParameter
+
 from cinema.models import Genre, Actor, CinemaHall, Movie, MovieSession, Order
 from cinema.permissions import IsAdminOrIfAuthenticatedReadOnly
 
@@ -61,6 +63,25 @@ class CinemaHallViewSet(
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
 
+@extend_schema(
+    parameters=[
+        OpenApiParameter(
+            "title",
+            description="Filter by movie title",
+            required=False
+        ),
+        OpenApiParameter(
+            "genres",
+            description="Filter by genre IDs (comma-separated)",
+            required=False
+        ),
+        OpenApiParameter(
+            "actors",
+            description="Filter by actor IDs (comma-separated)",
+            required=False
+        ),
+    ]
+)
 class MovieViewSet(
     mixins.ListModelMixin,
     mixins.CreateModelMixin,
@@ -128,6 +149,16 @@ class MovieViewSet(
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+@extend_schema(
+    parameters=[
+        OpenApiParameter(
+            "date", description="Filter by date YYYY-MM-DD", required=False
+        ),
+        OpenApiParameter(
+            "movie", description="Filter by movie ID", required=False
+        ),
+    ]
+)
 class MovieSessionViewSet(viewsets.ModelViewSet):
     queryset = (
         MovieSession.objects.all()
