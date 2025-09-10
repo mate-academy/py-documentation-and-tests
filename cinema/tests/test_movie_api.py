@@ -157,3 +157,80 @@ class MovieImageUploadTests(TestCase):
         res = self.client.get(MOVIE_SESSION_URL)
 
         self.assertIn("movie_image", res.data[0].keys())
+
+
+class MovieViewSetTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.user = get_user_model().objects.create_superuser(
+            "admin@myproject.com", "password"
+        )
+        self.client.force_authenticate(self.user)
+
+    def test_movie_filter_by_title(self):
+        sample_movie(title="Inception")
+        response = self.client.get(MOVIE_URL, {"title": "Inc"})
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data[0]["title"], "Inception")
+
+    def test_movie_filter_by_genre(self):
+        movie = sample_movie(title="Inception")
+        genre = sample_genre(name="Sci-fi")
+        movie.genres.add(genre)
+        response = self.client.get(MOVIE_URL, {"genres": genre.id})
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data[0]["title"], "Inception")
+
+    def test_movie_filter_by_actor(self):
+        movie = sample_movie(title="Inception")
+        actor = sample_actor(first_name="Leonardo", last_name="DiCaprio")
+        movie.actors.add(actor)
+        response = self.client.get(MOVIE_URL, {"actors": actor.id})
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data[0]["title"], "Inception")
+
+    def test_movie_list(self):
+        sample_movie(title="Django unchained")
+        sample_movie(title="Drive")
+        sample_movie(title="F1")
+        response = self.client.get(MOVIE_URL)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 3)
+
+    def test_movie_retrieve(self):
+        movie1 = sample_movie(title="Django unchained")
+        movie2 = sample_movie(title="F1")
+        response = self.client.get(detail_url(movie2.id))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["title"], "F1")
+
+        response = self.client.get(detail_url(movie1.id))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["title"], "Django unchained")
+
+    def test_create_movie(self):
+        genre = sample_genre(name="Action")
+        actor = sample_actor(first_name="Tom", last_name="Cruise")
+
+        payload = {
+            "title": "Mission Impossible",
+            "description": "Spy movie",
+            "duration": 110,
+            "genres": [genre.id],
+            "actors": [actor.id],
+        }
+        response = self.client.post(MOVIE_URL, payload)
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def test_unauthenticated_user(self):
+        self.client.force_authenticate(user=None)
+        response = self.client.get(MOVIE_URL)
+
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
