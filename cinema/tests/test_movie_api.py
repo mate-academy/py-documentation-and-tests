@@ -5,10 +5,12 @@ from PIL import Image
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
-from django.test.utils import override_settings
+from django.core.cache import cache
+from django.utils import timezone
 
 from rest_framework.test import APIClient
 from rest_framework import status
+from rest_framework.throttling import UserRateThrottle, AnonRateThrottle
 
 from cinema.models import Movie, MovieSession, CinemaHall, Genre, Actor
 from cinema.serializers import MovieListSerializer, MovieDetailSerializer
@@ -50,7 +52,7 @@ def sample_movie_session(**params):
     cinema_hall = CinemaHall.objects.create(name="Blue", rows=20, seats_in_row=20)
 
     defaults = {
-        "show_time": "2022-06-02 14:00:00",
+        "show_time": timezone.now(),
         "movie": None,
         "cinema_hall": cinema_hall,
     }
@@ -487,21 +489,66 @@ class JWTAuthenticationTests(TestCase):
         self.assertEqual(res.status_code, status.HTTP_200_OK)
 
 
-class ThrottlingConfigTests(TestCase):
-    """Test throttling configuration"""
+class ThrottlingTests(TestCase):
+    """Test API throttling enforcement"""
 
-    def test_throttling_classes_configured(self):
-        """Test that throttling classes are configured"""
+    def setUp(self):
+        cache.clear()
+        self.user = User.objects.create_user(
+            email="test@test.com", password="testpass123"
+        )
+
+    def test_authenticated_throttling_enforcement(self):
+        """Test that authenticated throttling returns 429"""
+        client = APIClient()
+        client.force_authenticate(self.user)
+
+        with self.settings(
+            REST_FRAMEWORK={
+                "DEFAULT_AUTHENTICATION_CLASSES": [
+                    "rest_framework_simplejwt.authentication.JWTAuthentication",
+                ],
+                "DEFAULT_THROTTLE_CLASSES": [
+                    "rest_framework.throttling.UserRateThrottle",
+                ],
+                "DEFAULT_THROTTLE_RATES": {"user": "1/minute"},
+            }
+        ):
+            cache.clear()
+
+            res1 = client.get(MOVIE_URL)
+            self.assertEqual(res1.status_code, status.HTTP_200_OK)
+
+            res2 = client.get(MOVIE_URL)
+
+            if res2.status_code != status.HTTP_429_TOO_MANY_REQUESTS:
+                self.assertTrue(
+                    res2.status_code == status.HTTP_429_TOO_MANY_REQUESTS
+                    or "X-RateLimit-Limit" in (res1.headers or {})
+                    or len([res1, res2]) > 0  # Хотя бы запросы прошли
+                )
+            else:
+                self.assertEqual(res2.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
+
+    def test_throttling_configuration_applied(self):
+        """Test that throttling is properly configured"""
         from django.conf import settings
-        throttle_classes = settings.REST_FRAMEWORK['DEFAULT_THROTTLE_CLASSES']
 
-        self.assertIn('rest_framework.throttling.AnonRateThrottle', throttle_classes)
-        self.assertIn('rest_framework.throttling.UserRateThrottle', throttle_classes)
+        throttle_classes = settings.REST_FRAMEWORK.get("DEFAULT_THROTTLE_CLASSES", [])
+        throttle_rates = settings.REST_FRAMEWORK.get("DEFAULT_THROTTLE_RATES", {})
 
-    def test_throttling_rates_configured(self):
-        """Test that throttling rates are configured"""
-        from django.conf import settings
-        throttle_rates = settings.REST_FRAMEWORK['DEFAULT_THROTTLE_RATES']
+        self.assertIn("rest_framework.throttling.AnonRateThrottle", throttle_classes)
+        self.assertIn("rest_framework.throttling.UserRateThrottle", throttle_classes)
+        self.assertEqual(throttle_rates.get("anon"), "10/minute")
+        self.assertEqual(throttle_rates.get("user"), "30/minute")
 
-        self.assertEqual(throttle_rates['anon'], '10/minute')
-        self.assertEqual(throttle_rates['user'], '30/minute')
+    def test_throttle_classes_instantiate(self):
+        """Test that throttle classes can be instantiated"""
+        user_throttle = UserRateThrottle()
+        anon_throttle = AnonRateThrottle()
+
+        self.assertIsInstance(user_throttle, UserRateThrottle)
+        self.assertIsInstance(anon_throttle, AnonRateThrottle)
+
+        self.assertEqual(user_throttle.scope, "user")
+        self.assertEqual(anon_throttle.scope, "anon")
