@@ -130,9 +130,21 @@ class MovieViewSet(
 
     @extend_schema(
         parameters=[
-            OpenApiParameter(name='title', description='Filter by movie title', required=False),
-            OpenApiParameter(name='genres', description='Filter by genres ids (comma-separated)', required=False),
-            OpenApiParameter(name='actors', description='Filter by actors ids (comma-separated)', required=False),
+            OpenApiParameter(
+                name="title",
+                description="Filter by movie title",
+                required=False
+            ),
+            OpenApiParameter(
+                name="genres",
+                description="Filter by genres ids (comma-separated)",
+                required=False,
+            ),
+            OpenApiParameter(
+                name="actors",
+                description="Filter by actors ids (comma-separated)",
+                required=False,
+            ),
         ]
     )
     def list(self, request, *args, **kwargs):
@@ -180,8 +192,16 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
 
     @extend_schema(
         parameters=[
-            OpenApiParameter(name='date', description='Filter sessions by date YYYY-MM-DD', required=False),
-            OpenApiParameter(name='movie', description='Filter sessions by movie id', required=False),
+            OpenApiParameter(
+                name="date",
+                description="Filter sessions by date YYYY-MM-DD",
+                required=False,
+            ),
+            OpenApiParameter(
+                name="movie",
+                description="Filter sessions by movie id",
+                required=False
+            ),
         ]
     )
     def list(self, request, *args, **kwargs):

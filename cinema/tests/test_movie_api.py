@@ -44,9 +44,7 @@ def sample_actor(**params):
 
 
 def sample_movie_session(**params):
-    cinema_hall = CinemaHall.objects.create(
-        name="Blue", rows=20, seats_in_row=20
-    )
+    cinema_hall = CinemaHall.objects.create(name="Blue", rows=20, seats_in_row=20)
 
     defaults = {
         "show_time": "2022-06-02 14:00:00",
@@ -159,6 +157,7 @@ class MovieImageUploadTests(TestCase):
 
         self.assertIn("movie_image", res.data[0].keys())
 
+
 class UnauthenticatedMovieTestCase(TestCase):
     def setUp(self):
         self.client = APIClient()
@@ -180,12 +179,8 @@ class AuthenticatedMovieTestCase(TestCase):
     def test_movie(self):
         mov_with_actor = sample_movie()
 
-        actor1 = Actor.objects.create(
-            first_name="Jackie", last_name="Chan"
-        )
-        actor2 = Actor.objects.create(
-            first_name="Angelina", last_name="Jolie"
-        )
+        actor1 = Actor.objects.create(first_name="Jackie", last_name="Chan")
+        actor2 = Actor.objects.create(first_name="Angelina", last_name="Jolie")
         mov_with_actor.actors.add(actor1, actor2)
         res = self.client.get(MOVIE_URL)
         movies = Movie.objects.all()
@@ -200,25 +195,15 @@ class AuthenticatedMovieTestCase(TestCase):
             description="description",
             duration=149,
         )
-        actor1 = Actor.objects.create(
-            first_name="Jackie", last_name="Chan"
-        )
-        actor2 = Actor.objects.create(
-            first_name="Angelina", last_name="Jolie"
-        )
+        actor1 = Actor.objects.create(first_name="Jackie", last_name="Chan")
+        actor2 = Actor.objects.create(first_name="Angelina", last_name="Jolie")
         genre1 = Genre.objects.create(name="Action")
         genre2 = Genre.objects.create(name="Drama")
         bus_with_actor.actors.add(actor1, actor2)
         bus_with_actor.genres.add(genre1, genre2)
 
-        res = self.client.get(
-            MOVIE_URL,
-            {"actors": f"{actor1.id}, {actor2.id}"}
-        )
-        res1 = self.client.get(MOVIE_URL,
-                               {"genres": f""
-                                          f"{genre1.id}, {genre2.id}"}
-                               )
+        res = self.client.get(MOVIE_URL, {"actors": f"{actor1.id}, {actor2.id}"})
+        res1 = self.client.get(MOVIE_URL, {"genres": f"" f"{genre1.id}, {genre2.id}"})
         movie_serializer_without_actor = MovieListSerializer(bus_without_actor)
         movie_serializer_with_actor = MovieListSerializer(bus_with_actor)
 
@@ -228,11 +213,14 @@ class AuthenticatedMovieTestCase(TestCase):
 
     def test_retrieve_movie(self):
         bus_with_actor_genre = sample_movie()
-        bus_with_actor_genre.actors.add(Actor.objects.create(
-            first_name="Jackie",
-            last_name="Chan"
-        ))
-        bus_with_actor_genre.genres.add(Genre.objects.create(name="Poem",))
+        bus_with_actor_genre.actors.add(
+            Actor.objects.create(first_name="Jackie", last_name="Chan")
+        )
+        bus_with_actor_genre.genres.add(
+            Genre.objects.create(
+                name="Poem",
+            )
+        )
         url = detail_url(bus_with_actor_genre.id)
         res = self.client.get(url)
         serializer = MovieDetailSerializer(bus_with_actor_genre)
@@ -255,9 +243,7 @@ class AdminMovieTestCase(TestCase):
     def setUp(self):
         self.client = APIClient()
         self.user = get_user_model().objects.create_user(
-            email="admin.user@cinema.com",
-            password="1qazcde3",
-            is_staff=True
+            email="admin.user@cinema.com", password="1qazcde3", is_staff=True
         )
         self.client.force_authenticate(user=self.user)
 
@@ -275,16 +261,20 @@ class AdminMovieTestCase(TestCase):
             self.assertEqual(payload[key], getattr(movie, key))
 
     def test_create_movie_with_actor_genre(self):
-        actor1 = Actor.objects.create(
-            first_name="Cristiano", last_name="Ronaldo"
+        actor1 = Actor.objects.create(first_name="Cristiano", last_name="Ronaldo")
+        genre = Genre.objects.create(
+            name="Sports",
         )
-        genre = Genre.objects.create(name="Sports", )
         payload = {
             "title": "movie",
             "description": "description",
             "duration": 90,
-            "actors": [actor1.id,],
-            "genres": [genre.id,],
+            "actors": [
+                actor1.id,
+            ],
+            "genres": [
+                genre.id,
+            ],
         }
 
         res = self.client.post(MOVIE_URL, payload)
