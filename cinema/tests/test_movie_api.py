@@ -5,6 +5,7 @@ from PIL import Image
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
+from django.test.utils import override_settings
 
 from rest_framework.test import APIClient
 from rest_framework import status
@@ -326,6 +327,22 @@ class AuthenticatedMovieApiTests(TestCase):
 
         self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
 
+    def test_update_movie_forbidden(self):
+        """Test that regular users cannot update movies"""
+        movie = sample_movie()
+        url = detail_url(movie.id)
+
+        res = self.client.patch(url, {"title": "New Title"})
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_delete_movie_forbidden(self):
+        """Test that regular users cannot delete movies"""
+        movie = sample_movie()
+        url = detail_url(movie.id)
+
+        res = self.client.delete(url)
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+
 
 class AdminMovieTests(TestCase):
     """Test admin movie API access"""
@@ -406,9 +423,85 @@ class AdminMovieTests(TestCase):
         self.assertIn("image", res.data)
         self.assertTrue(os.path.exists(movie.image.path))
 
+    def test_update_movie(self):
+        """Test updating movie (PATCH)"""
+        movie = sample_movie()
+        genre = sample_genre()
+
+        url = detail_url(movie.id)
+        payload = {"title": "Updated Title"}
+
+        res = self.client.patch(url, payload)
+        movie.refresh_from_db()
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(movie.title, payload["title"])
+
+    def test_delete_movie(self):
+        """Test deleting movie"""
+        movie = sample_movie()
+        url = detail_url(movie.id)
+
+        res = self.client.delete(url)
+
+        self.assertEqual(res.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(Movie.objects.filter(id=movie.id).exists())
+
     def tearDown(self):
         """Clean up uploaded images after tests"""
         for movie in Movie.objects.all():
             if movie.image:
                 if os.path.exists(movie.image.path):
                     os.remove(movie.image.path)
+
+
+class JWTAuthenticationTests(TestCase):
+    """Test JWT authentication via Authorization headers"""
+
+    def setUp(self):
+        self.client = APIClient()
+        self.user = User.objects.create_user(
+            email="test@test.com", password="testpass123"
+        )
+
+    def test_get_jwt_token(self):
+        """Test obtaining JWT token"""
+        url = reverse("user:token_obtain_pair")
+        res = self.client.post(
+            url, {"email": "test@test.com", "password": "testpass123"}
+        )
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertIn("access", res.data)
+
+    def test_access_with_jwt_token(self):
+        """Test accessing protected endpoint with JWT token"""
+        token_url = reverse("user:token_obtain_pair")
+        token_res = self.client.post(
+            token_url, {"email": "test@test.com", "password": "testpass123"}
+        )
+        token = token_res.data["access"]
+
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
+        res = self.client.get(MOVIE_URL)
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+
+
+class ThrottlingConfigTests(TestCase):
+    """Test throttling configuration"""
+
+    def test_throttling_classes_configured(self):
+        """Test that throttling classes are configured"""
+        from django.conf import settings
+        throttle_classes = settings.REST_FRAMEWORK['DEFAULT_THROTTLE_CLASSES']
+
+        self.assertIn('rest_framework.throttling.AnonRateThrottle', throttle_classes)
+        self.assertIn('rest_framework.throttling.UserRateThrottle', throttle_classes)
+
+    def test_throttling_rates_configured(self):
+        """Test that throttling rates are configured"""
+        from django.conf import settings
+        throttle_rates = settings.REST_FRAMEWORK['DEFAULT_THROTTLE_RATES']
+
+        self.assertEqual(throttle_rates['anon'], '10/minute')
+        self.assertEqual(throttle_rates['user'], '30/minute')
