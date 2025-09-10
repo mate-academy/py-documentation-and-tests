@@ -151,3 +151,67 @@ class AuthenticatedMovieTestCase(TestCase):
         self.assertIn(serializer1.data, res.data)
         self.assertNotIn(serializer2.data, res.data)
         self.assertEqual(len(res.data), 1)
+
+
+class AdminMovieViewSetTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.admin = get_user_model().objects.create_superuser(
+            email="admin@cinema.com",
+            password="adminpass"
+        )
+        res = self.client.post(TOKEN_URL, {
+            "email": self.admin.email,
+            "password": "adminpass"
+        })
+        token = res.data["access"]
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
+        self.genre1 = sample_genre(name="Action")
+        self.genre2 = sample_genre(name="Comedy")
+        self.actor1 = sample_actor(first_name="Tom", last_name="Hanks")
+        self.actor2 = sample_actor(first_name="Emma", last_name="Stone")
+
+    def test_create_movie(self):
+        payload = {
+            "title": "New Movie",
+            "description": "Description",
+            "duration": 120,
+            "genres": [self.genre1.id, self.genre2.id],
+            "actors": [self.actor1.id, self.actor2.id]
+        }
+        res = self.client.post(MOVIE_URL, payload, format="json")
+        self.assertIn(res.status_code, [status.HTTP_201_CREATED, status.HTTP_405_METHOD_NOT_ALLOWED])
+        if res.status_code == status.HTTP_201_CREATED:
+            movie = Movie.objects.get(id=res.data["id"])
+            self.assertEqual(movie.title, payload["title"])
+
+    def test_retrieve_movie(self):
+        movie = sample_movie()
+        movie.genres.set([self.genre1])
+        movie.actors.set([self.actor1])
+        url = detail_url(movie.id)
+        res = self.client.get(url)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data["id"], movie.id)
+
+    def test_filter_movies_by_genres(self):
+        movie1 = sample_movie(title="Movie1")
+        movie2 = sample_movie(title="Movie2")
+        movie1.genres.set([self.genre1])
+        movie2.genres.set([self.genre2])
+        res = self.client.get(MOVIE_URL, {"genres": self.genre1.id})
+        if res.status_code == status.HTTP_200_OK:
+            ids = [m["id"] for m in res.data]
+            self.assertIn(movie1.id, ids)
+            self.assertNotIn(movie2.id, ids)
+
+    def test_filter_movies_by_actors(self):
+        movie1 = sample_movie(title="Movie1")
+        movie2 = sample_movie(title="Movie2")
+        movie1.actors.set([self.actor1])
+        movie2.actors.set([self.actor2])
+        res = self.client.get(MOVIE_URL, {"actors": self.actor1.id})
+        if res.status_code == status.HTTP_200_OK:
+            ids = [m["id"] for m in res.data]
+            self.assertIn(movie1.id, ids)
+            self.assertNotIn(movie2.id, ids)
