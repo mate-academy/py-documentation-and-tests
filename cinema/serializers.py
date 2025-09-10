@@ -42,6 +42,11 @@ class MovieSerializer(serializers.ModelSerializer):
             "genres",
             "actors",
         )
+        read_only_fields = ("id",)
+        extra_kwargs = {
+            "genres": {"required": False, "allow_empty": True},
+            "actors": {"required": False, "allow_empty": True},
+        }
 
 
 class MovieListSerializer(serializers.ModelSerializer):
