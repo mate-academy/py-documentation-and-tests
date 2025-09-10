@@ -7,7 +7,7 @@ from .models import (
     Movie,
     MovieSession,
     Order,
-    Ticket,
+    Ticket
 )
 
 admin.site.register(CinemaHall)

@@ -9,7 +9,7 @@ from cinema.models import (
     Movie,
     MovieSession,
     Ticket,
-    Order,
+    Order
 )
 
 
@@ -34,25 +34,18 @@ class CinemaHallSerializer(serializers.ModelSerializer):
 class MovieSerializer(serializers.ModelSerializer):
     class Meta:
         model = Movie
-        fields = (
-            "id",
-            "title",
-            "description",
-            "duration",
-            "genres",
-            "actors",
-        )
+        fields = ("id", "title", "description", "duration", "genres", "actors")
 
 
 class MovieListSerializer(serializers.ModelSerializer):
 
     genres = serializers.SlugRelatedField(
-        many=True, read_only=True, slug_field="name"
-    )
-    actors = serializers.SlugRelatedField(
         many=True,
         read_only=True,
-        slug_field="full_name",
+        slug_field="name"
+    )
+    actors = serializers.SlugRelatedField(
+        many=True, read_only=True, slug_field="full_name"
     )
 
     class Meta:
@@ -64,7 +57,7 @@ class MovieListSerializer(serializers.ModelSerializer):
             "duration",
             "genres",
             "actors",
-            "image",
+            "image"
         )
 
 
@@ -81,7 +74,7 @@ class MovieDetailSerializer(serializers.ModelSerializer):
             "duration",
             "genres",
             "actors",
-            "image",
+            "image"
         )
 
 
@@ -101,7 +94,8 @@ class MovieSessionListSerializer(MovieSessionSerializer):
     movie_title = serializers.CharField(source="movie.title", read_only=True)
     movie_image = serializers.ImageField(source="movie.image", read_only=True)
     cinema_hall_name = serializers.CharField(
-        source="cinema_hall.name", read_only=True
+        source="cinema_hall.name",
+        read_only=True
     )
     cinema_hall_capacity = serializers.IntegerField(
         source="cinema_hall.capacity", read_only=True
@@ -128,7 +122,7 @@ class TicketSerializer(serializers.ModelSerializer):
             attrs["row"],
             attrs["seat"],
             attrs["movie_session"].cinema_hall,
-            ValidationError
+            ValidationError,
         )
         return data
 
@@ -151,7 +145,9 @@ class MovieSessionDetailSerializer(MovieSessionSerializer):
     movie = MovieListSerializer(many=False, read_only=True)
     cinema_hall = CinemaHallSerializer(many=False, read_only=True)
     taken_places = TicketSeatsSerializer(
-        source="tickets", many=True, read_only=True
+        source="tickets",
+        many=True,
+        read_only=True
     )
 
     class Meta:
