@@ -8,6 +8,7 @@ from django.urls import reverse
 
 from rest_framework.test import APIClient
 from rest_framework import status
+from rest_framework_simplejwt.tokens import RefreshToken
 
 from cinema.models import Movie, MovieSession, CinemaHall, Genre, Actor
 from cinema.serializers import MovieListSerializer, MovieDetailSerializer
@@ -174,9 +175,27 @@ class MovieViewAuthenticatedTests(TestCase):
             email="test@gmail.com",
             password="test_password",
         )
-        self.client.force_authenticate(self.user)
+        refresh = RefreshToken.for_user(self.user)
+        self.access_token = str(refresh.access_token)
 
-    def test_movie_list(self):
+    def test_movie_upload_authenticated(self):
+        movie_info = {
+            "title": "Sample movie",
+            "description": "Sample description",
+            "duration": 90,
+            "genres": [sample_genre().id],
+            "actors": [sample_actor().id],
+        }
+
+        res = self.client.post(
+            reverse("cinema:movie-list"),
+            data=movie_info,
+            HTTP_AUTHORIZATION=f"Bearer {self.access_token}"
+        )
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertFalse(Movie.objects.filter(title=movie_info["title"]).exists())
+
+    def test_movie_list_authenticated(self):
         sample_movie()
         movie_with_actors_and_genres = sample_movie()
         movie_with_actors_and_genres.actors.add(sample_actor())
@@ -184,33 +203,43 @@ class MovieViewAuthenticatedTests(TestCase):
         movies = Movie.objects.all()
         serializer = MovieListSerializer(movies, many=True)
 
-        res = self.client.get(reverse("cinema:movie-list"))
+        res = self.client.get(
+            reverse("cinema:movie-list"),
+            HTTP_AUTHORIZATION=f"Bearer {self.access_token}"
+        )
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(res.data, serializer.data)
 
-    def test_movie_detail(self):
-        sample_movie()
-        movie = Movie.objects.get(title="Sample movie")
+    def test_movie_detail_authenticated(self):
+        movie = sample_movie()
         serializer = MovieDetailSerializer(movie)
 
-        res = self.client.get(reverse("cinema:movie-detail", args=[movie.id]))
+        res = self.client.get(
+            reverse("cinema:movie-detail", args=[movie.id]),
+            HTTP_AUTHORIZATION=f"Bearer {self.access_token}"
+        )
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(res.data, serializer.data)
 
-    def test_movie_upload_authenticated(self):
-        movie_info = {
-            "title": "Sample movie",
-            "description": "Sample description",
-            "duration": 90,
-            "genres": [sample_genre()],
-            "actors": [sample_actor()],
-        }
+    def test_movie_update_authenticated(self):
+        movie = sample_movie()
+        data = {"title": "Changed"}
+        res = self.client.put(
+            reverse("cinema:movie-detail", args=[movie.id]),
+            data,
+            HTTP_AUTHORIZATION=f"Bearer {self.access_token}"
+        )
+        self.assertEqual(res.status_code, 403)
 
-        res = self.client.post(reverse("cinema:movie-list"), movie_info)
-        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
-        self.assertFalse(Movie.objects.filter(title=movie_info["title"]).exists())
+    def test_movie_delete_authenticated(self):
+        movie = sample_movie()
+        res = self.client.delete(
+            reverse("cinema:movie-detail", args=[movie.id]),
+            HTTP_AUTHORIZATION=f"Bearer {self.access_token}"
+        )
+        self.assertEqual(res.status_code, 403)
 
     def test_filter_movies_by_title(self):
         movie1 = sample_movie(title="Sample movie")
@@ -218,7 +247,11 @@ class MovieViewAuthenticatedTests(TestCase):
         serializer1 = MovieListSerializer(movie1)
         serializer2 = MovieListSerializer(movie2)
 
-        res = self.client.get(reverse("cinema:movie-list"), {"title": "sample"})
+        res = self.client.get(
+            reverse("cinema:movie-list"),
+            data={"title": "sample"},
+            HTTP_AUTHORIZATION=f"Bearer {self.access_token}"
+        )
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertIn(serializer1.data, res.data)
@@ -234,7 +267,11 @@ class MovieViewAuthenticatedTests(TestCase):
         serializer1 = MovieListSerializer(movie1)
         serializer2 = MovieListSerializer(movie2)
 
-        res = self.client.get(reverse("cinema:movie-list"), {"genres": [genre1.id]})
+        res = self.client.get(
+            reverse("cinema:movie-list"),
+            data={"genres": [genre1.id]},
+            HTTP_AUTHORIZATION=f"Bearer {self.access_token}"
+        )
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertIn(serializer1.data, res.data)
@@ -250,7 +287,11 @@ class MovieViewAuthenticatedTests(TestCase):
         serializer1 = MovieListSerializer(movie1)
         serializer2 = MovieListSerializer(movie2)
 
-        res = self.client.get(reverse("cinema:movie-list"), {"actors": [actor1.id]})
+        res = self.client.get(
+            reverse("cinema:movie-list"),
+            data={"actors": [actor1.id]},
+            HTTP_AUTHORIZATION=f"Bearer {self.access_token}"
+        )
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertIn(serializer1.data, res.data)
@@ -264,7 +305,8 @@ class MovieViewAdminTests(TestCase):
             email="admin@gmail.com",
             password="admin_password",
         )
-        self.client.force_authenticate(self.user)
+        refresh = RefreshToken.for_user(self.user)
+        self.access_token = str(refresh.access_token)
 
     def test_movie_upload_admin(self):
         movie_info = {
@@ -275,6 +317,11 @@ class MovieViewAdminTests(TestCase):
             "actors": [sample_actor().id],
         }
 
-        res = self.client.post(reverse("cinema:movie-list"), movie_info)
+        res = self.client.post(
+            reverse("cinema:movie-list"),
+            data=movie_info,
+            HTTP_AUTHORIZATION=f"Bearer {self.access_token}"
+        )
+
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
         self.assertTrue(Movie.objects.filter(title=movie_info["title"]).exists())
