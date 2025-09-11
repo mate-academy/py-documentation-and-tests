@@ -66,6 +66,7 @@ class ActorViewSet(
         """Creates a new actor(only for admins)"""
         return super().create(request, *args, **kwargs)
 
+
 class CinemaHallViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
@@ -83,6 +84,7 @@ class CinemaHallViewSet(
     def create(self, request, *args, **kwargs):
         """Creates a new cinema hall(only for admins)"""
         return super().create(request, *args, **kwargs)
+
 
 class MovieViewSet(
     mixins.ListModelMixin,
@@ -164,7 +166,8 @@ class MovieViewSet(
                 style="form",
                 explode=False,
                 location=OpenApiParameter.QUERY,
-                description="Filter by actor IDs, comma-separated (e.g. ?actors=1,2,3)",
+                description="Filter by actor IDs, "
+                            "comma-separated (e.g. ?actors=1,2,3)",
             ),
             OpenApiParameter(
                 name="genres",
@@ -172,7 +175,8 @@ class MovieViewSet(
                 style="form",
                 explode=False,
                 location=OpenApiParameter.QUERY,
-                description="Filter by genre IDs, comma-separated (e.g. ?genres=1,2,3)",
+                description="Filter by genre IDs, "
+                            "comma-separated (e.g. ?genres=1,2,3)",
             ),
         ]
     )

@@ -153,13 +153,13 @@ REST_FRAMEWORK = {
         "user": "30/minute"
     },
     "DEFAULT_AUTHENTICATION_CLASSES": (
-       "rest_framework_simplejwt.authentication.JWTAuthentication",
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
 }
 
 SPECTACULAR_SETTINGS = {
     "TITLE": "PLouvezz Best In the World API",
     "DESCRIPTION": "Provides documentation for cinema_app API",
-    'VERSION': '1.0.0',
-    'SERVE_INCLUDE_SCHEMA': False,
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
 }
