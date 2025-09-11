@@ -166,7 +166,6 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
     serializer_class = MovieSessionSerializer
     authentication_classes = (JWTAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
-    image = serializers.ImageField(read_only=True)
 
     def get_queryset(self):
         date = self.request.query_params.get("date")

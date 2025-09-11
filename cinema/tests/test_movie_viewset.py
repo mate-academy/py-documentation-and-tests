@@ -18,11 +18,19 @@ def image_file():
 
 class AuthenticatedUserTestCase(APITestCase):
     def setUp(self):
+        self.user_password = "testpass123"
         self.user = get_user_model().objects.create_user(
-            email="user@test.com", password="testpass123"
+            email="user@test.com", password=self.user_password
         )
         self.client = APIClient()
-        self.client.force_authenticate(user=self.user)
+
+        token_res = self.client.post(
+            reverse("token_obtain_pair"),  # або "/api/token/"
+            {"email": self.user.email, "password": self.user_password},
+        )
+        self.assertEqual(token_res.status_code, 200)
+        access = token_res.data["access"]
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {access}")
 
 
 class GenreTests(AuthenticatedUserTestCase):
