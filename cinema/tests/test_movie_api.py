@@ -10,7 +10,7 @@ from rest_framework.test import APIClient
 from rest_framework import status
 
 from cinema.models import Movie, MovieSession, CinemaHall, Genre, Actor
-from cinema.serializers import MovieSerializer, MovieListSerializer, MovieDetailSerializer
+from cinema.serializers import MovieListSerializer, MovieDetailSerializer
 
 MOVIE_URL = reverse("cinema:movie-list")
 MOVIE_SESSION_URL = reverse("cinema:moviesession-list")
@@ -61,12 +61,7 @@ def detail_url(movie_id):
     return reverse("cinema:movie-detail", args=(movie_id,))
 
 def image_upload_url(movie_id):
-    """Return URL for recipe image upload"""
     return reverse("cinema:movie-upload-image", args=[movie_id])
-
-
-def detail_url(movie_id):
-    return reverse("cinema:movie-detail", args=[movie_id])
 
 
 class MovieImageUploadTests(TestCase):
@@ -343,5 +338,29 @@ class AdminMovieApiTests(TestCase):
         url = detail_url(movie.id)
 
         res = self.client.delete(url)
+
+        self.assertEqual(res.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def test_put_movie_not_allowed(self):
+        movie = sample_movie()
+        url = detail_url(movie.id)
+
+        payload = {
+            "title": "Updated Title",
+            "description": "Updated Description",
+            "duration": 120,
+        }
+
+        res = self.client.put(url, payload)
+
+        self.assertEqual(res.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def test_patch_movie_not_allowed(self):
+        movie = sample_movie()
+        url = detail_url(movie.id)
+
+        payload = {"title": "Partially Updated"}
+
+        res = self.client.patch(url, payload)
 
         self.assertEqual(res.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
