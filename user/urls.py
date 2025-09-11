@@ -6,6 +6,7 @@ from rest_framework_simplejwt.views import (
 
 from user.views import CreateUserView, CreateTokenView, ManageUserView
 
+
 app_name = "user"
 
 urlpatterns = [
