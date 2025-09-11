@@ -82,6 +82,19 @@ class MovieViewSetTests(TestCase):
         res = self.client.post(url, payload)
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
 
+    def test_create_movie_authorized_user(self):
+        url = reverse("cinema:movie-list")
+        self.client.force_authenticate(self.user)
+        payload = {
+            "title": "New Movie",
+            "description": "New description",
+            "duration": 120,
+            "genres": [self.genre.id],
+            "actors": [self.actor.id],
+        }
+        res = self.client.post(url, payload)
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+
     def test_create_movie_admin(self):
         url = reverse("cinema:movie-list")
         self.client.force_authenticate(self.admin_user)
@@ -154,5 +167,5 @@ class MovieViewSetTests(TestCase):
         self.assertEqual(len(res.data), 1)
 
     def tearDown(self):
-        if hasattr(self, "movie") and self.movie.image:
+        if self.movie.image:
             self.movie.image.delete()
