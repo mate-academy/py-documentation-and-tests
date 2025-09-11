@@ -72,7 +72,9 @@ class MovieImageUploadTests(TestCase):
         self.user = get_user_model().objects.create_superuser(
             "admin@myproject.com", "password"
         )
-        self.client.force_authenticate(self.user)
+        refresh = RefreshToken.for_user(self.user)
+        self.access_token = str(refresh.access_token)
+
         self.movie = sample_movie()
         self.genre = sample_genre()
         self.actor = sample_actor()
@@ -88,7 +90,12 @@ class MovieImageUploadTests(TestCase):
             img = Image.new("RGB", (10, 10))
             img.save(ntf, format="JPEG")
             ntf.seek(0)
-            res = self.client.post(url, {"image": ntf}, format="multipart")
+            res = self.client.post(
+                url,
+                data={"image": ntf},
+                format="multipart",
+                HTTP_AUTHORIZATION=f"Bearer {self.access_token}"
+            )
         self.movie.refresh_from_db()
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
@@ -98,7 +105,12 @@ class MovieImageUploadTests(TestCase):
     def test_upload_image_bad_request(self):
         """Test uploading an invalid image"""
         url = image_upload_url(self.movie.id)
-        res = self.client.post(url, {"image": "not image"}, format="multipart")
+        res = self.client.post(
+            url,
+            data={"image": "not image"},
+            format="multipart",
+            HTTP_AUTHORIZATION=f"Bearer {self.access_token}"
+        )
 
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
 
@@ -110,7 +122,7 @@ class MovieImageUploadTests(TestCase):
             ntf.seek(0)
             res = self.client.post(
                 url,
-                {
+                data={
                     "title": "Title",
                     "description": "Description",
                     "duration": 90,
@@ -119,6 +131,7 @@ class MovieImageUploadTests(TestCase):
                     "image": ntf,
                 },
                 format="multipart",
+                HTTP_AUTHORIZATION=f"Bearer {self.access_token}"
             )
 
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
@@ -131,8 +144,16 @@ class MovieImageUploadTests(TestCase):
             img = Image.new("RGB", (10, 10))
             img.save(ntf, format="JPEG")
             ntf.seek(0)
-            self.client.post(url, {"image": ntf}, format="multipart")
-        res = self.client.get(detail_url(self.movie.id))
+            self.client.post(
+                url,
+                data={"image": ntf},
+                format="multipart",
+                HTTP_AUTHORIZATION=f"Bearer {self.access_token}"
+            )
+        res = self.client.get(
+            detail_url(self.movie.id),
+            HTTP_AUTHORIZATION=f"Bearer {self.access_token}"
+        )
 
         self.assertIn("image", res.data)
 
@@ -142,8 +163,16 @@ class MovieImageUploadTests(TestCase):
             img = Image.new("RGB", (10, 10))
             img.save(ntf, format="JPEG")
             ntf.seek(0)
-            self.client.post(url, {"image": ntf}, format="multipart")
-        res = self.client.get(MOVIE_URL)
+            self.client.post(
+                url,
+                data={"image": ntf},
+                format="multipart",
+                HTTP_AUTHORIZATION=f"Bearer {self.access_token}"
+            )
+        res = self.client.get(
+            MOVIE_URL,
+            HTTP_AUTHORIZATION=f"Bearer {self.access_token}"
+        )
 
         self.assertIn("image", res.data[0].keys())
 
@@ -153,8 +182,16 @@ class MovieImageUploadTests(TestCase):
             img = Image.new("RGB", (10, 10))
             img.save(ntf, format="JPEG")
             ntf.seek(0)
-            self.client.post(url, {"image": ntf}, format="multipart")
-        res = self.client.get(MOVIE_SESSION_URL)
+            self.client.post(
+                url,
+                data={"image": ntf},
+                format="multipart",
+                HTTP_AUTHORIZATION=f"Bearer {self.access_token}"
+            )
+        res = self.client.get(
+            MOVIE_SESSION_URL,
+            HTTP_AUTHORIZATION=f"Bearer {self.access_token}"
+        )
 
         self.assertIn("movie_image", res.data[0].keys())
 
@@ -269,7 +306,7 @@ class MovieViewAuthenticatedTests(TestCase):
 
         res = self.client.get(
             reverse("cinema:movie-list"),
-            data={"genres": [genre1.id]},
+            data={"genres": str(genre1.id)},
             HTTP_AUTHORIZATION=f"Bearer {self.access_token}"
         )
 
@@ -289,7 +326,7 @@ class MovieViewAuthenticatedTests(TestCase):
 
         res = self.client.get(
             reverse("cinema:movie-list"),
-            data={"actors": [actor1.id]},
+            data={"actors": str(actor1.id)},
             HTTP_AUTHORIZATION=f"Bearer {self.access_token}"
         )
 
@@ -325,3 +362,5 @@ class MovieViewAdminTests(TestCase):
 
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
         self.assertTrue(Movie.objects.filter(title=movie_info["title"]).exists())
+
+
