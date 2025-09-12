@@ -3,6 +3,7 @@ import os
 
 from PIL import Image
 from django.contrib.auth import get_user_model
+from django.core.cache import cache
 from django.test import TestCase
 from django.urls import reverse
 
@@ -93,11 +94,11 @@ class InvalidTokenAuthTests(TestCase):
     def setUp(self):
         self.client = APIClient()
         self.user = get_user_model().objects.create_user(
-            email="test@test.test", password="testpassword"
+            email="test@user.test", password="usertestpassword"
         )
         res = self.client.post(
             reverse("token_obtain_pair"),
-            {"email": "test@test.test", "password": "testpassword"})
+            {"email": "test@user.test", "password": "usertestpassword"})
         token = res.data["access"]
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {token + 'a'}")
 
@@ -111,14 +112,15 @@ class MovieSessionQueryParamsValidationTests(TestCase):
     def setUp(self):
         self.client = APIClient()
         self.user = get_user_model().objects.create_user(
-            email="user@test.com", password="testpass"
+            email="test1@test1.test", password="1testpassword"
         )
         res = self.client.post(
             reverse("token_obtain_pair"),
-            {"email": "user@test.com", "password": "testpass"}
-        )
+            {"email": "test1@test1.test", "password": "1testpassword"})
         token = res.data["access"]
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
+        self.assertEqual(res.status_code, status.HTTP_200_OK, res.data)
+        self.assertIn("access", res.data)
 
     def test_invalid_date_params_return_400(self):
         res = self.client.get(MOVIE_SESSION_URL, {"date": "abc"})
@@ -136,13 +138,15 @@ class AuthenticatedNotAdminMovieApiTests(TestCase):
     def setUp(self):
         self.client = APIClient()
         self.user = get_user_model().objects.create_user(
-            email="test@test.test", password="testpassword"
+            email="test2@test2.test", password="2testpassword"
         )
         res = self.client.post(
             reverse("token_obtain_pair"),
-            {"email": "test@test.test", "password": "testpassword"})
+            {"email": "test2@test2.test", "password": "2testpassword"})
         token = res.data["access"]
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
+        self.assertEqual(res.status_code, status.HTTP_200_OK, res.data)
+        self.assertIn("access", res.data)
 
     def test_movies_list_and_retrieve_allowed(self):
         movie = sample_movie()
@@ -253,13 +257,13 @@ class AdminMovieApiTests(TestCase):
     def setUp(self):
         self.client = APIClient()
         self.admin = get_user_model().objects.create_superuser(
-            email="admin@test.com",
-            password="adminpass",
+            email="admin@testadmin.com",
+            password="adminpassword",
             is_staff=True,
         )
         res = self.client.post(
             reverse("token_obtain_pair"),
-            {"email": "admin@test.com", "password": "adminpass"})
+            {"email": "admin@testadmin.com", "password": "adminpassword"})
         token = res.data["access"]
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
 
@@ -288,35 +292,38 @@ class AdminMovieApiTests(TestCase):
 
 
 class MovieUpdateDeleteNotAllowedTests(TestCase):
+    def tearDown(self):
+        cache.clear()
+
     def setUp(self):
         self.client = APIClient()
         self.movie = sample_movie()
 
     def auth_as_user(self):
-        self.user = get_user_model().objects.create_user(
-            email="test@test.test", password="testpassword"
-        )
+        email = "test3@test.test"
+        password = "3testpassword"
+        get_user_model().objects.create_user(email=email, password=password)
         res = self.client.post(
             reverse("token_obtain_pair"),
-            {"email": "test@test.test", "password": "testpassword"})
-        token = res.data["access"]
-        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
-
-
-    def auth_as_admin(self):
-        self.client = APIClient()
-        self.admin = get_user_model().objects.create_superuser(
-            email="admin@test.com",
-            password="adminpass",
-            is_staff=True,
+            {"email": email, "password": password}
         )
-        res = self.client.post(
-            reverse("token_obtain_pair"),
-            {"email": "admin@test.com", "password": "adminpass"})
-        token = res.data["access"]
-        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
         self.assertEqual(res.status_code, status.HTTP_200_OK, res.data)
         self.assertIn("access", res.data)
+        token = res.data["access"]
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
+
+    def auth_as_admin(self):
+        email = "admin@admin.com"
+        password = "adminpas"
+        get_user_model().objects.create_superuser(email=email, password=password)
+        res = self.client.post(
+            reverse("token_obtain_pair"),
+            {"email": email, "password": password}
+        )
+        self.assertEqual(res.status_code, status.HTTP_200_OK, res.data)
+        self.assertIn("access", res.data)
+        token = res.data["access"]
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
 
     def test_put_patch_delete_not_allowed_for_user(self):
         self.auth_as_user()
