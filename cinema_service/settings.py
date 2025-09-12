@@ -145,7 +145,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 REST_FRAMEWORK = {
     "DEFAULT_PERMISSIONS_CLASSES": [
-        "station.permissions.IsAdminOrIfAuthenticatedReadOnly",
+        "cinema.permissions.IsAdminOrIfAuthenticatedReadOnly",
     ],
 
     "DEFAULT_AUTHENTICATION_CLASSES": [

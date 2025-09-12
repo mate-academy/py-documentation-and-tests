@@ -75,7 +75,14 @@ class MovieViewSet(
     @staticmethod
     def _params_to_ints(qs):
         """Converts a list of string IDs to a list of integers"""
-        return [int(str_id) for str_id in qs.split(",")]
+        if not qs:
+            return []
+        try:
+            return [int(str_id.strip()) for str_id in qs.split(",") if str_id.strip()]
+        except ValueError:
+            raise ValidationError(
+                "Invalid ID format. Expected comma-separated integers (e.g., 1,2,3)."
+            )
 
     def get_queryset(self):
         """Retrieve the movies with filters"""

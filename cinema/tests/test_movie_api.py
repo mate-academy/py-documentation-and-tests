@@ -219,6 +219,30 @@ class AuthenticatedMovieApiTests(TestCase):
         self.assertNotIn(serializer2.data, res.data)
         self.assertIn(serializer3.data, res.data)
 
+
+    def test_filter_movie_by_actor(self):
+        movie1 = sample_movie(title="Matrix")
+        movie2 = sample_movie(title="Fight Club")
+        movie3 = sample_movie(title="Konstantin :)")
+
+        actor1 = sample_actor(first_name='Keanu', last_name='Reeves')
+        actor2 = sample_actor(first_name='Brad', last_name='Pit')
+
+        movie1.actors.add(actor1)
+        movie2.actors.add(actor2)
+        movie3.actors.add(actor1)
+
+        res = self.client.get(MOVIE_URL, {"actors": f"{actor1.id}"})
+
+        serializer1 = MovieListSerializer(movie1)
+        serializer2 = MovieListSerializer(movie2)
+        serializer3 = MovieListSerializer(movie3)
+
+
+        self.assertIn(serializer1.data, res.data)
+        self.assertNotIn(serializer2.data, res.data)
+        self.assertIn(serializer3.data, res.data)
+
     def test_filter_movie_by_genres(self):
         movie1 = sample_movie(title="Titanic")
         movie2 = sample_movie(title="Fight Club")
