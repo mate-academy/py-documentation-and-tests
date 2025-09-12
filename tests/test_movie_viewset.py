@@ -166,6 +166,74 @@ class MovieViewSetTests(TestCase):
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(len(res.data), 1)
 
+    def test_update_movie_unauthorized(self):
+        url = detail_url(self.movie.id)
+        payload = {"title": "Updated Movie"}
+        res = self.client.patch(url, payload)
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_update_movie_authorized_user(self):
+        url = detail_url(self.movie.id)
+        self.client.force_authenticate(self.user)
+        payload = {"title": "Updated Movie"}
+        res = self.client.patch(url, payload)
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_update_movie_admin(self):
+        url = detail_url(self.movie.id)
+        self.client.force_authenticate(self.admin_user)
+        payload = {"title": "Updated Movie"}
+        res = self.client.patch(url, payload)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.movie.refresh_from_db()
+        self.assertEqual(self.movie.title, "Updated Movie")
+
+    def test_partial_update_movie_admin(self):
+        url = detail_url(self.movie.id)
+        self.client.force_authenticate(self.admin_user)
+        payload = {"description": "Updated description"}
+        res = self.client.patch(url, payload)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.movie.refresh_from_db()
+        self.assertEqual(self.movie.description, "Updated description")
+
+    def test_delete_movie_unauthorized(self):
+        url = detail_url(self.movie.id)
+        res = self.client.delete(url)
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_delete_movie_authorized_user(self):
+        url = detail_url(self.movie.id)
+        self.client.force_authenticate(self.user)
+        res = self.client.delete(url)
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_delete_movie_admin(self):
+        url = detail_url(self.movie.id)
+        self.client.force_authenticate(self.admin_user)
+        res = self.client.delete(url)
+        self.assertEqual(res.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(Movie.objects.filter(id=self.movie.id).exists())
+
+    def test_upload_image_unauthorized(self):
+        url = image_upload_url(self.movie.id)
+        with tempfile.NamedTemporaryFile(suffix=".jpg") as ntf:
+            img = Image.new("RGB", (10, 10))
+            img.save(ntf, format="JPEG")
+            ntf.seek(0)
+            res = self.client.post(url, {"image": ntf}, format="multipart")
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_upload_image_authorized_user(self):
+        url = image_upload_url(self.movie.id)
+        self.client.force_authenticate(self.user)
+        with tempfile.NamedTemporaryFile(suffix=".jpg") as ntf:
+            img = Image.new("RGB", (10, 10))
+            img.save(ntf, format="JPEG")
+            ntf.seek(0)
+            res = self.client.post(url, {"image": ntf}, format="multipart")
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+
     def tearDown(self):
         if self.movie.image:
             self.movie.image.delete()

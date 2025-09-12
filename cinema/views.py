@@ -68,6 +68,8 @@ class MovieViewSet(
     mixins.ListModelMixin,
     mixins.CreateModelMixin,
     mixins.RetrieveModelMixin,
+    mixins.UpdateModelMixin,
+    mixins.DestroyModelMixin,
     viewsets.GenericViewSet,
 ):
     queryset = Movie.objects.prefetch_related("genres", "actors")
@@ -80,17 +82,23 @@ class MovieViewSet(
             OpenApiParameter(
                 "title",
                 OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
+                required=False,
                 description="Filter movies by title "
                             "(case-insensitive partial match)",
             ),
             OpenApiParameter(
                 name="genres",
                 type={"type": "array", "items": {"type": "integer"}},
+                location=OpenApiParameter.QUERY,
+                required=False,
                 description="Filter by genres id (ex. ?genres=1,2)",
             ),
             OpenApiParameter(
                 name="actors",
                 type={"type": "array", "items": {"type": "integer"}},
+                location=OpenApiParameter.QUERY,
+                required=False,
                 description="Filter by actors id (ex. ?actors=1,2)",
             ),
         ]
@@ -174,12 +182,16 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
             OpenApiParameter(
                 "date",
                 OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
+                required=False,
                 description="Filter movie sessions by "
                             "date (YYYY-MM-DD format)",
             ),
             OpenApiParameter(
                 "movie",
                 OpenApiTypes.INT,
+                location=OpenApiParameter.QUERY,
+                required=False,
                 description="Filter movie sessions by movie ID",
             ),
         ]
