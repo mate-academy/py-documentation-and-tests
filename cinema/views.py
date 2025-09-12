@@ -4,6 +4,7 @@ from django.db.models import F, Count
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import viewsets, mixins, status
+from rest_framework.exceptions import ValidationError
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
@@ -177,6 +178,18 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
     authentication_classes = (JWTAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
+    @staticmethod
+    def _params_to_ints(qs):
+        """Converts a list of string IDs to a list of integers"""
+        if not qs:
+            return []
+        try:
+            return [int(str_id.strip()) for str_id in qs.split(",") if str_id.strip()]
+        except ValueError:
+            raise ValidationError(
+                "Invalid movie ID format. Expected comma-separated integers (e.g., 1,2,3)."
+            )
+
     def get_queryset(self):
         date = self.request.query_params.get("date")
         movie_id_str = self.request.query_params.get("movie")
@@ -184,11 +197,18 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
         queryset = self.queryset
 
         if date:
-            date = datetime.strptime(date, "%Y-%m-%d").date()
-            queryset = queryset.filter(show_time__date=date)
+            try:
+                date = datetime.strptime(date, "%Y-%m-%d").date()
+                queryset = queryset.filter(show_time__date=date)
+            except ValueError:
+                raise ValidationError(
+                    "Invalid date format. Expected YYYY-MM-DD (e.g., 2024-12-25)."
+                )
 
         if movie_id_str:
-            queryset = queryset.filter(movie_id=int(movie_id_str))
+            movie_ids = self._params_to_ints(movie_id_str)
+            if movie_ids:
+                queryset = queryset.filter(movie_id__in=movie_ids)
 
         return queryset
 
@@ -205,16 +225,17 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
         parameters=[
             OpenApiParameter(
                 name="date",
-                description="Filter by date",
+                description="Filter by date (YYYY-MM-DD format)",
                 required=False,
                 type=OpenApiTypes.STR,
+                example="2024-12-25"
             ),
             OpenApiParameter(
                 name="movie",
-                description="Comma separated list of movie sessions"
-                            "(e.g. 1,2,3) to filter movies",
+                description="Comma-separated list of movie IDs to filter sessions (e.g., 1,2,3)",
                 required=False,
                 type=OpenApiTypes.STR,
+                example="1,2,3"
             ),
         ]
     )
