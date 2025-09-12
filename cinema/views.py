@@ -92,7 +92,10 @@ class MovieViewSet(
             queryset = queryset.filter(title__icontains=title)
 
         if genres:
-            genres_ids = self._params_to_ints(genres)
+            try:
+                genres_ids = self._params_to_ints(genres)
+            except ValueError:
+                raise ParseError("Invalid genre ID. Must be integer.")
             queryset = queryset.filter(genres__id__in=genres_ids)
 
         if actors:
@@ -220,7 +223,7 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
                 name="movie",
                 description="Movie ID to filter sessions",
                 required=False,
-                type=OpenApiTypes.STR,
+                type=OpenApiTypes.INT,
                 location=OpenApiParameter.QUERY,
             ),
         ]

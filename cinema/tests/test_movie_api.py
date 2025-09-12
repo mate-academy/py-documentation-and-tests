@@ -343,10 +343,17 @@ class MovieUpdateDeleteNotAllowedTests(TestCase):
 class MovieImageUploadTests(TestCase):
     def setUp(self):
         self.client = APIClient()
-        self.user = get_user_model().objects.create_superuser(
-            "admin@myproject.com", "password"
+        email = "admin@admin.admin"
+        password = "adminpa"
+        get_user_model().objects.create_superuser(email=email, password=password)
+        res = self.client.post(
+            reverse("token_obtain_pair"),
+            {"email": email, "password": password}
         )
-        self.client.force_authenticate(self.user)
+        self.assertEqual(res.status_code, status.HTTP_200_OK, res.data)
+        self.assertIn("access", res.data)
+        token = res.data["access"]
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
         self.movie = sample_movie()
         self.genre = sample_genre()
         self.actor = sample_actor()

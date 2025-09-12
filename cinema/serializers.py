@@ -22,6 +22,7 @@ class GenreSerializer(serializers.ModelSerializer):
 class ActorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Actor
+        full_name = serializers.ReadOnlyField()
         fields = ("id", "first_name", "last_name", "full_name")
 
 
