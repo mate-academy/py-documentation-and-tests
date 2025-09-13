@@ -32,9 +32,9 @@ urlpatterns = [
     ),
     # jwt
     path(
-        "api/token/", TokenObtainPairView.as_view(), name="token_obtain_pair"
+        "api/token/", TokenObtainPairView.as_view(), name="token-obtain-pair"
     ),
     path(
-        "api/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"
+        "api/token/refresh/", TokenRefreshView.as_view(), name="token-refresh"
     ),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
