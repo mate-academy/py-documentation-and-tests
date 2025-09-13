@@ -85,7 +85,7 @@ class TestMovieView(APITestCase):
             return False
         
         self.headers = {
-            "Authorization": f"Bearer {response.data["access"]}"
+            "Authorization": f"Bearer {response.data['access']}"
         }
         return True
 
