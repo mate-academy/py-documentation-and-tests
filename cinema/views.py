@@ -1,6 +1,9 @@
 from datetime import datetime
 
 from django.db.models import F, Count
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema, OpenApiParameter, \
+    OpenApiExample
 from rest_framework import viewsets, mixins, status
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import action
@@ -37,6 +40,10 @@ class GenreViewSet(
     serializer_class = GenreSerializer
     authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
+
+    def list(self, request):
+        # your non-standard behaviour
+        return super().list(request)
 
 
 class ActorViewSet(
@@ -76,6 +83,32 @@ class MovieViewSet(
     def _params_to_ints(qs):
         """Converts a list of string IDs to a list of integers"""
         return [int(str_id) for str_id in qs.split(",")]
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name='title',
+                description='Filter movies by title',
+                required=False,
+                type=str),
+            OpenApiParameter(
+                name='genres',
+                description='Filter movies by genres ids',
+                required=False,
+                many=True,
+                type=str
+                    ),
+            OpenApiParameter(
+                name='actors',
+                description='Filter movies by actors ids',
+                required=False,
+                many=True,
+                type=str
+            ),
+                ],
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
 
     def get_queryset(self):
         """Retrieve the movies with filters"""
@@ -157,6 +190,24 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(movie_id=int(movie_id_str))
 
         return queryset
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name='date',
+                description='Filter movie sessions by date',
+                required=False,
+                type=str),
+            OpenApiParameter(
+                name='movie',
+                description='Filter movie sessions by movie id',
+                required=False,
+                type=str
+            ),
+        ],
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
 
     def get_serializer_class(self):
         if self.action == "list":
