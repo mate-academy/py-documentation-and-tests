@@ -8,6 +8,7 @@ from django.urls import reverse
 
 from rest_framework.test import APIClient
 from rest_framework import status
+from rest_framework_simplejwt.tokens import RefreshToken
 
 from cinema.models import Movie, MovieSession, CinemaHall, Genre, Actor
 
@@ -165,7 +166,9 @@ class MovieViewSetTests(TestCase):
         self.user = get_user_model().objects.create_superuser(
             "admin@myproject.com", "password"
         )
-        self.client.force_authenticate(self.user)
+        refresh = RefreshToken.for_user(self.user)
+        access_token = str(refresh.access_token)
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {access_token}")
 
     def test_movie_filter_by_title(self):
         sample_movie(title="Inception")
@@ -234,3 +237,17 @@ class MovieViewSetTests(TestCase):
         response = self.client.get(MOVIE_URL)
 
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_throttle_for_authenticated_user(self):
+        for _ in range(31):
+            response = self.client.get(MOVIE_URL)
+            if response.status_code == status.HTTP_429_TOO_MANY_REQUESTS:
+                break
+        self.assertEqual(response.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
+
+    def test_throttle_for_unauthenticated_user(self):
+        for _ in range(11):
+            response = self.client.get(MOVIE_URL)
+            if response.status_code == status.HTTP_429_TOO_MANY_REQUESTS:
+                break
+        self.assertEqual(response.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
