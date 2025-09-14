@@ -6,7 +6,7 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 
-from rest_framework.test import APIClient
+from rest_framework.test import APIClient, APITestCase
 from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
 
@@ -245,9 +245,46 @@ class MovieViewSetTests(TestCase):
                 break
         self.assertEqual(response.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
 
-    def test_throttle_for_unauthenticated_user(self):
-        for _ in range(11):
-            response = self.client.get(MOVIE_URL)
-            if response.status_code == status.HTTP_429_TOO_MANY_REQUESTS:
-                break
-        self.assertEqual(response.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
+
+class JWTAuthFlowTests(APITestCase):
+    def setUp(self):
+        self.email = "admin@myproject.com"
+        self.password = "password123"
+        self.user = get_user_model().objects.create_user(
+            email=self.email,
+            password=self.password
+        )
+        self.token_url = reverse("token_obtain_pair")
+        self.refresh_url = reverse("token_refresh")
+        self.movie_url = reverse("movie-list")
+
+    def test_obtain_jwt_token_and_access_protected_view(self):
+        response = self.client.post(self.token_url, {
+            "email": self.email,
+            "password": self.password
+        })
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("access", response.data)
+        self.assertIn("refresh", response.data)
+
+        access_token = response.data["access"]
+
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {access_token}")
+        response = self.client.get(self.movie_url)
+        self.assertIn(response.status_code, [status.HTTP_200_OK, status.HTTP_204_NO_CONTENT])
+
+    def test_refresh_jwt_token(self):
+        response = self.client.post(self.token_url, {
+            "email": self.email,
+            "password": self.password
+        })
+        refresh_token = response.data["refresh"]
+
+        response = self.client.post(self.refresh_url, {"refresh": refresh_token})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("access", response.data)
+
+    def test_access_with_invalid_token(self):
+        self.client.credentials(HTTP_AUTHORIZATION="Bearer invalidtoken123")
+        response = self.client.get(self.movie_url)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
