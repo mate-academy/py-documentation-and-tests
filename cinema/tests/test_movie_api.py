@@ -256,7 +256,7 @@ class JWTAuthFlowTests(APITestCase):
         )
         self.token_url = reverse("token_obtain_pair")
         self.refresh_url = reverse("token_refresh")
-        self.movie_url = reverse("movie-list")
+        self.movie_url = MOVIE_URL
 
     def test_obtain_jwt_token_and_access_protected_view(self):
         response = self.client.post(self.token_url, {
