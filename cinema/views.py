@@ -7,7 +7,12 @@ from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
-from rest_framework.viewsets import GenericViewSet, ReadOnlyModelViewSet
+from rest_framework.viewsets import GenericViewSet
+from drf_spectacular.utils import (
+    extend_schema,
+    OpenApiParameter,
+    OpenApiExample
+)
 
 from cinema.models import Genre, Actor, CinemaHall, Movie, MovieSession, Order
 from cinema.permissions import IsAdminOrIfAuthenticatedReadOnly
@@ -61,6 +66,28 @@ class CinemaHallViewSet(
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
 
+@extend_schema(
+    parameters=[
+        OpenApiParameter(
+            name="title",
+            description="Filter by part of the movie title (case-insensitive)",
+            required=False,
+            type=str,
+        ),
+        OpenApiParameter(
+            name="genres",
+            description="Filter by genre ids (comma separated, e.g. 1,2,3)",
+            required=False,
+            type={"type": "list", "items": {"type": "integer"}},
+        ),
+        OpenApiParameter(
+            name="actors",
+            description="Filter by actor ids (comma separated, e.g. 1,2,3)",
+            required=False,
+            type={"type": "list", "items": {"type": "integer"}},
+        ),
+    ]
+)
 class MovieViewSet(
     mixins.ListModelMixin,
     mixins.CreateModelMixin,
@@ -128,6 +155,27 @@ class MovieViewSet(
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+@extend_schema(
+    parameters=[
+        OpenApiParameter(
+            name="date",
+            description="Filter by show date (format YYYY-MM-DD)",
+            required=False,
+            type=str,
+            examples=[OpenApiExample(
+                "Date example",
+                value="2025-09-16",
+                description="Example date for filtering movie sessions."
+            )],
+        ),
+        OpenApiParameter(
+            name="movie",
+            description="Filter by movie id",
+            required=False,
+            type=int,
+        ),
+    ]
+)
 class MovieSessionViewSet(viewsets.ModelViewSet):
     queryset = (
         MovieSession.objects.all()
