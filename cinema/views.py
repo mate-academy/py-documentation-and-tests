@@ -1,9 +1,11 @@
 from datetime import datetime
 
 from django.db.models import F, Count
+from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import viewsets, mixins, status
 from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
@@ -98,18 +100,18 @@ class MovieViewSet(
         parameters=[
             OpenApiParameter(
                 name="title",
-                type=str,
+                type=OpenApiTypes.STR,
                 description="Filter by movie title (substring match)",
             ),
             OpenApiParameter(
                 name="genres",
-                type={"type": "array", "items": {"type": "integer"}},
-                description="Filter by genre IDs (e.g. ?genres=1,2,3)",
+                type=OpenApiTypes.STR,
+                description="Comma-separated list of genre IDs (e.g. ?genres=1,2,3)",
             ),
             OpenApiParameter(
                 name="actors",
-                type={"type": "array", "items": {"type": "integer"}},
-                description="Filter by actor IDs (e.g. ?actors=4,5,6)",
+                type=OpenApiTypes.STR,
+                description="Comma-separated list of actors IDs (e.g. ?actors=1,2,3)",
             ),
         ]
     )
@@ -167,7 +169,10 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
         queryset = self.queryset
 
         if date:
-            date = datetime.strptime(date, "%Y-%m-%d").date()
+            try:
+                date = datetime.strptime(date, "%Y-%m-%d").date()
+            except ValueError:
+                raise ValidationError("Invalid date format. Expected YYYY-MM-DD.")
             queryset = queryset.filter(show_time__date=date)
 
         if movie_id_str:
@@ -193,8 +198,8 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
             ),
             OpenApiParameter(
                 name="date",
-                type=str,
-                description="Filter by movie data",
+                type=OpenApiTypes.DATE,
+                description="Filter by movie date (format: YYYY-MM-DD, e.g. ?date=2025-09-19)",
             )
         ]
     )
