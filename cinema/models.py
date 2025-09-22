@@ -5,6 +5,8 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.conf import settings
 from django.utils.text import slugify
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema_field
 
 
 class CinemaHall(models.Model):
@@ -35,6 +37,7 @@ class Actor(models.Model):
         return self.first_name + " " + self.last_name
 
     @property
+    @extend_schema_field(OpenApiTypes.STR)
     def full_name(self):
         return f"{self.first_name} {self.last_name}"
 
