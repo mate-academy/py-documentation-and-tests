@@ -1,11 +1,13 @@
 from datetime import datetime
 
 from django.db.models import F, Count
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import viewsets, mixins, status
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet, ReadOnlyModelViewSet
 
@@ -98,6 +100,31 @@ class MovieViewSet(
 
         return queryset.distinct()
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="title",
+                type=str,
+                description="Movie title to filter by",
+                required=False,
+            ),
+            OpenApiParameter(
+                name="genres",
+                type=str,
+                description="Movie genres id to filter by",
+                required=False,
+            ),
+            OpenApiParameter(
+                name="actors",
+                type=str,
+                description="Movie actors id to filter by",
+                required=False,
+            )
+        ]
+    )
+    def list(self, request: Request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
     def get_serializer_class(self):
         if self.action == "list":
             return MovieListSerializer
@@ -157,6 +184,25 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(movie_id=int(movie_id_str))
 
         return queryset
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="date",
+                type=str,
+                description="Movie date to filter by",
+                required=False,
+            ),
+            OpenApiParameter(
+                name="movie",
+                type=str,
+                description="Movie id to filter by",
+                required=False,
+            ),
+        ]
+    )
+    def list(self, request: Request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
 
     def get_serializer_class(self):
         if self.action == "list":
