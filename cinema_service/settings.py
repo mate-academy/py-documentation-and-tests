@@ -169,5 +169,17 @@ SPECTACULAR_SETTINGS = {
                    "showtimes, enhancing the overall movie-going experience.",
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
-    # OTHER SETTINGS
+    "SECURITY": [
+        {"BearerAuth": []},
+    ],
+    "COMPONENTS": {
+        "securitySchemes": {
+            "BearerAuth": {
+                "type": "http",
+                "scheme": "bearer",
+                "bearerFormat": "JWT",
+                "description": "Enter your JWT token in the format: **Bearer &lt;token&gt;**",
+            }
+        }
+    },
 }

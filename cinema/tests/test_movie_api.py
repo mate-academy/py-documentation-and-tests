@@ -95,10 +95,16 @@ def get_jwt_for_user(client: APIClient, email: str, password: str):
 class MovieImageUploadTests(TestCase):
     def setUp(self):
         self.client = APIClient()
-        self.user = get_user_model().objects.create_superuser(
-            "admin@myproject.com", "password"
+        # Use JWT instead of force_authenticate
+        self.admin_email = "admin@myproject.com"
+        self.admin_password = "password"
+        self.admin_user = get_user_model().objects.create_superuser(
+            self.admin_email, self.admin_password
         )
-        self.client.force_authenticate(self.user)
+        token = get_jwt_for_user(self.client, self.admin_email, self.admin_password)
+        assert token, "Failed to obtain JWT token for admin"
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
+
         self.movie = sample_movie()
         self.genre = sample_genre()
         self.actor = sample_actor()
@@ -206,8 +212,8 @@ class MovieApiTests(TestCase):
             email=self.user_email,
             password=self.user_password
         )
-        self.staff_email = "admin@example.com"
-        self.staff_password = "testpass123"
+        self.staff_email = "admin.user@cinema.com"
+        self.staff_password = "1qazcde3"
         self.staff = get_user_model().objects.create_superuser(
             email=self.staff_email,
             password=self.staff_password
@@ -313,6 +319,23 @@ class MovieApiTests(TestCase):
         serializer = MovieDetailSerializer(movie)
         self.assertEqual(res.data, serializer.data)
 
+    def test_update_movie_forbidden_for_non_admin(self):
+        movie = sample_movie(title="Old Title")
+        url = detail_url(movie.id)
+        self._auth_with_jwt(self.user_email, self.user_password)
+
+        res_put = self.client.put(url, {
+            "title": "New Title",
+            "description": movie.description,
+            "duration": movie.duration,
+            "genres": [],
+            "actors": []
+        })
+        self.assertEqual(res_put.status_code, status.HTTP_403_FORBIDDEN)
+
+        res_patch = self.client.patch(url, {"title": "Patched Title"})
+        self.assertEqual(res_patch.status_code, status.HTTP_403_FORBIDDEN)
+
     def test_create_movie_forbidden_for_non_admin(self):
         payload = {"title": "Admin Movie", "description": "Desc", "duration": 120, "genres": [], "actors": []}
         self._auth_with_jwt(self.user_email, self.user_password)
@@ -353,21 +376,14 @@ class MovieApiTests(TestCase):
             )
 
     def test_throttling_anonymous_and_authenticated(self):
-        """Test that throttling works for anonymous and authenticated users"""
         from django.core.cache import cache
         cache.clear()
 
         client = APIClient()
-        responses = []
-        for i in range(5):
-            resp = client.get(MOVIE_URL)
-            responses.append(resp.status_code)
-
-        self.assertNotIn(
-            status.HTTP_429_TOO_MANY_REQUESTS,
-            responses[:5],
-            "Anonymous user should not be throttled within the first 5 requests"
-        )
+        for i in range(10):
+            client.get(MOVIE_URL)
+        res_11 = client.get(MOVIE_URL)
+        self.assertEqual(res_11.status_code, status.HTTP_401_UNAUTHORIZED)
 
         cache.clear()
         client_auth = APIClient()
@@ -375,22 +391,10 @@ class MovieApiTests(TestCase):
         pwd = "throttlepass"
         get_user_model().objects.create_user(email=email, password=pwd)
         token = get_jwt_for_user(client_auth, email, pwd)
-        self.assertIsNotNone(token, "Couldn't obtain token for throttle test user")
+        self.assertIsNotNone(token)
         client_auth.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
 
-        auth_responses = []
-        for i in range(10):
-            r = client_auth.get(MOVIE_URL)
-            auth_responses.append(r.status_code)
-
-        self.assertNotIn(
-            status.HTTP_429_TOO_MANY_REQUESTS,
-            auth_responses[:10],
-            "Authenticated user should not be throttled within first 10 requests"
-        )
-
-        self.assertIn(
-            status.HTTP_200_OK,
-            auth_responses,
-            "At least one authenticated request should succeed"
-        )
+        for i in range(30):
+            client_auth.get(MOVIE_URL)
+        res_31 = client_auth.get(MOVIE_URL)
+        self.assertEqual(res_31.status_code, status.HTTP_429_TOO_MANY_REQUESTS)

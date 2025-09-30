@@ -69,6 +69,7 @@ class MovieViewSet(
     queryset = Movie.objects.prefetch_related("genres", "actors")
     serializer_class = MovieSerializer
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
+    http_method_names = ["get", "post", "put", "patch", "delete"]
 
     @staticmethod
     def _params_to_ints(qs):
@@ -132,20 +133,25 @@ class MovieViewSet(
         parameters=[
             OpenApiParameter(
                 name="title",
-                description="Filter by title name (example: ?title='batman')",
-                type=str,
+                description="Filter by title name (example: ?title=batman)",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
                 required=False
             ),
             OpenApiParameter(
                 name="genres",
-                description="Filter by genre id (example: ?genre=2)",
-                type={"type": "array", "items": {"type": "number"}},
+                description="Filter by comma-separated genre ids (example: ?genres=1,2,3). Implementation expects CSV "
+                            "string.",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
                 required=False
             ),
             OpenApiParameter(
                 name="actors",
-                description="Filter by actor id (example: ?actor=2)",
-                type={"type": "array", "items": {"type": "number"}},
+                description="Filter by comma-separated actor ids (example: ?actors=4,5). Implementation expects CSV "
+                            "string.",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
                 required=False
             )
         ]
@@ -197,15 +203,16 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
         parameters=[
             OpenApiParameter(
                 name="date",
-                description="Filter by date (example: ?date='1993-08-23')",
+                description="Filter by date (example: ?date=1993-08-23)",
                 type=OpenApiTypes.DATE,
                 location=OpenApiParameter.QUERY,
                 required=False
             ),
             OpenApiParameter(
                 name="movie",
-                description="Filter by movie id (example: ?movie=2)",
-                type={"type": "array", "items": {"type": "number"}},
+                description="Filter by movie id (example: ?movie=2). Implementation accepts a single integer id.",
+                type=OpenApiTypes.INT,
+                location=OpenApiParameter.QUERY,
                 required=False
             )
         ]
