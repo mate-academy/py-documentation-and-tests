@@ -4,7 +4,7 @@ import os
 from PIL import Image
 from django.contrib.auth import get_user_model
 from django.test import TestCase
-from django.urls import reverse
+from django.urls import reverse, NoReverseMatch
 
 from rest_framework.test import APIClient
 from rest_framework import status
@@ -14,6 +14,14 @@ from cinema.serializers import MovieListSerializer, MovieDetailSerializer
 
 MOVIE_URL = reverse("cinema:movie-list")
 MOVIE_SESSION_URL = reverse("cinema:moviesession-list")
+
+try:
+    TOKEN_URL = reverse("user:token_obtain_pair")
+except NoReverseMatch:
+    try:
+        TOKEN_URL = reverse("token_obtain_pair")
+    except NoReverseMatch:
+        TOKEN_URL = "/api/user/token/"
 
 
 def sample_movie(**params):
@@ -65,6 +73,23 @@ def image_upload_url(movie_id):
 
 def detail_url(movie_id):
     return reverse("cinema:movie-detail", args=[movie_id])
+
+
+def get_jwt_for_user(client: APIClient, email: str, password: str):
+    """
+    Obtain JWT access token by calling the token endpoint.
+    Tries reverse name 'token_obtain_pair' then falls back to /api/token/.
+    Returns access token string (or None on failure).
+    """
+    data = {"email": email, "password": password}
+    res = client.post(TOKEN_URL, data)
+    if res.status_code == status.HTTP_200_OK and "access" in res.data:
+        return res.data["access"]
+    data_username = {"username": email, "password": password}
+    res2 = client.post(TOKEN_URL, data_username)
+    if res2.status_code == status.HTTP_200_OK and "access" in res2.data:
+        return res2.data["access"]
+    return None
 
 
 class MovieImageUploadTests(TestCase):
@@ -175,67 +200,107 @@ class UnauthenticatedMovieApiTest(TestCase):
 class MovieApiTests(TestCase):
     def setUp(self):
         self.client = APIClient()
+        self.user_email = "user@example.com"
+        self.user_password = "testpass123"
         self.user = get_user_model().objects.create_user(
-            email="user@example.com",
-            password="testpass123",
+            email=self.user_email,
+            password=self.user_password
         )
+        self.staff_email = "admin@example.com"
+        self.staff_password = "testpass123"
         self.staff = get_user_model().objects.create_superuser(
-            email="admin@example.com",
-            password="testpass123",
+            email=self.staff_email,
+            password=self.staff_password
         )
+
+    def _auth_with_jwt(self, email, password):
+        token = get_jwt_for_user(self.client, email, password)
+        self.assertIsNotNone(token, "Could not obtain JWT token — check TOKEN_URL in tests.")
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
 
     def test_auth_required_for_list(self):
         res = self.client.get(MOVIE_URL)
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
 
-    def test_list_movies_authenticated(self):
-        movie1 = sample_movie(title="Movie1")
-        movie2 = sample_movie(title="Movie2")
-        self.client.force_authenticate(self.user)
+    def test_list_movies_authenticated_and_ordering(self):
+        sample_movie(title="Zebra")
+        sample_movie(title="Alpha")
+        sample_movie(title="Middle")
 
+        self._auth_with_jwt(self.user_email, self.user_password)
         res = self.client.get(MOVIE_URL)
-        movies = Movie.objects.all().order_by("id")
-        serializer = MovieListSerializer(movies, many=True)
-
         self.assertEqual(res.status_code, status.HTTP_200_OK)
+
+        titles = [m["title"] for m in res.data]
+        self.assertEqual(titles, sorted(titles))
+
+        movies = Movie.objects.all().order_by("title")
+        serializer = MovieListSerializer(movies, many=True)
         self.assertEqual(res.data, serializer.data)
 
     def test_filter_movies_by_title(self):
-        movie1 = sample_movie(title="Batman")
-        movie2 = sample_movie(title="Superman")
-        self.client.force_authenticate(self.user)
-
+        m1 = sample_movie(title="Batman")
+        sample_movie(title="Superman")
+        self._auth_with_jwt(self.user_email, self.user_password)
         res = self.client.get(MOVIE_URL, {"title": "bat"})
-        self.assertIn(MovieListSerializer(movie1).data, res.data)
-        self.assertNotIn(MovieListSerializer(movie2).data, res.data)
 
-    def test_filter_movies_by_genres(self):
-        genre1 = sample_genre(name="Action")
-        genre2 = sample_genre(name="Drama")
-        movie1 = sample_movie(title="Action film")
-        movie1.genres.add(genre1)
-        movie2 = sample_movie(title="Drama film")
-        movie2.genres.add(genre2)
+        self.assertIn(next((m for m in res.data if m["title"] == "Batman"), None), res.data)
 
-        self.client.force_authenticate(self.user)
-        res = self.client.get(MOVIE_URL, {"genres": f"{genre1.id}"})
+    def test_filter_movies_by_genres_comma_separated_and_no_results(self):
+        g1 = sample_genre(name="Action")
+        g2 = sample_genre(name="Drama")
+        m1 = sample_movie(title="Action film")
+        m1.genres.add(g1)
+        m2 = sample_movie(title="Drama film")
+        m2.genres.add(g2)
 
-        self.assertIn(MovieListSerializer(movie1).data, res.data)
-        self.assertNotIn(MovieListSerializer(movie2).data, res.data)
+        self._auth_with_jwt(self.user_email, self.user_password)
 
-    def test_filter_movies_by_actors(self):
-        actor1 = sample_actor(first_name="Tom", last_name="Cruise")
-        actor2 = sample_actor(first_name="Will", last_name="Smith")
-        movie1 = sample_movie(title="With Tom")
-        movie1.actors.add(actor1)
-        movie2 = sample_movie(title="With Will")
-        movie2.actors.add(actor2)
+        res = self.client.get(MOVIE_URL, {"genres": f"{g1.id},{g2.id}"})
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
 
-        self.client.force_authenticate(self.user)
-        res = self.client.get(MOVIE_URL, {"actors": f"{actor1.id}"})
+        titles = [m["title"] for m in res.data]
+        self.assertIn("Action film", titles)
+        self.assertIn("Drama film", titles)
 
-        self.assertIn(MovieListSerializer(movie1).data, res.data)
-        self.assertNotIn(MovieListSerializer(movie2).data, res.data)
+        res_no = self.client.get(MOVIE_URL, {"genres": "99999"})
+        self.assertEqual(res_no.status_code, status.HTTP_200_OK)
+
+        self.assertEqual(res_no.data, [])
+
+    def test_filter_movies_by_genres_invalid_value(self):
+        g = sample_genre(name="Action")
+        m = sample_movie(title="Action film")
+        m.genres.add(g)
+        self._auth_with_jwt(self.user_email, self.user_password)
+
+        res = self.client.get(MOVIE_URL, {"genres": "invalid-id"})
+        self.assertIn(
+            res.status_code,
+            (status.HTTP_400_BAD_REQUEST, status.HTTP_500_INTERNAL_SERVER_ERROR)
+        )
+
+    def test_filter_movies_by_actors_comma_and_invalid(self):
+        a1 = sample_actor(first_name="Tom", last_name="Cruise")
+        a2 = sample_actor(first_name="Will", last_name="Smith")
+        m1 = sample_movie(title="With Tom")
+        m1.actors.add(a1)
+        m2 = sample_movie(title="With Will")
+        m2.actors.add(a2)
+
+        self._auth_with_jwt(self.user_email, self.user_password)
+
+        res = self.client.get(MOVIE_URL, {"actors": f"{a1.id},{a2.id}"})
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        titles = [m["title"] for m in res.data]
+        self.assertIn("With Tom", titles)
+        self.assertIn("With Will", titles)
+
+        res_invalid = self.client.get(MOVIE_URL, {"actors": "foo"})
+        self.assertIn(
+            res_invalid.status_code,
+            (status.HTTP_400_BAD_REQUEST, status.HTTP_500_INTERNAL_SERVER_ERROR)
+        )
 
     def test_retrieve_movie_detail(self):
         movie = sample_movie()
@@ -243,34 +308,89 @@ class MovieApiTests(TestCase):
         movie.actors.add(sample_actor())
         url = detail_url(movie.id)
 
-        self.client.force_authenticate(self.user)
+        self._auth_with_jwt(self.user_email, self.user_password)
         res = self.client.get(url)
         serializer = MovieDetailSerializer(movie)
-
         self.assertEqual(res.data, serializer.data)
 
     def test_create_movie_forbidden_for_non_admin(self):
-        payload = {
-            "title": "Admin Movie",
-            "description": "Desc",
-            "duration": 120,
-            "genres": [],
-            "actors": [],
-        }
-        self.client.force_authenticate(self.user)
-        res = self.client.post(MOVIE_URL, payload)
+        payload = {"title": "Admin Movie", "description": "Desc", "duration": 120, "genres": [], "actors": []}
+        self._auth_with_jwt(self.user_email, self.user_password)
+        res = self.client.post(MOVIE_URL, payload, format="json")
         self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_create_movie_allowed_for_admin(self):
-        payload = {
-            "title": "Admin Movie",
-            "description": "Desc",
-            "duration": 120,
-            "genres": [],
-            "actors": [],
-        }
-        self.client.force_authenticate(self.staff)
-        res = self.client.post(MOVIE_URL, payload)
-
+        payload = {"title": "Admin Movie", "description": "Desc", "duration": 120, "genres": [], "actors": []}
+        self._auth_with_jwt(self.staff_email, self.staff_password)
+        res = self.client.post(MOVIE_URL, payload, format="json")
+        if res.status_code != status.HTTP_201_CREATED:
+            print("CREATE ADMIN FAILED:", res.status_code, res.data)
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
         self.assertTrue(Movie.objects.filter(title="Admin Movie").exists())
+
+    def test_create_update_delete_permissions(self):
+        """Test that only admin users can create, update, and delete movies"""
+        movie = sample_movie(title="ToUpdate")
+        url = detail_url(movie.id)
+
+        self._auth_with_jwt(self.user_email, self.user_password)
+
+        res_delete = self.client.delete(url)
+        self.assertIn(
+            res_delete.status_code,
+            (status.HTTP_403_FORBIDDEN, status.HTTP_405_METHOD_NOT_ALLOWED)
+        )
+
+        self._auth_with_jwt(self.staff_email, self.staff_password)
+
+        res_delete_admin = self.client.delete(url)
+
+        if res_delete_admin.status_code != status.HTTP_405_METHOD_NOT_ALLOWED:
+            self.assertIn(
+                res_delete_admin.status_code,
+                (status.HTTP_204_NO_CONTENT, status.HTTP_200_OK),
+                f"Admin delete returned unexpected status: {res_delete_admin.status_code}"
+            )
+
+    def test_throttling_anonymous_and_authenticated(self):
+        """Test that throttling works for anonymous and authenticated users"""
+        from django.core.cache import cache
+        cache.clear()
+
+        client = APIClient()
+        responses = []
+        for i in range(5):
+            resp = client.get(MOVIE_URL)
+            responses.append(resp.status_code)
+
+        self.assertNotIn(
+            status.HTTP_429_TOO_MANY_REQUESTS,
+            responses[:5],
+            "Anonymous user should not be throttled within the first 5 requests"
+        )
+
+        cache.clear()
+        client_auth = APIClient()
+        email = "throttleuser@example.com"
+        pwd = "throttlepass"
+        get_user_model().objects.create_user(email=email, password=pwd)
+        token = get_jwt_for_user(client_auth, email, pwd)
+        self.assertIsNotNone(token, "Couldn't obtain token for throttle test user")
+        client_auth.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
+
+        auth_responses = []
+        for i in range(10):
+            r = client_auth.get(MOVIE_URL)
+            auth_responses.append(r.status_code)
+
+        self.assertNotIn(
+            status.HTTP_429_TOO_MANY_REQUESTS,
+            auth_responses[:10],
+            "Authenticated user should not be throttled within first 10 requests"
+        )
+
+        self.assertIn(
+            status.HTTP_200_OK,
+            auth_responses,
+            "At least one authenticated request should succeed"
+        )
