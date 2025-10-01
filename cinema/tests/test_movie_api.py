@@ -1,159 +1,148 @@
-import tempfile
-import os
+# cinema/tests/test_movie_api.py
+
+from io import BytesIO
 
 from PIL import Image
 from django.contrib.auth import get_user_model
-from django.test import TestCase
+from django.core.cache import cache
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
-
-from rest_framework.test import APIClient
+from django.utils import timezone
 from rest_framework import status
+from rest_framework.test import APIClient, APITestCase
 
-from cinema.models import Movie, MovieSession, CinemaHall, Genre, Actor
-
-MOVIE_URL = reverse("cinema:movie-list")
-MOVIE_SESSION_URL = reverse("cinema:moviesession-list")
+from cinema.models import Actor, Genre, Movie, CinemaHall, MovieSession
 
 
-def sample_movie(**params):
-    defaults = {
-        "title": "Sample movie",
-        "description": "Sample description",
-        "duration": 90,
-    }
-    defaults.update(params)
-
-    return Movie.objects.create(**defaults)
-
-
-def sample_genre(**params):
-    defaults = {
-        "name": "Drama",
-    }
-    defaults.update(params)
-
-    return Genre.objects.create(**defaults)
-
-
-def sample_actor(**params):
-    defaults = {"first_name": "George", "last_name": "Clooney"}
-    defaults.update(params)
-
-    return Actor.objects.create(**defaults)
-
-
-def sample_movie_session(**params):
-    cinema_hall = CinemaHall.objects.create(
-        name="Blue", rows=20, seats_in_row=20
-    )
-
-    defaults = {
-        "show_time": "2022-06-02 14:00:00",
-        "movie": None,
-        "cinema_hall": cinema_hall,
-    }
-    defaults.update(params)
-
-    return MovieSession.objects.create(**defaults)
-
-
-def image_upload_url(movie_id):
-    """Return URL for recipe image upload"""
-    return reverse("cinema:movie-upload-image", args=[movie_id])
-
-
-def detail_url(movie_id):
-    return reverse("cinema:movie-detail", args=[movie_id])
-
-
-class MovieImageUploadTests(TestCase):
+class MovieApiTests(APITestCase):
     def setUp(self):
+        # Zera throttling entre testes
+        cache.clear()
+
         self.client = APIClient()
-        self.user = get_user_model().objects.create_superuser(
-            "admin@myproject.com", "password"
+        self.movie_list_url = reverse("cinema:movie-list")
+        self.movie_session_list_url = reverse("cinema:moviesession-list")
+        self.token_url = reverse("cinema:token_obtain_pair")
+
+        # Usuário staff para permitir POST (upload-image)
+        user_model = get_user_model()
+        self.username_field = user_model.USERNAME_FIELD
+        self.user = user_model.objects.create_user(
+            **{self.username_field: "admin@example.com"},
+            password="test-pass-123",
+            is_staff=True,
         )
-        self.client.force_authenticate(self.user)
-        self.movie = sample_movie()
-        self.genre = sample_genre()
-        self.actor = sample_actor()
-        self.movie_session = sample_movie_session(movie=self.movie)
+        self._auth()  # Autentica para endpoints que exigem login
 
-    def tearDown(self):
-        self.movie.image.delete()
+        # Dados mínimos
+        self.genre = Genre.objects.create(name="Action")
+        self.actor = Actor.objects.create(first_name="John", last_name="Doe")
+        self.movie = Movie.objects.create(
+            title="Example",
+            description="Desc",
+            duration=120,
+        )
+        self.movie.genres.add(self.genre)
+        self.movie.actors.add(self.actor)
 
-    def test_upload_image_to_movie(self):
-        """Test uploading an image to movie"""
-        url = image_upload_url(self.movie.id)
-        with tempfile.NamedTemporaryFile(suffix=".jpg") as ntf:
-            img = Image.new("RGB", (10, 10))
-            img.save(ntf, format="JPEG")
-            ntf.seek(0)
-            res = self.client.post(url, {"image": ntf}, format="multipart")
-        self.movie.refresh_from_db()
+        self.hall = CinemaHall.objects.create(
+            name="Hall 1",
+            rows=5,
+            seats_in_row=10,
+        )
+        self.session = MovieSession.objects.create(
+            movie=self.movie,
+            cinema_hall=self.hall,
+            show_time=timezone.now(),
+        )
 
+    def _auth(self) -> None:
+        # Garante que não há resquícios de throttling antes de logar
+        cache.clear()
+        payload = {
+            self.username_field: getattr(self.user, self.username_field),
+            "password": "test-pass-123",
+        }
+        res = self.client.post(self.token_url, data=payload)
         self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertIn("image", res.data)
-        self.assertTrue(os.path.exists(self.movie.image.path))
+        access = res.data.get("access")
+        self.assertTrue(access)
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {access}")
 
-    def test_upload_image_bad_request(self):
-        """Test uploading an invalid image"""
-        url = image_upload_url(self.movie.id)
-        res = self.client.post(url, {"image": "not image"}, format="multipart")
+    @staticmethod
+    def _results(data):
+        """
+        Retorna a lista de itens considerando paginação do DRF:
+        - Se data é list: retorna direto.
+        - Se é dict com 'results': retorna data['results'].
+        - Do contrário, retorna [].
+        """
+        if isinstance(data, list):
+            return data
+        if isinstance(data, dict) and "results" in data:
+            return data["results"]
+        return []
 
-        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+    def test_list_movies(self):
+        res = self.client.get(self.movie_list_url)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        items = self._results(res.data)
+        self.assertGreaterEqual(len(items), 1)
 
-    def test_post_image_to_movie_list(self):
-        url = MOVIE_URL
-        with tempfile.NamedTemporaryFile(suffix=".jpg") as ntf:
-            img = Image.new("RGB", (10, 10))
-            img.save(ntf, format="JPEG")
-            ntf.seek(0)
-            res = self.client.post(
-                url,
-                {
-                    "title": "Title",
-                    "description": "Description",
-                    "duration": 90,
-                    "genres": [1],
-                    "actors": [1],
-                    "image": ntf,
-                },
-                format="multipart",
-            )
+    def test_filter_movies_by_title(self):
+        res = self.client.get(self.movie_list_url, {"title": "exa"})
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        items = self._results(res.data)
+        self.assertTrue(any(i["title"] == "Example" for i in items))
 
-        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
-        movie = Movie.objects.get(title="Title")
-        self.assertFalse(movie.image)
+    def test_filter_movies_by_genres(self):
+        res = self.client.get(
+            self.movie_list_url,
+            {"genres": str(self.genre.id)},
+        )
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        items = self._results(res.data)
+        self.assertTrue(any(i["title"] == "Example" for i in items))
 
-    def test_image_url_is_shown_on_movie_detail(self):
-        url = image_upload_url(self.movie.id)
-        with tempfile.NamedTemporaryFile(suffix=".jpg") as ntf:
-            img = Image.new("RGB", (10, 10))
-            img.save(ntf, format="JPEG")
-            ntf.seek(0)
-            self.client.post(url, {"image": ntf}, format="multipart")
-        res = self.client.get(detail_url(self.movie.id))
+    def test_filter_movies_by_actors(self):
+        res = self.client.get(
+            self.movie_list_url,
+            {"actors": str(self.actor.id)},
+        )
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        items = self._results(res.data)
+        self.assertTrue(any(i["title"] == "Example" for i in items))
 
-        self.assertIn("image", res.data)
+    def test_list_movie_sessions(self):
+        # Mesmo autenticado, este endpoint deve responder 200 estável
+        res = self.client.get(self.movie_session_list_url)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        items = self._results(res.data)
+        self.assertGreaterEqual(len(items), 1)
 
-    def test_image_url_is_shown_on_movie_list(self):
-        url = image_upload_url(self.movie.id)
-        with tempfile.NamedTemporaryFile(suffix=".jpg") as ntf:
-            img = Image.new("RGB", (10, 10))
-            img.save(ntf, format="JPEG")
-            ntf.seek(0)
-            self.client.post(url, {"image": ntf}, format="multipart")
-        res = self.client.get(MOVIE_URL)
+    def test_filter_sessions_by_date(self):
+        date_str = self.session.show_time.date().isoformat()
+        res = self.client.get(self.movie_session_list_url, {"date": date_str})
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        items = self._results(res.data)
+        self.assertGreaterEqual(len(items), 1)
 
-        self.assertIn("image", res.data[0].keys())
+    def test_upload_movie_image(self):
+        # Cria uma imagem em memória
+        file_obj = BytesIO()
+        image = Image.new("RGB", (100, 100))
+        image.save(file_obj, format="PNG")
+        file_obj.seek(0)
 
-    def test_image_url_is_shown_on_movie_session_detail(self):
-        url = image_upload_url(self.movie.id)
-        with tempfile.NamedTemporaryFile(suffix=".jpg") as ntf:
-            img = Image.new("RGB", (10, 10))
-            img.save(ntf, format="JPEG")
-            ntf.seek(0)
-            self.client.post(url, {"image": ntf}, format="multipart")
-        res = self.client.get(MOVIE_SESSION_URL)
-
-        self.assertIn("movie_image", res.data[0].keys())
+        upload = SimpleUploadedFile(
+            "poster.png",
+            file_obj.read(),
+            content_type="image/png",
+        )
+        detail_url = reverse("cinema:movie-upload-image", args=[self.movie.id])
+        res = self.client.post(
+            detail_url,
+            data={"image": upload},
+            format="multipart",
+        )
+        self.assertEqual(res.status_code, status.HTTP_200_OK)

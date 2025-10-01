@@ -1,5 +1,6 @@
 from django.contrib.auth import get_user_model, authenticate
 from rest_framework import serializers
+from .models import Movie
 from django.utils.translation import gettext as _
 
 
@@ -53,3 +54,12 @@ class AuthTokenSerializer(serializers.Serializer):
 
         attrs["user"] = user
         return attrs
+
+
+class MovieImageSerializer(serializers.ModelSerializer):
+    image = serializers.ImageField(allow_empty_file=False, required=True)
+
+    class Meta:
+        model = Movie
+        fields = ("id", "image")
+        read_only_fields = ("id",)
