@@ -107,12 +107,12 @@ class MovieViewSet(
             OpenApiParameter(
                 "genres",
                 type={"type": "array", "items": {"type": "number"}},
-                description="Fileter by genres (ex. ?genres=1,2)"
+                description="Fileter by genres (ex. ?genres=1, 2)"
             ),
             OpenApiParameter(
                 "actors",
                 type={"type": "array", "items": {"type": "number"}},
-                description="Fileter by actors (ex. ?actors=1,2)"
+                description="Fileter by actors (ex. ?actors=1, 2)"
             )
         ]
     )
@@ -196,9 +196,9 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
                 description="Fileter by date (ex. ?date=2022-12-12)"
             ),
             OpenApiParameter(
-                "movies",
+                "movie",
                 type={"type": "array", "items": {"type": "number"}},
-                description="Fileter by movies (ex. ?movies=1,2)"
+                description="Fileter by movie (ex. ?movie=1)"
             )
         ]
     )
