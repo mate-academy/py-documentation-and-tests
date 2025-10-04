@@ -1,16 +1,18 @@
 import tempfile
 import os
+from http.client import responses
 
 from PIL import Image
 from django.contrib.auth import get_user_model
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.urls import reverse
 
-from rest_framework.test import APIClient
+from rest_framework.test import APIClient, APITestCase
 from rest_framework import status
 
 from cinema.models import Movie, MovieSession, CinemaHall, Genre, Actor
-
+from user.models import User
 MOVIE_URL = reverse("cinema:movie-list")
 MOVIE_SESSION_URL = reverse("cinema:moviesession-list")
 
@@ -157,3 +159,92 @@ class MovieImageUploadTests(TestCase):
         res = self.client.get(MOVIE_SESSION_URL)
 
         self.assertIn("movie_image", res.data[0].keys())
+
+
+class UnauthenticatedMovieApiTestCase(APITestCase):
+    def setUp(self):
+        self.client = APIClient()
+
+
+    def test_auth_list(self):
+        sample_movie()
+        response = self.client.get(MOVIE_URL)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_auth_retrieve(self):
+        sample_movie()
+        response = self.client.get(MOVIE_URL, {id:1})
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_auth_create(self):
+        payload = {
+        "title": "Sample movie",
+        "description": "Sample description",
+        "duration": 90,
+        }
+        response = self.client.post(MOVIE_URL, payload)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+
+class AuthorizedUserMovieAPITestCase(APITestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.user = User.objects.create_user(email="fake@emial.com", password="fakfdse")
+        self.client.force_authenticate(self.user)
+
+    def test_auth_list(self):
+        response = self.client.get(MOVIE_URL)
+        self.assertEqual(response.status_code,status.HTTP_200_OK )
+
+    def test_auth_retrieve(self):
+        sample_movie()
+        response = self.client.get(MOVIE_URL, {"id":1})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_auth_create(self):
+        payload = {
+        "title": "Sample movie",
+        "description": "Sample description",
+        "duration": 90,
+        }
+        response = self.client.post(MOVIE_URL, payload)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_auth_upload_image(self):
+        sample_movie()
+        image = SimpleUploadedFile(
+            name="test.jpg",
+            content=b"\x47\x49\x46\x38\x39\x61",
+            content_type="image/jpeg"
+        )
+        response = self.client.post(reverse("cinema:movie-upload-image", args=[1]), {"image":image})
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
+class AuthorizedUserAdminMovieAPITestCase(APITestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.user_admin = User.objects.create_user(email="admin@gmail.com", password="adminm", is_staff=True)
+        self.client.force_authenticate(self.user_admin)
+
+    def test_auth_list(self):
+        response = self.client.get(MOVIE_URL)
+        self.assertEqual(response.status_code,status.HTTP_200_OK )
+
+    def test_auth_retrieve(self):
+        sample_movie()
+        response = self.client.get(MOVIE_URL, {"id":1})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_auth_create(self):
+        sample_actor()
+        sample_genre()
+        payload = {
+        "title": "Sample movie",
+        "description": "Sample description",
+        "duration": 90,
+        "genres": 1,
+        "actors": 1
+        }
+        response = self.client.post(MOVIE_URL, payload)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
