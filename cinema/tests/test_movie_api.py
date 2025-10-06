@@ -157,3 +157,119 @@ class MovieImageUploadTests(TestCase):
         res = self.client.get(MOVIE_SESSION_URL)
 
         self.assertIn("movie_image", res.data[0].keys())
+
+
+class MovieAuthTests(TestCase):
+
+    def setUp(self):
+        self.client = APIClient()
+
+    def test_auth_required(self):
+        res = self.client.get(MOVIE_URL)
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+
+class MovieViewSetTests(TestCase):
+
+    def setUp(self):
+        self.client = APIClient()
+        self.admin_user = get_user_model().objects.create_superuser(
+            "admin2@example.com", "password"
+        )
+        self.user = get_user_model().objects.create_user(
+            "user@example.com", "password123"
+        )
+
+        self.genre1 = sample_genre(name="Action")
+        self.genre2 = sample_genre(name="Comedy")
+        self.actor1 = sample_actor(first_name="Tom", last_name="Hanks")
+        self.actor2 = sample_actor(first_name="Jim", last_name="Carrey")
+
+        self.movie1 = sample_movie(title="Forrest Gump")
+        self.movie1.genres.add(self.genre1)
+        self.movie1.actors.add(self.actor1)
+
+        self.movie2 = sample_movie(title="The Mask")
+        self.movie2.genres.add(self.genre2)
+        self.movie2.actors.add(self.actor2)
+
+    def test_authenticated_user_can_read(self):
+        self.client.force_authenticate(self.user)
+        res = self.client.get(MOVIE_URL)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertIn("title", res.data[0])
+
+    def test_non_admin_cannot_create_movie(self):
+        self.client.force_authenticate(self.user)
+        payload = {"title": "New Movie", "description": "Desc", "duration": 100}
+        res = self.client.post(MOVIE_URL, payload)
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_admin_can_create_movie(self):
+        self.client.force_authenticate(self.admin_user)
+        payload = {
+            "title": "New Movie",
+            "description": "Desc",
+            "duration": 100,
+            "genres": [self.genre1.id],
+            "actors": [self.actor1.id],
+        }
+        res = self.client.post(MOVIE_URL, payload)
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        movie = Movie.objects.get(title="New Movie")
+        self.assertIn(self.genre1, movie.genres.all())
+        self.assertIn(self.actor1, movie.actors.all())
+
+    def test_filter_movies_by_title(self):
+        self.client.force_authenticate(self.user)
+        res = self.client.get(MOVIE_URL, {"title": "forrest"})
+        self.assertEqual(len(res.data), 1)
+        self.assertEqual(res.data[0]["title"], "Forrest Gump")
+
+    def test_filter_movies_by_genre(self):
+        self.client.force_authenticate(self.user)
+        res = self.client.get(MOVIE_URL, {"genres": str(self.genre2.id)})
+        self.assertEqual(len(res.data), 1)
+        self.assertEqual(res.data[0]["title"], "The Mask")
+
+    def test_filter_movies_by_actor(self):
+        self.client.force_authenticate(self.user)
+        res = self.client.get(MOVIE_URL, {"actors": str(self.actor1.id)})
+        self.assertEqual(len(res.data), 1)
+        self.assertEqual(res.data[0]["title"], "Forrest Gump")
+
+    def test_filter_movies_returns_distinct(self):
+        self.client.force_authenticate(self.user)
+        self.movie1.genres.add(self.genre2)
+        res = self.client.get(MOVIE_URL, {"genres": f"{self.genre1.id},{self.genre2.id}"})
+        titles = [m["title"] for m in res.data]
+        self.assertEqual(len(titles), len(set(titles)))
+
+    def test_get_serializer_class_list(self):
+        from cinema.views import MovieViewSet
+        view = MovieViewSet()
+        view.action = "list"
+        from cinema.serializers import MovieListSerializer
+        self.assertEqual(view.get_serializer_class(), MovieListSerializer)
+
+    def test_get_serializer_class_retrieve(self):
+        from cinema.views import MovieViewSet
+        view = MovieViewSet()
+        view.action = "retrieve"
+        from cinema.serializers import MovieDetailSerializer
+        self.assertEqual(view.get_serializer_class(), MovieDetailSerializer)
+
+    def test_get_serializer_class_upload_image(self):
+        from cinema.views import MovieViewSet
+        view = MovieViewSet()
+        view.action = "upload_image"
+        from cinema.serializers import MovieImageSerializer
+        self.assertEqual(view.get_serializer_class(), MovieImageSerializer)
+
+    def test_get_serializer_class_default(self):
+        from cinema.views import MovieViewSet
+        view = MovieViewSet()
+        view.action = "create"
+        from cinema.serializers import MovieSerializer
+        self.assertEqual(view.get_serializer_class(), MovieSerializer)
+
