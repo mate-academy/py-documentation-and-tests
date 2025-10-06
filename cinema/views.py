@@ -155,6 +155,7 @@ class MovieViewSet(
     def list(self, request, *args, **kwargs):
         return super().list(request, *args, **kwargs)
 
+
 class MovieSessionViewSet(viewsets.ModelViewSet):
     queryset = (
         MovieSession.objects.all()
@@ -212,6 +213,7 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
     )
     def list(self, request, *args, **kwargs):
         return super().list(request, *args, **kwargs)
+
 
 class OrderPagination(PageNumberPagination):
     page_size = 10

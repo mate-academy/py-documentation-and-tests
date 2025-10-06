@@ -164,9 +164,9 @@ REST_FRAMEWORK = {
 }
 
 SPECTACULAR_SETTINGS = {
-    'TITLE': 'Cinema Service API',
-    'DESCRIPTION': 'API for Cinema Service',
-    'VERSION': '1.0.0',
+    "TITLE": "Cinema Service API",
+    "DESCRIPTION": "API for Cinema Service",
+    "VERSION": "1.0.0",
 
     # OTHER SETTINGS
 }
