@@ -7,7 +7,8 @@ from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
-from rest_framework.viewsets import GenericViewSet, ReadOnlyModelViewSet
+from rest_framework.viewsets import GenericViewSet
+from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiTypes
 
 from cinema.models import Genre, Actor, CinemaHall, Movie, MovieSession, Order
 from cinema.permissions import IsAdminOrIfAuthenticatedReadOnly
@@ -69,8 +70,6 @@ class MovieViewSet(
 ):
     queryset = Movie.objects.prefetch_related("genres", "actors")
     serializer_class = MovieSerializer
-    authentication_classes = (TokenAuthentication,)
-    permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
     @staticmethod
     def _params_to_ints(qs):
@@ -109,6 +108,35 @@ class MovieViewSet(
             return MovieImageSerializer
 
         return MovieSerializer
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="title",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
+                description="Filter movies by title.",
+            ),
+            OpenApiParameter(
+                name="genres",
+                type={"type": "array", "items": {"type": "integer"}},
+                location=OpenApiParameter.QUERY,
+                description="""
+                Filter by multiple genre IDs (comma-separated).
+                Example: ?genres=1,2,3""",
+            ),
+            OpenApiParameter(
+                name="actors",
+                type={"type": "array", "items": {"type": "integer"}},
+                location=OpenApiParameter.QUERY,
+                description="""Filter by multiple actor
+                IDs (comma-separated).
+                Example: ?actors=1,2,3""",
+            ),
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
 
     @action(
         methods=["POST"],
@@ -166,6 +194,25 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
             return MovieSessionDetailSerializer
 
         return MovieSessionSerializer
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="date",
+                type=OpenApiTypes.DATE,
+                location=OpenApiParameter.QUERY,
+                description="Filter movie session by date.",
+            ),
+            OpenApiParameter(
+                name="movie",
+                type=OpenApiTypes.INT,
+                location=OpenApiParameter.QUERY,
+                description="Filter movie sessions by movie.",
+            ),
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
 
 
 class OrderPagination(PageNumberPagination):
