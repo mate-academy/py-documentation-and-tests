@@ -9,6 +9,7 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
+from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from cinema.models import Genre, Actor, CinemaHall, Movie, MovieSession, Order
 from cinema.permissions import IsAdminOrIfAuthenticatedReadOnly
@@ -56,6 +57,28 @@ class CinemaHallViewSet(
     serializer_class = CinemaHallSerializer
 
 
+@extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="title",
+                type=OpenApiTypes.STR,
+                description='Filter movie by title',
+                required=False,
+            ),
+            OpenApiParameter(
+                name="genres",
+                type=OpenApiTypes.STR,
+                description='Filter movie by genres',
+                required=False,
+            ),
+            OpenApiParameter(
+                name="actors",
+                type=OpenApiTypes.STR,
+                description='Filter movie by actors',
+                required=False,
+            ),
+        ]
+    )
 class MovieViewSet(
     mixins.ListModelMixin,
     mixins.CreateModelMixin,
@@ -64,7 +87,7 @@ class MovieViewSet(
 ):
     queryset = Movie.objects.prefetch_related("genres", "actors")
     serializer_class = MovieSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAdminOrIfAuthenticatedReadOnly]
 
     @staticmethod
     def _params_to_ints(qs):
@@ -122,31 +145,6 @@ class MovieViewSet(
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-    @extend_schema(
-        parameters=[
-            OpenApiParameter(
-                name="title",
-                type=OpenApiTypes.STR,
-                description='Filter movie by title',
-                required=False,
-            ),
-            OpenApiParameter(
-                name="genres",
-                type=OpenApiTypes.STR,
-                description='Filter movie by genres',
-                required=False,
-            ),
-            OpenApiParameter(
-                name="actors",
-                type=OpenApiTypes.STR,
-                description='Filter movie by actors',
-                required=False,
-            ),
-        ]
-    )
-    def list(self, request, *args, **kwargs):
-        return super().list(request, *args, **kwargs)
-
 
 class MovieSessionViewSet(viewsets.ModelViewSet):
     queryset = (
@@ -190,17 +188,21 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
             OpenApiParameter(
                 name="date",
                 type=OpenApiTypes.DATE,
-                description='Filter movie session by date',
+                description="Filter movie session by date",
                 required=False,
             ),
             OpenApiParameter(
                 name="movie",
                 type=OpenApiTypes.INT,
-                description='Filter movie session by movie ID',
+                description="Filter movie session by movie ID",
                 required=False,
             ),
         ]
     )
+    def list(self, request, *args, **kwargs):
+        """List movie sessions with optional filters"""
+        return super().list(request, *args, **kwargs)
+
     def retrieve(self, request, *args, **kwargs):
         """Get detailed info about one movie session"""
         return super().retrieve(request, *args, **kwargs)
