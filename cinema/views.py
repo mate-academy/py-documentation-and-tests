@@ -1,6 +1,8 @@
 from datetime import datetime
 
 from django.db.models import F, Count
+from django.template.context_processors import request
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import viewsets, mixins, status
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import action
@@ -127,6 +129,31 @@ class MovieViewSet(
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                "title",
+                type={"type": "string"},
+                description="Filtering by movie name (partial coincidence)",
+                required=False,
+            ),
+            OpenApiParameter(
+                "genres",
+                type={"type": "array", "items": {"type": "integer"}},
+                description="Filtering for genre IDs (via whom)",
+                required=False,
+            ),
+            OpenApiParameter(
+                "actors",
+                type={"type": "array", "items": {"type": "integer"}},
+                description="Filtering for actor IDs (via whom)",
+                required=False,
+            ),
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
 
 class MovieSessionViewSet(viewsets.ModelViewSet):
     queryset = (
@@ -166,6 +193,26 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
             return MovieSessionDetailSerializer
 
         return MovieSessionSerializer
+
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                "date",
+                description="Filtering by display date (format YYYY-MM-DD)",
+                required=False,
+                type={"type": "string"},
+            ),
+            OpenApiParameter(
+                "movie",
+                description="Filtering by movie ID",
+                required=False,
+                type={"type": "integer"},
+            )
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
 
 
 class OrderPagination(PageNumberPagination):
