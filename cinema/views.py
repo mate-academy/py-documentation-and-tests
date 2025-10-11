@@ -6,10 +6,10 @@ from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import viewsets, mixins, status
 from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
-from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
-from rest_framework_simplejwt.authentication import JWTAuthentication
+
 
 from cinema.models import Genre, Actor, CinemaHall, Movie, MovieSession, Order
 from cinema.permissions import IsAdminOrIfAuthenticatedReadOnly
@@ -57,28 +57,6 @@ class CinemaHallViewSet(
     serializer_class = CinemaHallSerializer
 
 
-@extend_schema(
-        parameters=[
-            OpenApiParameter(
-                name="title",
-                type=OpenApiTypes.STR,
-                description='Filter movie by title',
-                required=False,
-            ),
-            OpenApiParameter(
-                name="genres",
-                type=OpenApiTypes.STR,
-                description='Filter movie by genres',
-                required=False,
-            ),
-            OpenApiParameter(
-                name="actors",
-                type=OpenApiTypes.STR,
-                description='Filter movie by actors',
-                required=False,
-            ),
-        ]
-    )
 class MovieViewSet(
     mixins.ListModelMixin,
     mixins.CreateModelMixin,
@@ -144,6 +122,31 @@ class MovieViewSet(
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="title",
+                type=OpenApiTypes.STR,
+                description="Filter movie by title",
+                required=False,
+            ),
+            OpenApiParameter(
+                name="genres",
+                type=OpenApiTypes.STR,
+                description="Filter movie by genres",
+                required=False,
+            ),
+            OpenApiParameter(
+                name="actors",
+                type=OpenApiTypes.STR,
+                description="Filter movie by actors",
+                required=False,
+            ),
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        """List movies with optional filters for title, genres, and actors"""
+        return super().list(request, *args, **kwargs)
 
 
 class MovieSessionViewSet(viewsets.ModelViewSet):
