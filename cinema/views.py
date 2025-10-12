@@ -108,10 +108,10 @@ class MovieViewSet(
         url_path="upload-image",
         permission_classes=[IsAdminUser],
     )
-    def upload_image(self, _request, pk=None):
+    def upload_image(self, request, pk=None):
         """Endpoint for uploading image to specific movie"""
         movie = self.get_object()
-        serializer = self.get_serializer(movie, data=_request.data)
+        serializer = self.get_serializer(movie, data=request.data)
 
         if serializer.is_valid():
             serializer.save()
@@ -149,9 +149,9 @@ class MovieViewSet(
             ),
         ]
     )
-    def list(self, _request, *args, **kwargs):
+    def list(self, request, *args, **kwargs):
         """Get list of movies"""
-        return super().list(_request, *args, **kwargs)
+        return super().list(request, *args, **kwargs)
 
 
 class MovieSessionViewSet(viewsets.ModelViewSet):

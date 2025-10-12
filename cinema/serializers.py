@@ -33,10 +33,14 @@ class CinemaHallSerializer(serializers.ModelSerializer):
 
 class MovieSerializer(serializers.ModelSerializer):
     genres = serializers.PrimaryKeyRelatedField(
-        many=True, queryset=Genre.objects.all()
+        many=True,
+        queryset=Genre.objects.all(),
+        help_text="List of genre IDs, for example: [1, 2, 3]"
     )
     actors = serializers.PrimaryKeyRelatedField(
-        many=True, queryset=Actor.objects.all()
+        many=True,
+        queryset=Actor.objects.all(),
+        help_text="List of actor IDs, for example: [1, 2, 3]"
     )
 
     class Meta:
@@ -51,17 +55,16 @@ class MovieSerializer(serializers.ModelSerializer):
         )
 
     def update(self, instance, validated_data):
-        instance.title = validated_data.get("title", instance.title)
-        instance.description = validated_data.get(
-            "description", instance.description
-        )
-        instance.duration = validated_data.get("duration", instance.duration)
-        instance.save()
+        genres = validated_data.pop("genres", None)
+        actors = validated_data.pop("actors", None)
 
-        if "genres" in validated_data:
-            instance.genres.set(validated_data["genres"])
-        if "actors" in validated_data:
-            instance.actors.set(validated_data["actors"])
+        with transaction.atomic():
+            instance = super().update(instance, validated_data)
+
+            if genres is not None:
+                instance.genres.set(genres)
+            if actors is not None:
+                instance.actors.set(actors)
 
         return instance
 

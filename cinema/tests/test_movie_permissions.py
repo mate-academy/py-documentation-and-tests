@@ -81,6 +81,7 @@ class AuthenticatedMovieApiTest(TestCase):
         res = self.client.get(
             MOVIE_URL, {"genres": f"{genre_1.id},{genre_2.id}"}
         )
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
 
         serializer_without_genre = MovieListSerializer(movie_without_genre)
         serializer_genre1 = MovieListSerializer(movie_with_genre1)
@@ -102,6 +103,7 @@ class AuthenticatedMovieApiTest(TestCase):
         movie_with_actor2.actors.add(actor_2)
 
         res = self.client.get(MOVIE_URL, {"actors": f"{actor_1.id},{actor_2.id}"})
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
 
         serializer_1 = MovieListSerializer(movie_with_actor1)
         serializer_2 = MovieListSerializer(movie_with_actor2)
@@ -208,10 +210,11 @@ class AdminMovieTests(TestCase):
             "actors": [actor_1.id, actor_2.id],
         }
 
-        res = self.client.post(MOVIE_URL, payload)
+        res = self.client.post(MOVIE_URL, payload, format="json")
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+
         movie = Movie.objects.get(id=res.data["id"])
 
-        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
         self.assertEqual(set(movie.genres.values_list("id", flat=True)), set(payload["genres"]))
         self.assertEqual(set(movie.actors.values_list("id", flat=True)), set(payload["actors"]))
 

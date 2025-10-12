@@ -167,7 +167,7 @@ SPECTACULAR_SETTINGS = {
     "TITLE": "Cinema API",
     "DESCRIPTION": "Order tickets for your cinema",
     "VERSION": "1.0.0",
-    "SERVE_INCLUDE_SCHEMA": False,
+    "SERVE_INCLUDE_SCHEMA": True,
     "SWAGGER_UI_SETTINGS": {
         "deepLinking": True,
         "defaultModelRendering": "model",
