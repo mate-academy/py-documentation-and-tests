@@ -32,6 +32,13 @@ class CinemaHallSerializer(serializers.ModelSerializer):
 
 
 class MovieSerializer(serializers.ModelSerializer):
+    genres = serializers.PrimaryKeyRelatedField(
+        many=True, queryset=Genre.objects.all()
+    )
+    actors = serializers.PrimaryKeyRelatedField(
+        many=True, queryset=Actor.objects.all()
+    )
+
     class Meta:
         model = Movie
         fields = (
@@ -42,6 +49,21 @@ class MovieSerializer(serializers.ModelSerializer):
             "genres",
             "actors",
         )
+
+    def update(self, instance, validated_data):
+        instance.title = validated_data.get("title", instance.title)
+        instance.description = validated_data.get(
+            "description", instance.description
+        )
+        instance.duration = validated_data.get("duration", instance.duration)
+        instance.save()
+
+        if "genres" in validated_data:
+            instance.genres.set(validated_data["genres"])
+        if "actors" in validated_data:
+            instance.actors.set(validated_data["actors"])
+
+        return instance
 
 
 class MovieListSerializer(serializers.ModelSerializer):

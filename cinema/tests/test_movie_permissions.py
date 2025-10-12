@@ -3,11 +3,9 @@ from django.test import TestCase, Client
 from rest_framework import status
 from rest_framework.reverse import reverse
 from rest_framework.test import APIClient
-from rest_framework.utils.representation import serializer_repr
 
 from cinema.models import Movie, Genre, Actor
-from cinema.serializers import MovieSerializer, MovieListSerializer, MovieDetailSerializer
-from cinema.tests.test_movie_api import MOVIE_URL
+from cinema.serializers import MovieListSerializer, MovieDetailSerializer
 
 
 MOVIE_URL = reverse("cinema:movie-list")
@@ -176,8 +174,12 @@ class AdminMovieTests(TestCase):
         }
 
         res = self.client.post(MOVIE_URL, payload)
-        print(res.status_code)
-        print(res.data)
+        self.assertEqual(
+            res.status_code,
+            status.HTTP_201_CREATED,
+            f"Movie creation failed: {res.status_code}, {res.data}"
+        )
+
         movie = Movie.objects.get(id=res.data["id"])
 
         self.assertEqual(movie.title, payload["title"])
@@ -220,3 +222,58 @@ class AdminMovieTests(TestCase):
         res = self.client.delete(url)
 
         self.assertEqual(res.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def test_update_movie(self):
+        movie = Movie.objects.create(
+            title="Old Title",
+            description="Old description",
+            duration=120,
+        )
+        movie.genres.add(Genre.objects.create(name="Drama"))
+        movie.actors.add(Actor.objects.create(first_name="Old", last_name="Actor"))
+
+        payload = {
+            "title": "New Title",
+            "description": "New description",
+            "duration": 150,
+            "genres": [],
+            "actors": [],
+        }
+
+        url = reverse("cinema:movie-detail", args=[movie.id])
+        res = self.client.put(url, payload, format="json")
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        movie.refresh_from_db()
+        self.assertEqual(movie.title, payload["title"])
+        self.assertEqual(movie.description, payload["description"])
+        self.assertEqual(movie.duration, payload["duration"])
+        self.assertEqual(movie.genres.count(), 0)
+        self.assertEqual(movie.actors.count(), 0)
+
+    def test_partial_update_movie(self):
+        movie = Movie.objects.create(
+            title="Original Title",
+            description="Original description",
+            duration=100,
+        )
+
+        payload = {"title": "Updated Title"}
+        url = reverse("cinema:movie-detail", args=[movie.id])
+        res = self.client.patch(url, payload)
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        movie.refresh_from_db()
+        self.assertEqual(movie.title, payload["title"])
+        self.assertEqual(movie.description, "Original description")
+
+    def test_filter_movies_by_title(self):
+        Movie.objects.create(title="Interstellar", description="Space", duration=169)
+        Movie.objects.create(title="Inception", description="Dreams", duration=148)
+
+        res = self.client.get(MOVIE_URL, {"title": "Inter"})
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        titles = [movie["title"] for movie in res.data["results"]]
+        self.assertIn("Interstellar", titles)
+        self.assertNotIn("Inception", titles)
