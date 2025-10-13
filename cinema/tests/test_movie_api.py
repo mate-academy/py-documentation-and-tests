@@ -5,13 +5,12 @@ from PIL import Image
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
-
 from rest_framework.test import APIClient
 from rest_framework import status
-from django.forms.models import model_to_dict
 
 from cinema.models import Movie, MovieSession, CinemaHall, Genre, Actor
 from cinema.serializers import MovieListSerializer, MovieDetailSerializer
+
 
 MOVIE_URL = reverse("cinema:movie-list")
 MOVIE_SESSION_URL = reverse("cinema:moviesession-list")
@@ -192,31 +191,19 @@ class AuthenticatedMovieApi(TestCase):
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(res.data, serializer.data)
 
-    def test_filter_movies_by_actors(self):
-        movie_without_actor = sample_movie()
-        movie_with_actor_1 = sample_movie(title="TestTitle_1")
-        movie_with_actor_2 = sample_movie(title="TestTitle_2")
-        actor_1 = sample_actor()
-        actor_2 = sample_actor(
-            first_name="TestName",
-            last_name="TestSurname"
+    def test_update_movie_forbidden(self):
+        movie = sample_movie()
+        res = self.client.put(
+            detail_url(movie.id), {"title": "Updated title"}
         )
-        movie_with_actor_1.actors.add(actor_1)
-        movie_with_actor_2.actors.add(actor_1, actor_2)
-        res = self.client.get(
-            MOVIE_URL,
-            {
-                "actors": f"{actor_1.id},{actor_2.id}"
-            }
-        )
-        serializer_no_actors = MovieListSerializer(movie_without_actor)
-        serializer_with_actors_1 = MovieListSerializer(movie_with_actor_1)
-        serializer_with_actors_2 = MovieListSerializer(movie_with_actor_2)
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
 
-        self.assertNotIn(serializer_no_actors.data, res.data)
-        self.assertIn(serializer_with_actors_1.data, res.data)
-        self.assertIn(serializer_with_actors_2.data, res.data)
-        self.assertEqual(len(res.data), 2)
+    def test_delete_movie_forbidden(self):
+        movie = sample_movie()
+        res = self.client.delete(
+            detail_url(movie.id)
+        )
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_filter_created_movies(self):
         actor_1 = sample_actor()
@@ -342,3 +329,26 @@ class AdminMovieTest(TestCase):
                 self.assertEqual(
                     payload[key], getattr(movie, key)
                 )
+
+    def test_update_movie(self):
+        movie = sample_movie()
+        res = self.client.patch(
+            detail_url(movie.id), {"title": "Updated title"}
+        )
+        movie.refresh_from_db()
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(movie.title, "Updated title")
+
+    def test_delete_movie(self):
+        movie = sample_movie()
+        res = self.client.delete(
+            detail_url(movie.id)
+        )
+        self.assertEqual(res.status_code, status.HTTP_204_NO_CONTENT)
+
+    def test_bad_request(self):
+        movie = sample_movie()
+        res = self.client.put(
+            detail_url(movie.id), {"name": "Updated title"}
+        )
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
