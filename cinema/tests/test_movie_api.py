@@ -218,6 +218,66 @@ class AuthenticatedMovieApi(TestCase):
         self.assertIn(serializer_with_actors_2.data, res.data)
         self.assertEqual(len(res.data), 2)
 
+    def test_filter_created_movies(self):
+        actor_1 = sample_actor()
+        actor_2 = sample_actor(
+            first_name="TestName",
+            last_name="TestSurname"
+        )
+        genre_1 = sample_genre()
+        genre_2 = sample_genre(name="Action")
+        movie_empty = sample_movie()
+        movie_1 = sample_movie(
+            title="Another movie",
+            description="Another description",
+            duration=90,
+        )
+        movie_2 = sample_movie(
+            title="The third movie",
+            description="Last description",
+            duration=100,
+        )
+        movie_1.actors.add(actor_1)
+        movie_1.genres.add(genre_1)
+        movie_2.actors.add(actor_2, actor_1)
+        movie_2.genres.add(genre_2)
+        serializer_1 = MovieListSerializer(movie_1)
+        serializer_2 = MovieListSerializer(movie_2)
+
+        # filter movies by actors
+        res_actors = self.client.get(
+            MOVIE_URL,
+            {"actors": f"{actor_1.id}"}
+        )
+
+        # filter movies by genres
+        res_genres = self.client.get(
+            MOVIE_URL,
+            {"genres": f"{genre_2.id}"}
+        )
+
+        # filter movies by title
+        res_title = self.client.get(
+            MOVIE_URL,
+            {"title": "THirD"}
+        )
+
+        self.assertEqual(res_actors.status_code, status.HTTP_200_OK)
+        self.assertEqual(res_genres.status_code, status.HTTP_200_OK)
+        self.assertEqual(res_title.status_code, status.HTTP_200_OK)
+
+        self.assertIn(serializer_1.data, res_actors.data)
+        self.assertIn(serializer_2.data, res_actors.data)
+        self.assertEqual(len(res_actors.data), 2)
+
+        self.assertIn(serializer_2.data, res_genres.data)
+        self.assertEqual(len(res_genres.data), 1)
+
+        self.assertIn(serializer_2.data, res_title.data)
+        self.assertEqual(len(res_title.data), 1)
+
+
+
     def test_retrieve_movie_detail(self):
         movie = sample_movie()
         actor_1 = sample_actor()
@@ -231,7 +291,7 @@ class AuthenticatedMovieApi(TestCase):
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(res.data, serializer.data)
 
-    def create_movie_forbidden(self):
+    def test_create_movie_forbidden(self):
         payload = {
             "title": "TestTitle",
             "description": "TestMovie description",
@@ -252,26 +312,13 @@ class AdminMovieTest(TestCase):
         )
         self.client.force_authenticate(self.user)
 
-    def create_movie(self):
-        payload = {
-            "title": "TestTitle",
-            "description": "TestMovie description",
-            "duration": 100,
-        }
-        res = self.client.post(MOVIE_URL, payload)
-        movie = Movie.objects.get(id=res.data["id"])
-        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
-        for key in payload:
-            self.assertEqual(payload[key], getattr(movie, key))
-
-    def test_create_movie_with_actors(self):
+    def test_create_movies(self):
         actor_1 = sample_actor()
         actor_2 = sample_actor(
             first_name="TestName",
             last_name="TestSurname"
         )
         genre = sample_genre()
-
         payload = {
             "title": "TestTitle",
             "description": "TestMovie description",
@@ -281,9 +328,17 @@ class AdminMovieTest(TestCase):
         }
         res = self.client.post(MOVIE_URL, payload)
         movie = Movie.objects.get(id=res.data["id"])
-        actors = movie.actors.all()
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
-        self.assertIn(actor_1, actors)
-        self.assertIn(actor_2, actors)
-        self.assertEqual(actors.count(), 2)
-
+        for key in payload:
+            if key in ["actors", "genres"]:
+                self.assertEqual(
+                    payload[key],
+                    list(getattr(movie, key).values_list(
+                        "id", flat=True
+                    )
+                         )
+                )
+            else:
+                self.assertEqual(
+                    payload[key], getattr(movie, key)
+                )
