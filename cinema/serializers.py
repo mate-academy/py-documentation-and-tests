@@ -40,7 +40,7 @@ class MovieSerializer(serializers.ModelSerializer):
             "description",
             "duration",
             "genres",
-            "actors",
+            "actors"
         )
 
 
