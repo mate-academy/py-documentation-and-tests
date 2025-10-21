@@ -3,7 +3,6 @@ import os
 
 from PIL import Image
 from django.contrib.auth import get_user_model
-from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.urls import reverse
 
@@ -80,7 +79,8 @@ class MovieImageUploadTests(TestCase):
         self.movie_session = sample_movie_session(movie=self.movie)
 
     def tearDown(self):
-        self.movie.image.delete()
+        if self.movie.image:
+            self.movie.image.delete(save=False)
 
     def test_upload_image_to_movie(self):
         """Test uploading an image to movie"""
@@ -251,28 +251,3 @@ class PrivateMovieApiTests(APITestCase):
 
         self.assertIn(movie1.title, [m["title"] for m in res.data])
         self.assertNotIn(movie2.title, [m["title"] for m in res.data])
-
-    # def test_upload_image_to_movie(self):
-    #     movie = sample_movie()
-    #
-    #     url = image_upload_url(movie.id)
-    #     with tempfile.NamedTemporaryFile(suffix=".jpg") as ntf:
-    #         img = Image.new("RGB", (10, 10))
-    #         img.save(ntf, format="JPEG")
-    #         ntf.seek(0)
-    #         res = self.client.post(
-    #             url, {"image": ntf}, format="multipart"
-    #         )
-    #
-    #     movie.refresh_from_db()
-    #     self.assertEqual(res.status_code, status.HTTP_200_OK)
-    #     self.assertIn("image", res.data)
-    #     self.assertTrue(os.path.exists(movie.image.path))
-    #     movie.image.delete()
-    #
-    # def test_upload_image_bad_request(self):
-    #     movie = sample_movie()
-    #     url = image_upload_url(movie.id)
-    #     res = self.client.post(url, {"image": "notimage"}, format="multipart")
-    #
-    #     self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
