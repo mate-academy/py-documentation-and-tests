@@ -251,3 +251,48 @@ class PrivateMovieApiTests(APITestCase):
 
         self.assertIn(movie1.title, [m["title"] for m in res.data])
         self.assertNotIn(movie2.title, [m["title"] for m in res.data])
+
+    def test_retrieve_movie(self):
+        movie = sample_movie(title="Interstellar")
+        res = self.client.get(detail_url(movie.id))
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data["title"], "Interstellar")
+
+    def test_update_movie(self):
+        movie = sample_movie(title="Old title")
+        payload = {
+            "title": "New title",
+            "description": "Updated",
+            "duration": 100,
+            "genres": [],
+            "actors": [],
+        }
+        res = self.client.put(detail_url(movie.id), payload)
+        movie.refresh_from_db()
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(movie.title, "New title")
+
+    def test_partial_update_movie(self):
+        movie = sample_movie(title="Title")
+        payload = {"title": "Patched title"}
+        res = self.client.patch(detail_url(movie.id), payload)
+        movie.refresh_from_db()
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(movie.title, "Patched title")
+
+    def test_delete_movie(self):
+        movie = sample_movie(title="To delete")
+        res = self.client.delete(detail_url(movie.id))
+        self.assertEqual(res.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(Movie.objects.filter(id=movie.id).exists())
+
+    def test_non_admin_cannot_upload_image(self):
+        self.client.force_authenticate(self.user)
+        movie = sample_movie(title="No upload")
+        url = image_upload_url(movie.id)
+        with tempfile.NamedTemporaryFile(suffix=".jpg") as ntf:
+            img = Image.new("RGB", (5, 5))
+            img.save(ntf, format="JPEG")
+            ntf.seek(0)
+            res = self.client.post(url, {"image": ntf}, format="multipart")
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
