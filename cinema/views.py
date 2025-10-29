@@ -12,6 +12,7 @@ from rest_framework.viewsets import GenericViewSet, ReadOnlyModelViewSet
 from cinema.models import Genre, Actor, CinemaHall, Movie, MovieSession, Order
 from cinema.permissions import IsAdminOrIfAuthenticatedReadOnly
 from drf_spectacular.utils import OpenApiParameter, extend_schema
+from drf_spectacular.types import OpenApiTypes
 
 
 from cinema.serializers import (
@@ -186,22 +187,16 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
     @extend_schema(
         parameters=[
             OpenApiParameter(
-                name="title",
-                description="Filtered by title",
+                name="date",
+                description="Date of movie session (YYYY-MM-DD)",
+                required=False,
+                type=OpenApiTypes.DATE,
+            ),
+            OpenApiParameter(
+                name="movie",
+                description="Title of movie",
                 required=False,
                 type=OpenApiTypes.STR,
-            ),
-            OpenApiParameter(
-                name="genres",
-                description="ID of genres (example: ?genres=1,2,3)",
-                required=False,
-                type={"type": "array", "items": {"type": "integer"}},
-            ),
-            OpenApiParameter(
-                name="actors",
-                description="ID of actors (example: ?actors=4,5)",
-                required=False,
-                type={"type": "array", "items": {"type": "integer"}},
             ),
         ],
         description="Take a filtered list."

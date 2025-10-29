@@ -199,3 +199,29 @@ class PrivateMovieApiTests(TestCase):
 
         self.assertIn(serializer1.data, res.data)
         self.assertNotIn(serializer2.data, res.data)
+
+    def test_filter_movies_by_genre(self):
+        genre = sample_genre()
+
+        m1 = sample_movie(title="movie1", genre=genre)
+        m2 = sample_movie(title="movie2")
+
+        res = self.client.get(MOVIE_URL, {"genre": "Drama"})
+        serializer1 = MovieSerializer(m1)
+        serializer2 = MovieSerializer(m2)
+
+        self.assertIn(serializer1.data, res.data)
+        self.assertNotIn(serializer2.data, res.data)
+
+    def test_filter_movies_by_actors(self):
+        actor = sample_actor()
+
+        m1 = sample_movie(title="movie1", actor=actor)
+        m2 = sample_movie(title="movie2")
+
+        res = self.client.get(MOVIE_URL, {"first_name": "George", "last_name": "Clooney"})
+        serializer1 = MovieSerializer(m1)
+        serializer2 = MovieSerializer(m2)
+
+        self.assertIn(serializer1.data, res.data)
+        self.assertNotIn(serializer2.data, res.data)
