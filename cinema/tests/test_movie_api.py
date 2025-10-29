@@ -10,6 +10,7 @@ from rest_framework.test import APIClient
 from rest_framework import status
 
 from cinema.models import Movie, MovieSession, CinemaHall, Genre, Actor
+from cinema.serializers import MovieSerializer
 
 MOVIE_URL = reverse("cinema:movie-list")
 MOVIE_SESSION_URL = reverse("cinema:moviesession-list")
@@ -159,25 +160,12 @@ class MovieImageUploadTests(TestCase):
         self.assertIn("movie_image", res.data[0].keys())
 
 
-class MovieViewSetTests(TestCase):
-    def setUp(self):
-        self.client = APIClient()
-        self.user = get_user_model().objects.create_superuser(
-            "admin@myproject.com", "password"
-        )
-        self.client.force_authenticate(self.user)
-        self.movie = sample_movie()
-        self.genre = sample_genre()
-        self.actor = sample_actor()
-        self.movie_session = sample_movie_session(movie=self.movie)
-
-
 class PublicMovieApiTests(TestCase):
     def setUp(self):
         self.client = APIClient()
 
     def test_auth_required(self):
-        res = self.client.post(MOVIES_URL, {"title": "Test"})
+        res = self.client.post(MOVIE_URL, {"title": "Test"})
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
@@ -194,7 +182,7 @@ class PrivateMovieApiTests(TestCase):
         sample_movie(title="Movie 1")
         sample_movie(title="Movie 2")
 
-        res = self.client.get(MOVIES_URL)
+        res = self.client.get(MOVIE_URL)
         movies = Movie.objects.all().order_by("id")
         serializer = MovieSerializer(movies, many=True)
 
@@ -205,7 +193,7 @@ class PrivateMovieApiTests(TestCase):
         m1 = sample_movie(title="Matrix")
         m2 = sample_movie(title="Interstellar")
 
-        res = self.client.get(MOVIES_URL, {"title": "matrix"})
+        res = self.client.get(MOVIE_URL, {"title": "matrix"})
         serializer1 = MovieSerializer(m1)
         serializer2 = MovieSerializer(m2)
 

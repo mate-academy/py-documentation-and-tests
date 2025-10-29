@@ -103,22 +103,25 @@ class MovieViewSet(
     @extend_schema(
         parameters=[
             OpenApiParameter(
-                "request",
-                type=str,
-                description="Request",
+                name="title",
+                description="Filtered by title",
                 required=False,
+                type=OpenApiTypes.STR,
             ),
             OpenApiParameter(
-                "collection_parameter",
-                type={"type": "list", "items": {"type": "any"}},
-                description="Others sequence arguments",
+                name="genres",
+                description="ID of genres (example: ?genres=1,2,3)",
+                required=False,
+                type={"type": "array", "items": {"type": "integer"}},
             ),
             OpenApiParameter(
-                "dict_parameter",
-                type={"type": "object", "items": {"type": "any"}},
-                description="Others arguments as dict",
-            )
-        ]
+                name="actors",
+                description="ID of actors (example: ?actors=4,5)",
+                required=False,
+                type={"type": "array", "items": {"type": "integer"}},
+            ),
+        ],
+        description="Take a filtered list."
     )
     def list(self, request, *args, **kwargs):
         return super().list(request, *args, **kwargs)
@@ -183,22 +186,25 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
     @extend_schema(
         parameters=[
             OpenApiParameter(
-                "request",
-                type=str,
-                description="Request",
+                name="title",
+                description="Filtered by title",
                 required=False,
+                type=OpenApiTypes.STR,
             ),
             OpenApiParameter(
-                "collection_parameter",
-                type={"type": "list", "items": {"type": "any"}},
-                description="Others sequence arguments",
+                name="genres",
+                description="ID of genres (example: ?genres=1,2,3)",
+                required=False,
+                type={"type": "array", "items": {"type": "integer"}},
             ),
             OpenApiParameter(
-                "dict_parameter",
-                type={"type": "object", "items": {"type": "any"}},
-                description="Others arguments as dict",
-            )
-        ]
+                name="actors",
+                description="ID of actors (example: ?actors=4,5)",
+                required=False,
+                type={"type": "array", "items": {"type": "integer"}},
+            ),
+        ],
+        description="Take a filtered list."
     )
     def list(self, request, *args, **kwargs):
         return super().list(request, *args, **kwargs)
