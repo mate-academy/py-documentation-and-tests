@@ -11,6 +11,8 @@ from rest_framework.viewsets import GenericViewSet, ReadOnlyModelViewSet
 
 from cinema.models import Genre, Actor, CinemaHall, Movie, MovieSession, Order
 from cinema.permissions import IsAdminOrIfAuthenticatedReadOnly
+from drf_spectacular.utils import OpenApiParameter, extend_schema
+
 
 from cinema.serializers import (
     GenreSerializer,
@@ -98,10 +100,30 @@ class MovieViewSet(
 
         return queryset.distinct()
 
-    def get_serializer_class(self):
-        if self.action == "list":
-            return MovieListSerializer
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                "request",
+                type=str,
+                description="Request",
+                required=False,
+            ),
+            OpenApiParameter(
+                "collection_parameter",
+                type={"type": "list", "items": {"type": "any"}},
+                description="Others sequence arguments",
+            ),
+            OpenApiParameter(
+                "dict_parameter",
+                type={"type": "object", "items": {"type": "any"}},
+                description="Others arguments as dict",
+            )
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
 
+    def get_serializer_class(self):
         if self.action == "retrieve":
             return MovieDetailSerializer
 
@@ -158,10 +180,30 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
 
         return queryset
 
-    def get_serializer_class(self):
-        if self.action == "list":
-            return MovieSessionListSerializer
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                "request",
+                type=str,
+                description="Request",
+                required=False,
+            ),
+            OpenApiParameter(
+                "collection_parameter",
+                type={"type": "list", "items": {"type": "any"}},
+                description="Others sequence arguments",
+            ),
+            OpenApiParameter(
+                "dict_parameter",
+                type={"type": "object", "items": {"type": "any"}},
+                description="Others arguments as dict",
+            )
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
 
+    def get_serializer_class(self):
         if self.action == "retrieve":
             return MovieSessionDetailSerializer
 

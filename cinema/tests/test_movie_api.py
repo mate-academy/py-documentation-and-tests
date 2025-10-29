@@ -157,3 +157,57 @@ class MovieImageUploadTests(TestCase):
         res = self.client.get(MOVIE_SESSION_URL)
 
         self.assertIn("movie_image", res.data[0].keys())
+
+
+class MovieViewSetTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.user = get_user_model().objects.create_superuser(
+            "admin@myproject.com", "password"
+        )
+        self.client.force_authenticate(self.user)
+        self.movie = sample_movie()
+        self.genre = sample_genre()
+        self.actor = sample_actor()
+        self.movie_session = sample_movie_session(movie=self.movie)
+
+
+class PublicMovieApiTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+
+    def test_auth_required(self):
+        res = self.client.post(MOVIES_URL, {"title": "Test"})
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+
+class PrivateMovieApiTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.user = get_user_model().objects.create_user(
+            "user@example.com",
+            "password123"
+        )
+        self.client.force_authenticate(self.user)
+
+    def test_retrieve_movies_list(self):
+        sample_movie(title="Movie 1")
+        sample_movie(title="Movie 2")
+
+        res = self.client.get(MOVIES_URL)
+        movies = Movie.objects.all().order_by("id")
+        serializer = MovieSerializer(movies, many=True)
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data, serializer.data)
+
+    def test_filter_movies_by_title(self):
+        m1 = sample_movie(title="Matrix")
+        m2 = sample_movie(title="Interstellar")
+
+        res = self.client.get(MOVIES_URL, {"title": "matrix"})
+        serializer1 = MovieSerializer(m1)
+        serializer2 = MovieSerializer(m2)
+
+        self.assertIn(serializer1.data, res.data)
+        self.assertNotIn(serializer2.data, res.data)
