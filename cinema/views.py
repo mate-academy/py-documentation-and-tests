@@ -11,6 +11,9 @@ from rest_framework.viewsets import GenericViewSet, ReadOnlyModelViewSet
 
 from cinema.models import Genre, Actor, CinemaHall, Movie, MovieSession, Order
 from cinema.permissions import IsAdminOrIfAuthenticatedReadOnly
+from drf_spectacular.utils import OpenApiParameter, extend_schema
+from drf_spectacular.types import OpenApiTypes
+
 
 from cinema.serializers import (
     GenreSerializer,
@@ -98,10 +101,33 @@ class MovieViewSet(
 
         return queryset.distinct()
 
-    def get_serializer_class(self):
-        if self.action == "list":
-            return MovieListSerializer
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="title",
+                description="Filtered by title",
+                required=False,
+                type=OpenApiTypes.STR,
+            ),
+            OpenApiParameter(
+                name="genres",
+                description="ID of genres (example: ?genres=1,2,3)",
+                required=False,
+                type={"type": "array", "items": {"type": "integer"}},
+            ),
+            OpenApiParameter(
+                name="actors",
+                description="ID of actors (example: ?actors=4,5)",
+                required=False,
+                type={"type": "array", "items": {"type": "integer"}},
+            ),
+        ],
+        description="Take a filtered list."
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
 
+    def get_serializer_class(self):
         if self.action == "retrieve":
             return MovieDetailSerializer
 
@@ -158,10 +184,27 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
 
         return queryset
 
-    def get_serializer_class(self):
-        if self.action == "list":
-            return MovieSessionListSerializer
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="date",
+                description="Date of movie session (YYYY-MM-DD)",
+                required=False,
+                type=OpenApiTypes.DATE,
+            ),
+            OpenApiParameter(
+                name="movie",
+                description="Title of movie",
+                required=False,
+                type=OpenApiTypes.STR,
+            ),
+        ],
+        description="Take a filtered list."
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
 
+    def get_serializer_class(self):
         if self.action == "retrieve":
             return MovieSessionDetailSerializer
 
