@@ -112,6 +112,10 @@ class AuthorizedMovieTests(APITestCase):
             CINEMA_URL,
             {"genres": genre_scifi.id}
         )
+        res_title = self.client.get(
+            CINEMA_URL,
+            {"title": "prada"}
+        )
         self.assertEqual(res_comedy.data, serializer_comedy.data)
         self.assertIn(serializer_interstellar.data[0], res_anne_hathaway.data)
         self.assertIn(serializer_interstellar.data[0], res_scifi.data)
@@ -119,6 +123,7 @@ class AuthorizedMovieTests(APITestCase):
         self.assertNotIn(
             serializer_without_actors_genres.data, res_anne_hathaway.data
         )
+        self.assertEqual(serializer_comedy.data, res_title.data)
 
     def test_authorized_movie_retrieve(self):
         movie = sample_movie()
@@ -129,6 +134,15 @@ class AuthorizedMovieTests(APITestCase):
         url = detail_movie(movie.id)
         res = self.client.get(url)
         self.assertEqual(res.status_code, status.HTTP_200_OK)
+
+    def test_authorized_movie_create_forbidden(self):
+        payload = {
+            "title": "Hitch",
+            "description": "The Hitch description",
+            "duration": 109,
+        }
+        res = self.client.post(CINEMA_URL, payload)
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
 
 
 class AdminMovieViewTest(APITestCase):

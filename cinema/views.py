@@ -155,7 +155,7 @@ class MovieViewSet(
             ),
             OpenApiParameter(
                 "title",
-                type={"type": "array", "items": {"type": "string"}},
+                type=str,
                 description="Filtering by title or a part of the title "
                             "(e.g. ?title=interstellar)",
                 required=False,
@@ -208,13 +208,13 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
         parameters=[
             OpenApiParameter(
                 "date",
-                type={"type": "array", "items": {"type": "string"}},
+                type=str,
                 description="Filtering by date (e.g. ?date=2024-10-08)",
                 required=False,
             ),
             OpenApiParameter(
                 "movie",
-                type={"type": "array", "items": {"type": "number"}},
+                type=int,
                 description="Filtering by movie id (e.g. ?movie=9)",
                 required=False,
             )
