@@ -137,7 +137,7 @@ class MovieViewSet(
                 type=str
             ),
             OpenApiParameter(
-                name="genre",
+                name="genres",
                 description="Filter by genre",
                 required=False,
                 type=str

@@ -160,7 +160,7 @@ class MovieImageUploadTests(TestCase):
 
 
 class UnauthenticatedMovieApiTests(TestCase):
-    def SetUp(self):
+    def setUp(self):
         self.client = APIClient()
 
     def test_auth_required(self):
