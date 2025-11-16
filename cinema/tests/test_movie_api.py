@@ -78,6 +78,7 @@ class MovieImageUploadTests(TestCase):
         self.actor = sample_actor()
         self.movie_session = sample_movie_session(movie=self.movie)
 
+
     def tearDown(self):
         self.movie.image.delete()
 
@@ -157,3 +158,38 @@ class MovieImageUploadTests(TestCase):
         res = self.client.get(MOVIE_SESSION_URL)
 
         self.assertIn("movie_image", res.data[0].keys())
+
+
+class UnauthenticatedMovieAPITests(TestCase):
+
+    def setUp(self):
+        self.client = APIClient()
+
+    def test_auth_required(self):
+        res = self.client.get(MOVIE_URL)
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+
+def sample_movie(**params) -> Movie:
+    defaults = {
+        "title": "Sample movie",
+        "description": "Sample description",
+        "duration": 90,
+    }
+    defaults.update(params)
+    return Movie.objects.create(**defaults)
+
+
+class AuthenticatedMovieAPITests(TestCase):
+
+    def setUp(self):
+        self.client = APIClient()
+        self.user = get_user_model().objects.create_user(
+            email="test@test.test",
+            password="testPassword",
+        )
+        self.client.force_authenticate(self.user)
+
+    def test_movie_list(self):
+        sample_movie()
+
