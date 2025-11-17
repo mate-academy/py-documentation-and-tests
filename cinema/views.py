@@ -143,7 +143,7 @@ class MovieViewSet(
                 type={"type": "array", "items": {"type": "number"}},
                 description="The actors of the movie",
                 required=False,
-            )
+            ),
         ]
     )
     def list(self, request, *args, **kwargs):
@@ -202,7 +202,7 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
                 type=OpenApiTypes.INT,
                 description="The movie",
                 required=False,
-            )
+            ),
         ]
     )
     def list(self, request, *args, **kwargs):
