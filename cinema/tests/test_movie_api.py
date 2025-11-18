@@ -3,13 +3,11 @@ import os
 
 from PIL import Image
 from django.contrib.auth import get_user_model
-from django.db.models.query_utils import class_or_instance_method
 from django.test import TestCase
 from django.urls import reverse
 
 from rest_framework.test import APIClient
 from rest_framework import status
-from setuptools.command.build import build
 
 from cinema.models import Movie, MovieSession, CinemaHall, Genre, Actor
 from cinema.serializers import MovieListSerializer, MovieDetailSerializer
@@ -160,20 +158,6 @@ class MovieImageUploadTests(TestCase):
         self.assertIn("movie_image", res.data[0].keys())
 
 
-def sample_movie(**params) -> Movie:
-    defaults = {
-        "title": "Sample movie",
-        "description": "Sample description",
-        "duration": 90,
-    }
-    defaults.update(params)
-    return Movie.objects.create(**defaults)
-
-
-def url_detail(bus_id):
-    return reverse("cinema:movie-detail", args=(bus_id,))
-
-
 class UnauthenticatedMovieAPITests(TestCase):
 
     def setUp(self):
@@ -271,7 +255,7 @@ class AuthenticatedMovieAPITests(TestCase):
         )
         movie.genres.add(Genre.objects.create(name="TestGenre"))
 
-        url = url_detail(movie.id)
+        url = detail_url(movie.id)
         res = self.client.get(url)
 
         serializer = MovieDetailSerializer(movie)
