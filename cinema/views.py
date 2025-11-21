@@ -4,12 +4,11 @@ from django.db.models import F, Count
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import viewsets, mixins, status
-from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
-from rest_framework.viewsets import GenericViewSet, ReadOnlyModelViewSet
+from rest_framework.viewsets import GenericViewSet
 
 from cinema.models import Genre, Actor, CinemaHall, Movie, MovieSession, Order
 from cinema.permissions import IsAdminOrIfAuthenticatedReadOnly
@@ -128,14 +127,14 @@ class MovieViewSet(
     @extend_schema(
         parameters=[
             OpenApiParameter(
-                "actor_id",
-                type=int,
+                "actors",
+                type=str,
                 description="Filter by actor id",
                 required=False,
             ),
             OpenApiParameter(
-                "genre_id",
-                type=int,
+                "genres",
+                type=str,
                 description="Filter by genre id",
                 required=False,
             ),
