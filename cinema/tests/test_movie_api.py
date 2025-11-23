@@ -10,6 +10,11 @@ from rest_framework.test import APIClient
 from rest_framework import status
 
 from cinema.models import Movie, MovieSession, CinemaHall, Genre, Actor
+from cinema.serializers import (
+    MovieListSerializer,
+    MovieDetailSerializer
+)
+from cinema.views import MovieViewSet
 
 MOVIE_URL = reverse("cinema:movie-list")
 MOVIE_SESSION_URL = reverse("cinema:moviesession-list")
@@ -64,6 +69,106 @@ def image_upload_url(movie_id):
 
 def detail_url(movie_id):
     return reverse("cinema:movie-detail", args=[movie_id])
+
+
+class MovieViewSetTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.simple_client = APIClient()
+        self.user = get_user_model().objects.create_superuser(
+            "admin@myproject.com", "password"
+        )
+        self.simple_user = get_user_model().objects.create_user(
+            email="test2@email.com", password="testpassword"
+        )
+        self.client.force_authenticate(self.user)
+        self.simple_client.force_authenticate(self.simple_user)
+        self.movie = sample_movie()
+        self.genre = sample_genre()
+        self.actor = sample_actor()
+        self.movie_session = sample_movie_session(movie=self.movie)
+        self.movie.genres.add(self.genre)
+        self.movie.actors.add(self.actor)
+
+    def tearDown(self):
+        self.movie.image.delete()
+
+    def test_list_movies(self):
+        res = self.client.get(MOVIE_URL)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+
+        all_movies = Movie.objects.all()
+        serializer = MovieListSerializer(all_movies, many=True)
+
+        self.assertEqual(res.data, serializer.data)
+
+    def test_params_to_ints(self):
+        self.assertEqual([1, 2, 3, 4], MovieViewSet._params_to_ints("1,2,3,4"))
+
+    def test_retrieve_movie(self):
+        res = self.client.get(detail_url(self.movie.id))
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+
+        serializer = MovieDetailSerializer(self.movie)
+        self.assertEqual(res.data, serializer.data)
+
+    def test_create_movie_admin(self):
+        data = {
+            "title": "Sample movie",
+            "description": "Sample description",
+            "duration": 100,
+            "genres": [1],
+            "actors": [1]
+        }
+        res = self.client.post(MOVIE_URL, data)
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+
+    def test_create_movie_simple_user(self):
+        data = {
+            "title": "Sample movie",
+            "description": "Sample description",
+            "duration": 100,
+            "genres": [1],
+            "actors": [1]
+        }
+        res = self.simple_client.post(MOVIE_URL, data)
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_throttle_auth_users(self):
+        for _ in range(30):
+            self.client.get(MOVIE_URL)
+        res = self.client.get(MOVIE_URL)
+        self.assertEqual(res.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
+
+    def test_throttle_anon_users(self):
+        anon_client = APIClient()
+        url = reverse("swagger-ui")
+        for _ in range(10):
+            anon_client.get(url)
+        res = anon_client.get(url)
+        self.assertEqual(res.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
+
+    def test_anon_status_code(self):
+        anon_client = APIClient()
+        res = anon_client.get(MOVIE_URL)
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_user_status_code_permission_error(self):
+        res = self.simple_client.post(MOVIE_URL, {})
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_filter_movies(self):
+        filters = {"title": "Sample", "genres": "1,2", "actors": "1"}
+        res = self.client.get(MOVIE_URL, query_params=filters)
+        data = MovieListSerializer(
+            Movie.objects.filter(
+                title__icontains="Sample",
+                genres__in=(1, 2),
+                actors__in=(1,)
+            ),
+            many=True
+        ).data
+        self.assertEqual(res.data, data)
 
 
 class MovieImageUploadTests(TestCase):
