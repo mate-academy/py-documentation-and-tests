@@ -42,6 +42,21 @@ class GenreViewSet(
     serializer_class = GenreSerializer
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
+    @extend_schema(
+        description="Get list of all genres."
+                    "No authentication required for viewing.",
+        summary="Get list of all genres.",
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+    @extend_schema(
+        description="Create a new genre. Admin permission required.",
+        summary="Create a new genre.",
+    )
+    def create(self, request, *args, **kwargs):
+        return super().create(request, *args, **kwargs)
+
 
 class ActorViewSet(
     mixins.CreateModelMixin,
@@ -52,6 +67,21 @@ class ActorViewSet(
     serializer_class = ActorSerializer
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
+    @extend_schema(
+        description="Get list of all actors. "
+                    "No authentication required for viewing.",
+        summary="List all actors"
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+    @extend_schema(
+        description="Create a new actor. Admin permission required.",
+        summary="Create actor"
+    )
+    def create(self, request, *args, **kwargs):
+        return super().create(request, *args, **kwargs)
+
 
 class CinemaHallViewSet(
     mixins.CreateModelMixin,
@@ -61,6 +91,21 @@ class CinemaHallViewSet(
     queryset = CinemaHall.objects.all()
     serializer_class = CinemaHallSerializer
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
+
+    @extend_schema(
+        description="Get list of all cinema halls with their capacity. "
+                    "No authentication required for viewing.",
+        summary="List all cinema halls"
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+    @extend_schema(
+        description="Create a new cinema hall. Admin permission required.",
+        summary="Create cinema hall"
+    )
+    def create(self, request, *args, **kwargs):
+        return super().create(request, *args, **kwargs)
 
 
 class MovieViewSet(
@@ -129,21 +174,23 @@ class MovieViewSet(
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     @extend_schema(
-        description="""
-        Get list of movies with optional filtering.
+        description="""Get list of movies with optional filtering.
 
-        You can filter movies by:
-        - **title**: Filter by movie title (case-insensitive partial match)
-        - **genres**: Filter by genre IDs (comma-separated)
-        - **actors**: Filter by actor IDs (comma-separated)
+            You can filter movies by:
+            - **title**: Filter by movie title (case-insensitive partial match)
+            - **genres**: Filter by genre IDs (comma-separated list)
+            - **actors**: Filter by actor IDs (comma-separated list)
 
-        **Note**: All filters can be used separately or combined.
-        """,
+            **Note**: All filters can be used separately or combined.
+            """,
+        summary="List movies with filtering",
         parameters=[
             OpenApiParameter(
                 name="title",
-                description="Filter by movie title",
+                description="Filter by movie title "
+                            "(partial match, case-insensitive)",
                 type=OpenApiTypes.STR,
+                required=False,
                 examples=[
                     OpenApiExample(
                         "Search for movie containing 'avatar'",
@@ -153,13 +200,14 @@ class MovieViewSet(
             ),
             OpenApiParameter(
                 name="genres",
-                description="Filter movie by genre IDs."
-                            " Provide a comma-separated list of genres IDs",
+                description="Filter movie by genre IDs. "
+                            "Provide a comma-separated list of genre IDs",
                 type=OpenApiTypes.STR,
+                required=False,
                 examples=[
                     OpenApiExample(
                         "Movies in Crime (ID: 1) and Action (ID: 4) genres",
-                        value="1, 4",
+                        value="1,4",
                     ),
                     OpenApiExample(
                         "Movie only in Drama genre (ID: 2)",
@@ -169,20 +217,36 @@ class MovieViewSet(
             ),
             OpenApiParameter(
                 name="actors",
-                description="Filter movies by actor IDs."
-                            " Provide a comma-separated list of actors IDs",
+                description="Filter movies by actor IDs. "
+                            "Provide a comma-separated list of actor IDs",
                 type=OpenApiTypes.STR,
+                required=False,
                 examples=[
                     OpenApiExample(
-                        "Movies featuring actors with IDs 1, 2", value="1, 2"
+                        "Movies featuring actors with IDs 1 and 2",
+                        value="1,2"
                     ),
                 ],
             ),
         ],
     )
     def list(self, request, *args, **kwargs):
-        """Get list of movies"""
         return super().list(request, *args, **kwargs)
+
+    @extend_schema(
+        description="Get detailed information about a specific movie "
+                    "including all genres and actors.",
+        summary="Get movie details"
+    )
+    def retrieve(self, request, *args, **kwargs):
+        return super().retrieve(request, *args, **kwargs)
+
+    @extend_schema(
+        description="Create a new movie. Admin permission required.",
+        summary="Create movie"
+    )
+    def create(self, request, *args, **kwargs):
+        return super().create(request, *args, **kwargs)
 
 
 class MovieSessionViewSet(viewsets.ModelViewSet):
@@ -225,21 +289,23 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
         return MovieSessionSerializer
 
     @extend_schema(
-        description="""
-                Get a list of all movie sessions with optional filtering.
+        description="""Get a list of all movie sessions
+            with optional filtering.
 
-                You can filter movie sessions by:
-                - **date**: Filter by specific date (format: YYYY-MM-DD)
-                - **movie**: Filter by movie ID
+            You can filter movie sessions by:
+            - **date**: Filter by specific date (format: YYYY-MM-DD)
+            - **movie**: Filter by movie ID
 
-                **Note**: Filters can be used separately or combined.
-                Each session includes information about available tickets.
-                """,
+            **Note**: Filters can be used separately or combined.
+            Each session includes information about available tickets.
+            """,
+        summary="List movie sessions with filtering",
         parameters=[
             OpenApiParameter(
                 name="date",
                 description="Filter by specific date (format: YYYY-MM-DD)",
                 type=OpenApiTypes.DATE,
+                required=False,
                 examples=[
                     OpenApiExample(
                         "Session on January 15, 2024",
@@ -250,16 +316,53 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
             OpenApiParameter(
                 name="movie",
                 description="Filter movie sessions by specific movie ID",
-                type=OpenApiTypes.STR,
+                type=OpenApiTypes.INT,
+                required=False,
                 examples=[
-                    OpenApiExample("Session for movie with ID: 1", value="1"),
+                    OpenApiExample("Session for movie with ID: 1", value=1),
                 ],
             ),
         ],
     )
     def list(self, request, *args, **kwargs):
-        """Get list of movies"""
         return super().list(request, *args, **kwargs)
+
+    @extend_schema(
+        description="Get detailed information about a specific movie session "
+                    "including taken seats and cinema hall details.",
+        summary="Get movie session details"
+    )
+    def retrieve(self, request, *args, **kwargs):
+        return super().retrieve(request, *args, **kwargs)
+
+    @extend_schema(
+        description="Create a new movie session. Admin permission required.",
+        summary="Create movie session"
+    )
+    def create(self, request, *args, **kwargs):
+        return super().create(request, *args, **kwargs)
+
+    @extend_schema(
+        description="Update a movie session. Admin permission required.",
+        summary="Update movie session"
+    )
+    def update(self, request, *args, **kwargs):
+        return super().update(request, *args, **kwargs)
+
+    @extend_schema(
+        description="Partially update a movie session. "
+                    "Admin permission required.",
+        summary="Partial update movie session"
+    )
+    def partial_update(self, request, *args, **kwargs):
+        return super().partial_update(request, *args, **kwargs)
+
+    @extend_schema(
+        description="Delete a movie session. Admin permission required.",
+        summary="Delete movie session"
+    )
+    def destroy(self, request, *args, **kwargs):
+        return super().destroy(request, *args, **kwargs)
 
 
 class OrderPagination(PageNumberPagination):
@@ -290,3 +393,18 @@ class OrderViewSet(
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
+
+    @extend_schema(
+        description="Get list of user's orders. Authentication required.",
+        summary="List user orders"
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+    @extend_schema(
+        description="Create a new order with tickets."
+                    " Authentication required.",
+        summary="Create order"
+    )
+    def create(self, request, *args, **kwargs):
+        return super().create(request, *args, **kwargs)
