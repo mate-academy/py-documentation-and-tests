@@ -1,5 +1,4 @@
 import tempfile
-import os
 from PIL import Image
 from cinema.models import Actor, Genre, Movie
 from cinema.serializers import MovieDetailSerializer, MovieListSerializer
