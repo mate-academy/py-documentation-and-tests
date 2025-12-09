@@ -357,6 +357,71 @@ class MovieViewSetAuthorizedTests(TestCase):
         url = detail_url(self.movie.id)
         res = self.client.delete(url)
         self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+        
+    def test_filter_movie_sessions_by_date(self):
+        """Test filtering movie sessions by date"""
+        movie1 = sample_movie(title="Movie 1")
+        movie2 = sample_movie(title="Movie 2")
+        
+        cinema_hall = CinemaHall.objects.create(name="Red", rows=10, seats_in_row=10)
+        
+        session1 = sample_movie_session(
+            movie=movie1,
+            cinema_hall=cinema_hall,
+            show_time="2023-01-15 14:00:00"
+        )
+        session2 = sample_movie_session(
+            movie=movie1,
+            cinema_hall=cinema_hall,
+            show_time="2023-01-16 16:00:00"
+        )
+        session3 = sample_movie_session(
+            movie=movie2,
+            cinema_hall=cinema_hall,
+            show_time="2023-01-17 18:00:00"
+        )
+        
+        res = self.client.get(MOVIE_SESSION_URL, {"date": "2023-01-16"})
+        
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(res.data), 1)
+        self.assertEqual(res.data[0]["id"], session2.id)
+        self.assertEqual(
+            res.data[0]["show_time"], 
+            "2023-01-16T16:00:00Z"
+        )
+    
+    def test_filter_movie_sessions_by_movie(self):
+        """Test filtering movie sessions by movie id"""
+        movie1 = sample_movie(title="Movie 1")
+        movie2 = sample_movie(title="Movie 2")
+        
+        cinema_hall = CinemaHall.objects.create(name="Green", rows=8, seats_in_row=12)
+        
+        session1 = sample_movie_session(
+            movie=movie1,
+            cinema_hall=cinema_hall,
+            show_time="2023-01-15 14:00:00"
+        )
+        session2 = sample_movie_session(
+            movie=movie1,
+            cinema_hall=cinema_hall,
+            show_time="2023-01-15 16:00:00"
+        )
+        session3 = sample_movie_session(
+            movie=movie2,
+            cinema_hall=cinema_hall,
+            show_time="2023-01-15 18:00:00"
+        )
+        
+        res = self.client.get(MOVIE_SESSION_URL, {"movie": f"{movie1.id}"})
+        
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(res.data), 2)
+        session_ids = [session["id"] for session in res.data]
+        self.assertIn(session1.id, session_ids)
+        self.assertIn(session2.id, session_ids)
+        self.assertNotIn(session3.id, session_ids)
 
 
 class MovieViewSetAdminTests(MovieViewSetAuthorizedTests):
