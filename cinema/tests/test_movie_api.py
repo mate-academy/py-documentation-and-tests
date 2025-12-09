@@ -212,20 +212,19 @@ class MovieViewSetUnauthenticatedTests(TestCase):
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
-class MovieViewSetAuthorizedTests(TestCase):
+class BaseMovieViewSetTests:
+
     def setUp(self):
         self.client = APIClient()
-        self.user = get_user_model().objects.create_user(
-            "user@myproject.com", "password"
-        )
-        self.client.force_authenticate(self.user)
+        self.genre = sample_genre()
+        self.actor = sample_actor()
         self.movie = sample_movie()
         self.valid_payload = {
             "title": "New Movie",
             "description": "New Description",
             "duration": 120,
-            "genres": [1],
-            "actors": [1]
+            "genres": [self.genre.id],
+            "actors": [self.actor.id]
         }
 
     def test_retrieve_movie(self):
@@ -340,24 +339,6 @@ class MovieViewSetAuthorizedTests(TestCase):
         self.assertIn(serializer1.data, res.data)
         self.assertEqual(len(res.data), 1)
 
-    def __test_create_movie_forbidden(self):
-        """Test that creating a movie is not allowed for non-admin users"""
-        res = self.client.post(MOVIE_URL, self.valid_payload)
-        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
-
-    def __test_update_movie_forbidden(self):
-        """Test that updating a movie is not allowed for non-admin users"""
-        payload = {"title": "Updated Title"}
-        url = detail_url(self.movie.id)
-        res = self.client.patch(url, payload)
-        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
-
-    def __test_delete_movie_forbidden(self):
-        """Test that deleting a movie is not allowed for non-admin users"""
-        url = detail_url(self.movie.id)
-        res = self.client.delete(url)
-        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
-        
     def test_filter_movie_sessions_by_date(self):
         """Test filtering movie sessions by date"""
         movie1 = sample_movie(title="Movie 1")
@@ -423,24 +404,28 @@ class MovieViewSetAuthorizedTests(TestCase):
         self.assertIn(session2.id, session_ids)
         self.assertNotIn(session3.id, session_ids)
 
-
-class MovieViewSetAdminTests(MovieViewSetAuthorizedTests):
+class MovieViewSetAuthorizedTests(BaseMovieViewSetTests, TestCase):
     def setUp(self):
-        self.client = APIClient()
+        super().setUp()
+        self.user = get_user_model().objects.create_user(
+            "user@myproject.com", "password"
+        )
+        self.client.force_authenticate(self.user)
+
+    def test_create_movie_forbidden(self):
+        """Test that creating a movie is not allowed for non-admin users"""
+        res = self.client.post(MOVIE_URL, self.valid_payload)
+
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+
+
+class MovieViewSetAdminTests(BaseMovieViewSetTests, TestCase):
+    def setUp(self):
+        super().setUp()
         self.admin = get_user_model().objects.create_superuser(
             "admin@myproject.com", "password"
         )
         self.client.force_authenticate(self.admin)
-        self.movie = sample_movie()
-        self.genre = sample_genre()
-        self.actor = sample_actor()
-        self.valid_payload = {
-            "title": "New Movie",
-            "description": "New Description",
-            "duration": 120,
-            "genres": [1],
-            "actors": [1]
-        }
 
     def test_create_movie(self):
         """Test creating a movie"""
