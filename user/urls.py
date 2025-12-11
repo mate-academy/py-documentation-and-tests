@@ -14,14 +14,13 @@ app_name = "user"
 
 urlpatterns = [
     path("register/", CreateUserView.as_view(), name="create"),
-    path("login/", CreateTokenView.as_view(), name="login"),
     path(
-        "api/token/",
+        "token/",
         TokenObtainPairView.as_view(),
         name="token_obtain_pair"
     ),
     path(
-        "api/token/refresh/",
+        "token/refresh/",
         TokenRefreshView.as_view(),
         name="token_refresh"
     ),
