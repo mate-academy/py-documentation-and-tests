@@ -3,7 +3,7 @@ import os
 
 from PIL import Image
 from django.contrib.auth import get_user_model
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
 
 from rest_framework.test import APIClient, APITestCase
