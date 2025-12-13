@@ -232,7 +232,7 @@ class MovieSerializerTests(TestCase):
         )
         self.client.force_authenticate(user)
         genre = sample_genre(name="Genre")
-        actor = sample_actor(first_name="Tom", last_name="Hardy")
+        actor = sample_actor(first_name="Tommie", last_name="Hardy")
         movie = sample_movie(title="Movie")
 
         movie.genres.add(genre)
