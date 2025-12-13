@@ -10,10 +10,10 @@ from rest_framework.test import APIClient
 from rest_framework import status
 
 from cinema.models import (Movie,
-                           MovieSession,
-                           CinemaHall,
                            Genre,
-                           Actor)
+                           Actor,
+                           CinemaHall,
+                           MovieSession)
 
 MOVIE_URL = reverse("cinema:movie-list")
 MOVIE_SESSION_URL = reverse("cinema:moviesession-list")
@@ -167,11 +167,11 @@ class PublicMovieAPITests(TestCase):
     def setUp(self):
         self.client = APIClient()
 
-    def test_list_movies_allowed(self):
+    def test_authentication_required_for_movie_list(self):
         res = self.client.get(MOVIE_URL)
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
 
-    def test_retrieve_movie_allowed(self):
+    def test_authentication_required_for_movie_detail(self):
         movie = sample_movie()
         res = self.client.get(detail_url(movie.id))
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
@@ -326,3 +326,47 @@ class MovieSerializerTests(TestCase):
 
         self.assertEqual(len(res.data), 1)
         self.assertEqual(res.data[0]["id"], movie1.id)
+
+
+class AuthenticatedMovieAPITests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+
+    def test_authenticated_user_can_list_movies(self):
+        user = get_user_model().objects.create_user(
+            email="alex@gmail.com",
+            password="password",
+        )
+        self.client.force_authenticate(user)
+        res = self.client.get(MOVIE_URL)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+
+    def test_authenticated_user_can_retrieve_movie(self):
+        user = get_user_model().objects.create_user(
+            email="alex2@gmail.com",
+            password="password2",
+        )
+        movie = sample_movie(title="Movie 2")
+        self.client.force_authenticate(user)
+        res = self.client.get(detail_url(movie.id))
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+
+    def test_authenticated_user_cannot_create_movie(self):
+        user = get_user_model().objects.create_user(
+            email="alex3@gmail.com",
+            password="password3",
+        )
+        self.client.force_authenticate(user)
+        res = self.client.post(MOVIE_URL, {"title": "Movie 3"})
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+
+
+    def test_authenticated_user_cannot_upload_image(self):
+        user = get_user_model().objects.create_user(
+            email="alex4@gmail.com",
+            password="password4",
+        )
+        movie = sample_movie(title="Movie 4")
+        self.client.force_authenticate(user)
+        res = self.client.post(image_upload_url(movie_id=movie.id))
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
