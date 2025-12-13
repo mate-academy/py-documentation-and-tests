@@ -368,5 +368,5 @@ class AuthenticatedMovieAPITests(TestCase):
         )
         movie = sample_movie(title="Movie 4")
         self.client.force_authenticate(user)
-        res = self.client.post(image_upload_url(movie_id=movie.id))
+        res = self.client.post(image_upload_url(movie.id))
         self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
