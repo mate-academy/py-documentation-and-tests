@@ -1,13 +1,17 @@
 from datetime import datetime
+from typing import List
 
 from django.db.models import F, Count
+from drf_spectacular.utils import extend_schema, OpenApiParameter
+from drf_spectacular.types import OpenApiTypes
 from rest_framework import viewsets, mixins, status
-from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
-from rest_framework.viewsets import GenericViewSet, ReadOnlyModelViewSet
+from rest_framework.viewsets import GenericViewSet
+from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from cinema.models import Genre, Actor, CinemaHall, Movie, MovieSession, Order
 from cinema.permissions import IsAdminOrIfAuthenticatedReadOnly
@@ -35,7 +39,7 @@ class GenreViewSet(
 ):
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
-    authentication_classes = (TokenAuthentication,)
+    authentication_classes = (JWTAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
 
@@ -46,7 +50,7 @@ class ActorViewSet(
 ):
     queryset = Actor.objects.all()
     serializer_class = ActorSerializer
-    authentication_classes = (TokenAuthentication,)
+    authentication_classes = (JWTAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
 
@@ -57,7 +61,7 @@ class CinemaHallViewSet(
 ):
     queryset = CinemaHall.objects.all()
     serializer_class = CinemaHallSerializer
-    authentication_classes = (TokenAuthentication,)
+    authentication_classes = (JWTAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
 
@@ -69,13 +73,46 @@ class MovieViewSet(
 ):
     queryset = Movie.objects.prefetch_related("genres", "actors")
     serializer_class = MovieSerializer
-    authentication_classes = (TokenAuthentication,)
+    authentication_classes = (JWTAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="title",
+                type=OpenApiTypes.STR,
+                description=(
+                    "Filter movies by title (case-insensitive contains)."
+                ),
+            ),
+            OpenApiParameter(
+                name="genres",
+                type=OpenApiTypes.STR,
+                description=(
+                    "Filter by genre ids (comma-separated), e.g. '1,2,3'."
+                ),
+            ),
+            OpenApiParameter(
+                name="actors",
+                type=OpenApiTypes.STR,
+                description=(
+                    "Filter by actor ids (comma-separated), e.g. '5,9'."
+                ),
+            ),
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
     @staticmethod
-    def _params_to_ints(qs):
-        """Converts a list of string IDs to a list of integers"""
-        return [int(str_id) for str_id in qs.split(",")]
+    def _params_to_ints(qs: str, param_name: str) -> List[int]:
+        """Converts a comma-separated list of IDs to a list of integers."""
+        try:
+            return [int(str_id) for str_id in qs.split(",") if str_id]
+        except ValueError as exc:
+            raise ValidationError(
+                {param_name: "Invalid ids. Use comma-separated integers."}
+            ) from exc
 
     def get_queryset(self):
         """Retrieve the movies with filters"""
@@ -89,11 +126,11 @@ class MovieViewSet(
             queryset = queryset.filter(title__icontains=title)
 
         if genres:
-            genres_ids = self._params_to_ints(genres)
+            genres_ids = self._params_to_ints(genres, "genres")
             queryset = queryset.filter(genres__id__in=genres_ids)
 
         if actors:
-            actors_ids = self._params_to_ints(actors)
+            actors_ids = self._params_to_ints(actors, "actors")
             queryset = queryset.filter(actors__id__in=actors_ids)
 
         return queryset.distinct()
@@ -140,8 +177,27 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
         )
     )
     serializer_class = MovieSessionSerializer
-    authentication_classes = (TokenAuthentication,)
+    authentication_classes = (JWTAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="date",
+                type=OpenApiTypes.DATE,
+                description=(
+                    "Filter movie sessions by date (YYYY-MM-DD)."
+                ),
+            ),
+            OpenApiParameter(
+                name="movie",
+                type=OpenApiTypes.INT,
+                description="Filter movie sessions by movie id.",
+            ),
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
 
     def get_queryset(self):
         date = self.request.query_params.get("date")
@@ -150,11 +206,22 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
         queryset = self.queryset
 
         if date:
-            date = datetime.strptime(date, "%Y-%m-%d").date()
-            queryset = queryset.filter(show_time__date=date)
+            try:
+                parsed_date = datetime.strptime(date, "%Y-%m-%d").date()
+            except ValueError as exc:
+                raise ValidationError(
+                    {"date": "Invalid date format. Use YYYY-MM-DD."}
+                ) from exc
+            queryset = queryset.filter(show_time__date=parsed_date)
 
         if movie_id_str:
-            queryset = queryset.filter(movie_id=int(movie_id_str))
+            try:
+                movie_id = int(movie_id_str)
+            except ValueError as exc:
+                raise ValidationError(
+                    {"movie": "Invalid movie id. Use an integer."}
+                ) from exc
+            queryset = queryset.filter(movie_id=movie_id)
 
         return queryset
 
@@ -183,7 +250,7 @@ class OrderViewSet(
     )
     serializer_class = OrderSerializer
     pagination_class = OrderPagination
-    authentication_classes = (TokenAuthentication,)
+    authentication_classes = (JWTAuthentication,)
     permission_classes = (IsAuthenticated,)
 
     def get_queryset(self):
