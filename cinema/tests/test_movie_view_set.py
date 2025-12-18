@@ -96,7 +96,7 @@ class AuthenticatedMovieTests(TestCase):
         res = self.client.post(MOVIE_URL, payload)
         self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
 
-    def test_upload_image_available_for_staff(self):
+    def test_upload_image_forbidden_for_regular_user(self):
         url = img_upload_url(self.movie1.id)
         with tempfile.NamedTemporaryFile(suffix=".jpg") as ntf:
             img = Image.new("RGB", (10, 10))
