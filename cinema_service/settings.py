@@ -42,7 +42,6 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "drf_spectacular",
     "rest_framework",
-    "rest_framework.authtoken",
     "debug_toolbar",
     "cinema",
     "user",
@@ -151,7 +150,7 @@ REST_FRAMEWORK = {
 
 SPECTACULAR_SETTINGS = {
     "TITLE": "Cinema service API",
-    "DESCRIPTION": "This you have a best API for cinema service.",
+    "DESCRIPTION": "The best API for a cinema service.",
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
 }

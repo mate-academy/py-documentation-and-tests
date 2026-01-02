@@ -54,6 +54,14 @@ class TestMovieViewSetWithUnauthorizedUser(TestCase):
 
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
 
+    def test_get_method(self):
+        check = sample_movie()
+
+        for res in (
+                self.client.get(MOVIE_LIST_URL),
+                self.client.get(reverse("cinema:movie-detail", kwargs={"pk": check.id})),
+        ):
+            self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
 
 class TestMovieViewSetWithAuthorizedUser(TestCase):
     def setUp(self):
@@ -88,9 +96,9 @@ class TestMovieViewSetWithAuthorizedUser(TestCase):
         detail_serializer = MovieListSerializer(check)
 
         for res in (
-            self.client.get(MOVIE_LIST_URL, data={"title": "cool movie"}),
-            self.client.get(MOVIE_LIST_URL, data={"actors": f"{actor.id}"}),
-            self.client.get(MOVIE_LIST_URL, data={"genres": f"{genre.id}"}),
+                self.client.get(MOVIE_LIST_URL, data={"title": "cool movie"}),
+                self.client.get(MOVIE_LIST_URL, data={"actors": f"{actor.id}"}),
+                self.client.get(MOVIE_LIST_URL, data={"genres": f"{genre.id}"}),
         ):
             self.assertEqual(res.status_code, status.HTTP_200_OK)
             self.assertNotEqual(res.data, serializer.data)
