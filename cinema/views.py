@@ -8,6 +8,7 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet, ReadOnlyModelViewSet
+from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiTypes
 
 from cinema.models import Genre, Actor, CinemaHall, Movie, MovieSession, Order
 from cinema.permissions import IsAdminOrIfAuthenticatedReadOnly
@@ -98,6 +99,28 @@ class MovieViewSet(
 
         return queryset.distinct()
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                "title",
+                OpenApiTypes.STR,
+                description="Filter movies by title substring"
+            ),
+            OpenApiParameter(
+                "genres",
+                OpenApiTypes.STR,
+                description="Filter by comma separated genre ids"
+            ),
+            OpenApiParameter(
+                "actors",
+                OpenApiTypes.STR,
+                description="Filter by comma separated actor ids"
+            ),
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
     def get_serializer_class(self):
         if self.action == "list":
             return MovieListSerializer
@@ -157,6 +180,23 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(movie_id=int(movie_id_str))
 
         return queryset
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                "date",
+                OpenApiTypes.DATE,
+                description="Filter sessions by date (YYYY-MM-DD)"
+            ),
+            OpenApiParameter(
+                "movie",
+                OpenApiTypes.INT,
+                description="Filter sessions by movie id"
+            ),
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
 
     def get_serializer_class(self):
         if self.action == "list":
