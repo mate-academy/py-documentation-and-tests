@@ -54,6 +54,7 @@ class MovieListSerializer(serializers.ModelSerializer):
         read_only=True,
         slug_field="full_name",
     )
+    image = serializers.ImageField(read_only=True)
 
     class Meta:
         model = Movie
