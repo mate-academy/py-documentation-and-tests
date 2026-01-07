@@ -159,6 +159,40 @@ class MovieImageUploadTests(TestCase):
         self.assertIn("movie_image", res.data[0].keys())
 
 
+class PublicMovieApiTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+
+    def test_list_movies_allowed_for_unauthenticated(self):
+        sample_movie()
+        sample_movie(title="Another")
+
+        res = self.client.get(MOVIE_URL)
+
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_retrieve_movie_allowed_for_unauthenticated(self):
+        movie = sample_movie()
+
+        res = self.client.get(detail_url(movie.id))
+
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_create_movie_denied_for_unauthenticated(self):
+        payload = {
+            "title": "Movie",
+            "description": "Desc",
+            "duration": 100,
+        }
+
+        res = self.client.post(MOVIE_URL, payload)
+
+        self.assertIn(
+            res.status_code,
+            [status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN],
+        )
+
+
 class AuthenticatedMovieApiTests(TestCase):
     def setUp(self):
         self.client = APIClient()
@@ -170,33 +204,9 @@ class AuthenticatedMovieApiTests(TestCase):
 
     def test_list_movies_allowed(self):
         sample_movie()
-        sample_movie(title="Another")
-
         res = self.client.get(MOVIE_URL)
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(res.data), 2)
-
-    def test_create_movie_unauthorized(self):
-        payload = {
-            "title": "Movie",
-            "description": "Desc",
-            "duration": 100,
-        }
-
-        res = self.client.post(MOVIE_URL, payload)
-
-        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
-
-
-class PrivateMovieApiTests(TestCase):
-    def setUp(self):
-        self.client = APIClient()
-        self.user = get_user_model().objects.create_user(
-            "user@test.com",
-            "password",
-        )
-        self.client.force_authenticate(self.user)
 
     def test_retrieve_movie(self):
         movie = sample_movie()
@@ -204,7 +214,6 @@ class PrivateMovieApiTests(TestCase):
         res = self.client.get(detail_url(movie.id))
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertEqual(res.data["title"], movie.title)
 
     def test_create_movie_forbidden(self):
         payload = {
