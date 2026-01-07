@@ -197,3 +197,28 @@ class MovieApiTests(TestCase):
         )
 
         self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_retrieve_movie_unauthenticated(self):
+        movie = create_movie()
+
+        res = self.client.get(movie_detail_url(movie.id))
+
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_upload_image_unauthenticated(self):
+        movie = create_movie()
+
+        with tempfile.NamedTemporaryFile(suffix=".jpg") as image:
+            img = Image.new("RGB", (100, 100))
+            img.save(image, format="JPEG")
+            image.seek(0)
+
+            payload = {"image": image}
+
+            res = self.client.post(
+                movie_upload_image_url(movie.id),
+                payload,
+                format="multipart",
+            )
+
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
