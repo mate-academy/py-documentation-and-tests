@@ -12,7 +12,8 @@ from .test_movie_api import (
     image_upload_url,
 )
 
-from django.urls import reverse
+from cinema.models import Movie
+import os
 import tempfile
 from PIL import Image
 
@@ -94,3 +95,50 @@ class MovieViewSetTests(TestCase):
             res = self.client.post(url, {"image": ntf}, format="multipart")
 
         self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_admin_can_create_movie(self):
+        user = get_user_model().objects.create_superuser("admin@example.com", "testpass")
+        self.client.force_authenticate(user)
+        g = sample_genre(name="Action")
+        a = sample_actor(first_name="First", last_name="Last")
+        payload = {
+            "title": "Created Movie",
+            "description": "Desc",
+            "duration": 120,
+            "genres": [g.id],
+            "actors": [a.id],
+        }
+        res = self.client.post(MOVIE_URL, payload, format="json")
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        self.assertTrue(Movie.objects.filter(title="Created Movie").exists())
+
+    def test_non_admin_cannot_create_movie(self):
+        user = get_user_model().objects.create_user("user2@example.com", "testpass")
+        self.client.force_authenticate(user)
+        g = sample_genre()
+        a = sample_actor()
+        payload = {
+            "title": "No Create",
+            "description": "Desc",
+            "duration": 90,
+            "genres": [g.id],
+            "actors": [a.id],
+        }
+        res = self.client.post(MOVIE_URL, payload, format="json")
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_admin_can_upload_image(self):
+        user = get_user_model().objects.create_superuser("admin2@example.com", "password")
+        self.client.force_authenticate(user)
+        movie = sample_movie()
+        url = image_upload_url(movie.id)
+        with tempfile.NamedTemporaryFile(suffix=".jpg") as ntf:
+            img = Image.new("RGB", (10, 10))
+            img.save(ntf, format="JPEG")
+            ntf.seek(0)
+            res = self.client.post(url, {"image": ntf}, format="multipart")
+        movie.refresh_from_db()
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertIn("image", res.data)
+        self.assertTrue(os.path.exists(movie.image.path))
+        movie.image.delete()
