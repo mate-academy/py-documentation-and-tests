@@ -178,6 +178,76 @@ class UnauthenticatedMovieApiTests(TestCase):
         res = self.client.get(MOVIE_URL)
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
 
+    def test_retrieve_movie_unauthorized(self):
+        """Test that unauthenticated user receives 401 for retrieve action"""
+        movie = sample_movie()
+        url = detail_url(movie.id)
+
+        res = self.client.get(url)
+
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_create_movie_unauthorized(self):
+        """Test that unauthenticated user receives 401 for create action"""
+        genre = sample_genre()
+        actor = sample_actor()
+
+        payload = {
+            "title": "New Movie",
+            "description": "Description",
+            "duration": 120,
+            "genres": [genre.id],
+            "actors": [actor.id],
+        }
+
+        res = self.client.post(MOVIE_URL, payload)
+
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_upload_image_unauthorized(self):
+        """
+        Test that unauthenticated user
+        receives 401 for upload_image action
+        """
+        movie = sample_movie()
+        url = image_upload_url(movie.id)
+
+        with tempfile.NamedTemporaryFile(suffix=".jpg") as ntf:
+            img = Image.new("RGB", (10, 10))
+            img.save(ntf, format="JPEG")
+            ntf.seek(0)
+            res = self.client.post(url, {"image": ntf}, format="multipart")
+
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+
+class AuthenticatedNonAdminMovieApiTests(TestCase):
+    """Tests for authenticated non-admin users"""
+
+    def setUp(self):
+        self.client = APIClient()
+        self.user = get_user_model().objects.create_user(
+            email="user@test.com",
+            password="testpass123",
+        )
+        self.client.force_authenticate(self.user)
+
+    def test_upload_image_forbidden_for_non_admin(self):
+        """
+        Test that authenticated non-admin user
+        receives 403 for upload_image action
+        """
+        movie = sample_movie()
+        url = image_upload_url(movie.id)
+
+        with tempfile.NamedTemporaryFile(suffix=".jpg") as ntf:
+            img = Image.new("RGB", (10, 10))
+            img.save(ntf, format="JPEG")
+            ntf.seek(0)
+            res = self.client.post(url, {"image": ntf}, format="multipart")
+
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+
 
 class AuthenticatedMovieApiTests(TestCase):
     def setUp(self):
