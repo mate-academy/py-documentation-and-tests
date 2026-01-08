@@ -1,7 +1,7 @@
-import tempfile
 import os
-
+import tempfile
 from PIL import Image
+
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
@@ -9,11 +9,17 @@ from django.urls import reverse
 from rest_framework.test import APIClient
 from rest_framework import status
 
-from cinema.models import Movie, MovieSession, CinemaHall, Genre, Actor
+from cinema.models import (
+    Movie,
+    MovieSession,
+    CinemaHall,
+    Genre,
+    Actor
+)
+
 
 MOVIE_URL = reverse("cinema:movie-list")
 MOVIE_SESSION_URL = reverse("cinema:moviesession-list")
-
 
 def sample_movie(**params):
     defaults = {
@@ -157,3 +163,91 @@ class MovieImageUploadTests(TestCase):
         res = self.client.get(MOVIE_SESSION_URL)
 
         self.assertIn("movie_image", res.data[0].keys())
+
+
+class PrivateMovieApiTests(TestCase):
+    """Test authenticated movie API access"""
+
+    def setUp(self):
+        self.client = APIClient()
+        self.user = get_user_model().objects.create_user(
+            email="user@test.com",
+            password="testpass123",
+        )
+        self.client.force_authenticate(self.user)
+
+    def test_list_movies(self):
+        """Test retrieving movie list"""
+        sample_movie(title="Movie 1")
+        sample_movie(title="Movie 2")
+
+        res = self.client.get(MOVIE_URL)
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(res.data), 2)
+
+    def test_filter_movies_by_title(self):
+        """Test filtering movies by title"""
+        movie1 = sample_movie(title="Star Wars")
+        movie2 = sample_movie(title="Star Trek")
+
+        res = self.client.get(MOVIE_URL, {"title": "wars"})
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(res.data), 1)
+        self.assertEqual(res.data[0]["id"], movie1.id)
+        self.assertNotEqual(res.data[0]["id"], movie2.id)
+
+    def test_filter_movies_by_genres(self):
+        """Test filtering movies by genres"""
+        genre1 = sample_genre(name="Action")
+        genre2 = sample_genre(name="Drama")
+
+        movie1 = sample_movie()
+        movie2 = sample_movie(title="Another movie")
+
+        movie1.genres.add(genre1)
+        movie2.genres.add(genre2)
+
+        res = self.client.get(
+            MOVIE_URL,
+            {"genres": f"{genre1.id}"},
+        )
+
+        self.assertEqual(len(res.data), 1)
+        self.assertEqual(res.data[0]["id"], movie1.id)
+
+    def test_filter_movies_by_actors(self):
+        """Test filtering movies by actors"""
+        actor1 = sample_actor(first_name="Brad", last_name="Pitt")
+        actor2 = sample_actor(first_name="Leonardo", last_name="DiCaprio")
+
+        movie1 = sample_movie()
+        movie2 = sample_movie(title="Another movie")
+
+        movie1.actors.add(actor1)
+        movie2.actors.add(actor2)
+
+        res = self.client.get(
+            MOVIE_URL,
+            {"actors": f"{actor1.id}"},
+        )
+
+        self.assertEqual(len(res.data), 1)
+        self.assertEqual(res.data[0]["id"], movie1.id)
+
+    def test_filter_movies_by_multiple_genres(self):
+        """Test filtering movies by multiple genres"""
+        genre1 = sample_genre(name="Comedy")
+        genre2 = sample_genre(name="Horror")
+
+        movie = sample_movie()
+        movie.genres.add(genre1, genre2)
+
+        res = self.client.get(
+            MOVIE_URL,
+            {"genres": f"{genre1.id},{genre2.id}"},
+        )
+
+        self.assertEqual(len(res.data), 1)
+        self.assertEqual(res.data[0]["id"], movie.id)
