@@ -177,3 +177,29 @@ class OrderSerializer(serializers.ModelSerializer):
 
 class OrderListSerializer(OrderSerializer):
     tickets = TicketListSerializer(many=True, read_only=True)
+
+
+class MovieFilterSerializer(serializers.Serializer):
+    title = serializers.CharField(
+        required=False,
+        help_text="Filter by movie title"
+    )
+    genres = serializers.CharField(
+        required=False,
+        help_text="Filter by genre IDs (comma separated)"
+    )
+    actors = serializers.CharField(
+        required=False,
+        help_text="Filter by actor IDs (comma separated)"
+    )
+
+
+class MovieSessionFilterSerializer(serializers.Serializer):
+    date = serializers.DateField(
+        required=False,
+        help_text="Filter by show date (format YYYY-MM-DD)"
+    )
+    movie = serializers.IntegerField(
+        required=False,
+        help_text="Filter by movie ID"
+    )
