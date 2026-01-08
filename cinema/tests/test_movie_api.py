@@ -10,7 +10,11 @@ from rest_framework.test import APIClient
 from rest_framework import status
 
 from cinema.models import Movie, MovieSession, CinemaHall, Genre, Actor
-from cinema.serializers import MovieListSerializer, MovieDetailSerializer, MovieSessionSerializer, MovieSerializer
+from cinema.serializers import (
+    MovieListSerializer,
+    MovieDetailSerializer,
+    MovieSerializer
+)
 
 MOVIE_URL = reverse("cinema:movie-list")
 MOVIE_SESSION_URL = reverse("cinema:moviesession-list")
@@ -323,7 +327,7 @@ class AdminUserMovieTest(TestCase):
             ]
         }
         serializer = MovieSerializer(data=payload)
-        self.assertTrue(serializer.is_valid(), True)
+        self.assertTrue(serializer.is_valid())
         response = self.client.post(MOVIE_URL, payload)
         self.assertEqual(response.status_code, 201)
-        self.assertTrue(Movie.objects.all().count(), 1)
+        self.assertEqual(Movie.objects.all().count(), 1)

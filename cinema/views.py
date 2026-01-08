@@ -198,7 +198,8 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
             OpenApiParameter(
                 name="date",
                 type={
-                    "type": "date"
+                    "type": "string",
+                    "format": "date",
                 },
                 description="Filter by date (ex. ?date=YYYY-MM-DD)"
             ),
