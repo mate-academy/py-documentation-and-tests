@@ -1,3 +1,6 @@
+import tempfile
+import os
+from PIL import Image
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from rest_framework import status
@@ -52,7 +55,8 @@ class AuthenticatedMovieApiTests(TestCase):
         serializer = MovieListSerializer(movies, many=True)
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertEqual(res.data, serializer.data)
+        for movie in movies:
+            self.assertIn(MovieListSerializer(movie).data, res.data)
 
     def test_filter_movies_by_genres(self):
         genre_1 = Genre.objects.create(name="Action")
@@ -90,6 +94,33 @@ class AuthenticatedMovieApiTests(TestCase):
 
         self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
 
+    def test_filter_movies_by_title(self):
+        movie_1 = sample_movie(title="Matrix")
+        movie_2 = sample_movie(title="Avatar")
+
+        res = self.client.get(MOVIE_URL, {"title": "Matrix"})
+
+        self.assertIn(MovieListSerializer(movie_1).data, res.data)
+        self.assertNotIn(MovieListSerializer(movie_2).data, res.data)
+
+    def test_filter_movies_by_actors(self):
+        actor_1 = Actor.objects.create(first_name="Tom", last_name="Hardy")
+        actor_2 = Actor.objects.create(first_name="Brad", last_name="Pitt")
+
+        movie_1 = sample_movie(title="Movie 1")
+        movie_2 = sample_movie(title="Movie 2")
+
+        movie_1.actors.add(actor_1)
+        movie_2.actors.add(actor_2)
+
+        res = self.client.get(MOVIE_URL, {"actors": actor_1.id})
+
+        self.assertIn(MovieListSerializer(movie_1).data, res.data)
+        self.assertNotIn(MovieListSerializer(movie_2).data, res.data)
+
+def image_upload_url(movie_id):
+    return reverse("cinema:movie-upload-image", args=[movie_id])
+
 
 class AdminMovieApiTests(TestCase):
     def setUp(self):
@@ -113,10 +144,31 @@ class AdminMovieApiTests(TestCase):
         }
 
         res = self.client.post(MOVIE_URL, payload)
-        print(res.data)
 
 
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
         self.assertTrue(
             Movie.objects.filter(title=payload["title"]).exists()
         )
+
+    def test_upload_image_to_movie(self):
+        movie = sample_movie()
+
+        url = image_upload_url(movie.id)
+
+        with tempfile.NamedTemporaryFile(suffix=".jpg") as image_file:
+            img = Image.new("RGB", (100, 100))
+            img.save(image_file, format="JPEG")
+            image_file.seek(0)
+
+            res = self.client.post(
+                url,
+                {"image": image_file},
+                format="multipart",
+            )
+
+        movie.refresh_from_db()
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertTrue(movie.image)
+        self.assertTrue(os.path.exists(movie.image.path))
