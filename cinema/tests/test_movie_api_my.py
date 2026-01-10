@@ -55,6 +55,66 @@ class AuthenticatedMovieApiTests(TestCase):
         self.assertEqual(len(res.data), 1)
         self.assertEqual(res.data[0]["title"], movie_target.title)
 
+    def test_filter_movies_by_genres(self):
+        genre1 = Genre.objects.create(name="Action-genre")
+        genre2 = Genre.objects.create(name="Drama-genre")
+
+        movie1 = Movie.objects.create(
+            title="Action movie",
+            description="Desc",
+            duration=100,
+        )
+        movie2 = Movie.objects.create(
+            title="Drama movie",
+            description="Desc",
+            duration=100,
+        )
+
+        movie1.genres.add(genre1)
+        movie2.genres.add(genre2)
+
+        res = self.client.get(
+            MOVIE_URL,
+            {"genres": str(genre1.id)}
+        )
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(res.data), 1)
+        self.assertEqual(res.data[0]["id"], movie1.id)
+
+    def test_filter_movies_by_actors(self):
+        actor1 = Actor.objects.create(
+            first_name="Tom",
+            last_name="Hardy"
+        )
+        actor2 = Actor.objects.create(
+            first_name="Brad",
+            last_name="Pitt"
+        )
+
+        movie1 = Movie.objects.create(
+            title="Movie with Tom",
+            description="Desc",
+            duration=100,
+        )
+        movie2 = Movie.objects.create(
+            title="Movie with Brad",
+            description="Desc",
+            duration=100,
+        )
+
+        movie1.actors.add(actor1)
+        movie2.actors.add(actor2)
+
+        res = self.client.get(
+            MOVIE_URL,
+            {"actors": str(actor1.id)}
+        )
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(res.data), 1)
+        self.assertEqual(res.data[0]["id"], movie1.id)
+
     def test_retrieve_movie_detail(self) -> None:
         url = detail_url(self.movie.id)
         res = self.client.get(url)
@@ -65,6 +125,28 @@ class AuthenticatedMovieApiTests(TestCase):
     def test_create_movie_forbidden(self) -> None:
         payload = {"title": "Forbidden", "description": "Desc", "duration": 100}
         res = self.client.post(MOVIE_URL, payload)
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_regular_user_forbidden_upload_image(self):
+        user = get_user_model().objects.create_user(
+            email="usertest@test.com",
+            password="password"
+        )
+        self.client.force_authenticate(user)
+
+        movie = Movie.objects.create(
+            title="Movie",
+            description="Desc",
+            duration=100,
+        )
+
+        url = reverse("cinema:movie-upload-image", args=[movie.id])
+        res = self.client.post(
+            url,
+            {"image": "data"},
+            format="multipart"
+        )
+
         self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
 
 class AdminMovieApiTests(TestCase):
