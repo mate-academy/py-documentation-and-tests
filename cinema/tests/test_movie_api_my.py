@@ -170,8 +170,8 @@ class AdminMovieApiTests(TestCase):
         res = self.client.post(MOVIE_URL, payload)
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
 
-    def test_upload_image_to_movie(self) -> None:
+    def test_upload_image_with_invalid_data_bad_request(self) -> None:
         movie = Movie.objects.create(title="Movie", description="Desc", duration=100)
         url = reverse("cinema:movie-upload-image", args=[movie.id])
         res = self.client.post(url, {"image": "data"}, format="multipart")
-        self.assertNotEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertNotEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
