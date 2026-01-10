@@ -174,4 +174,4 @@ class AdminMovieApiTests(TestCase):
         movie = Movie.objects.create(title="Movie", description="Desc", duration=100)
         url = reverse("cinema:movie-upload-image", args=[movie.id])
         res = self.client.post(url, {"image": "data"}, format="multipart")
-        self.assertNotEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
