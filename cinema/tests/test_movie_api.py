@@ -6,10 +6,10 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 
-from rest_framework.authtoken.models import Token
 from rest_framework.test import APIClient, APITestCase
 from rest_framework import status
-from django.utils import timezone
+
+from rest_framework_simplejwt.tokens import RefreshToken
 
 from cinema.models import Movie, MovieSession, CinemaHall, Genre, Actor
 from cinema.serializers import MovieListSerializer, MovieDetailSerializer
@@ -17,8 +17,10 @@ from cinema.serializers import MovieListSerializer, MovieDetailSerializer
 MOVIE_URL = reverse("cinema:movie-list")
 MOVIE_SESSION_URL = reverse("cinema:moviesession-list")
 
-show_time = timezone.now()
 
+def get_jwt_token_for_user(user):
+    refresh = RefreshToken.for_user(user)
+    return str(refresh.access_token)
 
 def sample_movie(**params):
     defaults = {
@@ -75,11 +77,10 @@ class MovieImageUploadTests(TestCase):
         self.user = get_user_model().objects.create_superuser(
             "admin@myproject.com", "password"
         )
-
-        self.client = APIClient()
         self.movie = sample_movie()
-        token = Token.objects.create(user=self.user)
-        self.client.credentials(HTTP_AUTHORIZATION=f"Token {token.key}")
+
+        token = get_jwt_token_for_user(self.user)
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {token.key}")
 
         self.genre = sample_genre()
         self.actor = sample_actor()
@@ -179,10 +180,13 @@ class PublicMovieApiTests(APITestCase):
 
 class PrivateMovieApiTests(APITestCase):
     def setUp(self):
+        self.client = APIClient()
         self.user = get_user_model().objects.create_user(
             email="user@user.com", password="pass123"
         )
-        self.client.force_authenticate(self.user)
+
+        token = get_jwt_token_for_user(self.user)
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {token.key}")
 
     def test_list_movies(self):
         movie1 = sample_movie(title="Movie 1")
@@ -267,12 +271,13 @@ class PrivateMovieApiTests(APITestCase):
 
 class AdminMovieApiTests(APITestCase):
     def setUp(self):
+        self.client = APIClient()
         self.admin = get_user_model().objects.create_superuser(
             email="admin@admin.admin", password="admin123"
         )
-        self.client = APIClient()
-        token = Token.objects.create(user=self.admin)
-        self.client.credentials(HTTP_AUTHORIZATION=f"Token {token.key}")
+
+        token = get_jwt_token_for_user(self.admin)
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {token.key}")
 
     def test_admin_can_create_movie(self):
         payload = {

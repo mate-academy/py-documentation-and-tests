@@ -1,14 +1,13 @@
 from rest_framework import generics
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.settings import api_settings
 
 from rest_framework_simplejwt.views import TokenObtainPairView
 
 from drf_spectacular.utils import extend_schema, extend_schema_view
 
 
-from user.serializers import UserSerializer, AuthTokenSerializer
+from user.serializers import UserSerializer
 
 
 @extend_schema(
@@ -56,7 +55,6 @@ class CreateTokenView(TokenObtainPairView):
 )
 class ManageUserView(generics.RetrieveUpdateAPIView):
     serializer_class = UserSerializer
-    authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAuthenticated,)
 
     def get_object(self):
