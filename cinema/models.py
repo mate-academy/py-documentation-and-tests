@@ -64,10 +64,10 @@ class Movie(models.Model):
 class MovieSession(models.Model):
     show_time = models.DateTimeField()
     movie = models.ForeignKey(
-        Movie, on_delete=models.CASCADE, related_name="movie_sessions"
+        Movie, on_delete=models.CASCADE, related_name="movie"
     )
     cinema_hall = models.ForeignKey(
-        CinemaHall, on_delete=models.CASCADE, related_name="movie_sessions"
+        CinemaHall, on_delete=models.CASCADE, related_name="cinema_hall"
     )
 
     class Meta:
@@ -132,17 +132,12 @@ class Ticket(models.Model):
     def save(
         self,
         *args,
-        force_insert=False,
-        force_update=False,
-        using=None,
-        update_fields=None,
+        **kwargs,
     ):
         self.full_clean()
         return super(Ticket, self).save(
-            force_insert,
-            force_update,
-            using,
-            update_fields
+            *args,
+            **kwargs,
         )
 
     def __str__(self):

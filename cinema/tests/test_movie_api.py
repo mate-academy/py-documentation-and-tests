@@ -80,7 +80,7 @@ class MovieImageUploadTests(TestCase):
         self.movie = sample_movie()
 
         token = get_jwt_token_for_user(self.user)
-        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {token.key}")
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
 
         self.genre = sample_genre()
         self.actor = sample_actor()
@@ -186,7 +186,7 @@ class PrivateMovieApiTests(APITestCase):
         )
 
         token = get_jwt_token_for_user(self.user)
-        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {token.key}")
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
 
     def test_list_movies(self):
         movie1 = sample_movie(title="Movie 1")
@@ -277,7 +277,7 @@ class AdminMovieApiTests(APITestCase):
         )
 
         token = get_jwt_token_for_user(self.admin)
-        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {token.key}")
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
 
     def test_admin_can_create_movie(self):
         payload = {
