@@ -318,8 +318,8 @@ class AdminMovieApiTests(APITestCase):
         )
 
         self.client = APIClient()
-        token = Token.objects.create(user=user)
-        self.client.credentials(HTTP_AUTHORIZATION=f"Token {token.key}")
+        token = get_jwt_token_for_user(user=user)
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
         movie = sample_movie()
         url = image_upload_url(movie.id)
 
