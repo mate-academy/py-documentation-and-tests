@@ -1,21 +1,18 @@
-# settings.py
-
 INSTALLED_APPS = [
     # ... other apps
     'drf_spectacular',
-    'rest_framework_simplejwt',
 ]
 
 REST_FRAMEWORK = {
-    # 1. Documentation Schema
+    # Documentation
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
-
-    # 2. JWT Authentication
+    
+    # Authentication
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
-
-    # 3. Throttling Configuration
+    
+    # Throttling
     'DEFAULT_THROTTLE_CLASSES': [
         'rest_framework.throttling.AnonRateThrottle',
         'rest_framework.throttling.UserRateThrottle',
@@ -26,10 +23,9 @@ REST_FRAMEWORK = {
     }
 }
 
-# Optional: Spectacular Settings for UI customization
 SPECTACULAR_SETTINGS = {
-    'TITLE': 'Cinema API Project',
-    'DESCRIPTION': 'API for managing cinema movies and sessions',
+    'TITLE': 'Cinema API',
+    'DESCRIPTION': 'Ordering tickets for movie sessions',
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
 }
