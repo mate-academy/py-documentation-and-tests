@@ -168,6 +168,11 @@ class UnauthenticatedMovieApiTests(APITestCase):
         res = self.client.get(MOVIE_URL)
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
 
+    def test_image_upload_auth_required(self):
+        url = image_upload_url(1)
+        res = self.client.post(url)
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
 class AuthenticatedMovieApiTests(APITestCase):
     def setUp(self):
         self.user = get_user_model().objects.create_user("test@test.com", "testpass")
@@ -195,6 +200,12 @@ class AuthenticatedMovieApiTests(APITestCase):
     def test_create_movie_forbidden(self):
         payload = {"title": "Forbidden", "duration": 100}
         res = self.client.post(MOVIE_URL, payload)
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_upload_image_forbidden(self):
+        movie = sample_movie()
+        url = detail_url(movie.id) + "upload-image/"
+        res = self.client.post(url, data={}, format="multipart")
         self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
 
 
