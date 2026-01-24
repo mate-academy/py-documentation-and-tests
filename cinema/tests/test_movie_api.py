@@ -251,3 +251,73 @@ class PrivateMovieApiTests(TestCase):
 
         self.assertEqual(len(res.data), 1)
         self.assertEqual(res.data[0]["id"], movie.id)
+
+    def test_create_movie_forbidden_for_regular_user(self):
+        genre = sample_genre()
+        actor = sample_actor()
+        payload = {
+            "title": "New Movie",
+            "description": "Description",
+            "duration": 100,
+            "genres": [genre.id],
+            "actors": [actor.id],
+        }
+
+        res = self.client.post(MOVIE_URL, payload, format="json")
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_upload_image_forbidden_for_regular_user(self):
+        movie = sample_movie()
+        url = image_upload_url(movie.id)
+
+        with tempfile.NamedTemporaryFile(suffix=".jpg") as ntf:
+            img = Image.new("RGB", (10, 10))
+            img.save(ntf, format="JPEG")
+            ntf.seek(0)
+            res = self.client.post(url, {"image": ntf}, format="multipart")
+
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+
+
+class PublicMovieApiTests(TestCase):
+    """Test unauthenticated movie API access"""
+
+    def setUp(self):
+        self.client = APIClient()
+
+    def test_list_movies_unauthenticated(self):
+        res = self.client.get(MOVIE_URL)
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_retrieve_movie_unauthenticated(self):
+        movie = sample_movie()
+        res = self.client.get(detail_url(movie.id))
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+
+class AdminMovieApiTests(TestCase):
+    """Test admin movie API access"""
+
+    def setUp(self):
+        self.client = APIClient()
+        self.admin = get_user_model().objects.create_superuser(
+            email="admin@test.com",
+            password="adminpass123",
+        )
+        self.client.force_authenticate(self.admin)
+
+    def test_create_movie_allowed_for_admin(self):
+        genre = sample_genre()
+        actor = sample_actor()
+        payload = {
+            "title": "Admin Movie",
+            "description": "Admin description",
+            "duration": 120,
+            "genres": [genre.id],
+            "actors": [actor.id],
+        }
+
+        res = self.client.post(MOVIE_URL, payload, format="json")
+
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        self.assertTrue(Movie.objects.filter(id=res.data["id"]).exists())
