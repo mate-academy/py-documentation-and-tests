@@ -294,6 +294,35 @@ class PublicMovieApiTests(TestCase):
         res = self.client.get(detail_url(movie.id))
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
 
+    def test_create_movie_unauthenticated(self):
+        """Test unauthenticated user cannot create a movie (should be 401)"""
+        genre = sample_genre()
+        actor = sample_actor()
+        payload = {
+            "title": "New Movie",
+            "description": "Description",
+            "duration": 100,
+            "genres": [genre.id],
+            "actors": [actor.id],
+        }
+
+        res = self.client.post(MOVIE_URL, payload, format="json")
+
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_upload_image_unauthenticated(self):
+        """Test unauthenticated user cannot upload image (should be 401)"""
+        movie = sample_movie()
+        url = image_upload_url(movie.id)
+
+        with tempfile.NamedTemporaryFile(suffix=".jpg") as ntf:
+            img = Image.new("RGB", (10, 10))
+            img.save(ntf, format="JPEG")
+            ntf.seek(0)
+            res = self.client.post(url, {"image": ntf}, format="multipart")
+
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
 
 class AdminMovieApiTests(TestCase):
     """Test admin movie API access"""
