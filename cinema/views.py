@@ -1,3 +1,5 @@
+# cinema/views.py
+
 from datetime import datetime
 
 from django.db.models import F, Count
@@ -26,6 +28,8 @@ from cinema.serializers import (
     OrderListSerializer,
     MovieImageSerializer,
 )
+
+from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiExample # IMPORT ADICIONADO PARA DOCUMENTAÇÃO SWAGGER
 
 
 class GenreViewSet(
@@ -110,6 +114,36 @@ class MovieViewSet(
 
         return MovieSerializer
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name='title',
+                location=OpenApiParameter.QUERY,
+                required=False,
+                description='Filter by partial movie title (case-insensitive).',
+                type=str,
+            ),
+            OpenApiParameter(
+                name='genres',
+                location=OpenApiParameter.QUERY,
+                required=False,
+                description='Filter by genre IDs, comma-separated (e.g., 1,2).',
+                type=str,
+            ),
+            OpenApiParameter(
+                name='actors',
+                location=OpenApiParameter.QUERY,
+                required=False,
+                description='Filter by actor IDs, comma-separated (e.g., 3,4).',
+                type=str,
+            ),
+        ],
+        operation_id='movie_list'
+    )
+    def list(self, request, *args, **kwargs):
+        """List all movies with optional filtering."""
+        return super().list(request, *args, **kwargs)
+
     @action(
         methods=["POST"],
         detail=True,
@@ -150,10 +184,12 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
         queryset = self.queryset
 
         if date:
+            # SWAGGER DOCUMENTATION NEEDED HERE
             date = datetime.strptime(date, "%Y-%m-%d").date()
             queryset = queryset.filter(show_time__date=date)
 
         if movie_id_str:
+            # SWAGGER DOCUMENTATION NEEDED HERE
             queryset = queryset.filter(movie_id=int(movie_id_str))
 
         return queryset
