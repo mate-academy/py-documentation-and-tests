@@ -13,7 +13,7 @@ urlpatterns = [
                   # Inclusão do namespace 'user' (para JWT)
                   path("api/user/", include("user.urls", namespace="user")),
 
-                  # Debug Toolbar
+                  # Debug Toolbar (IMPORTANTE: Deve ser incluído, mas se quebrar, pode ser removido temporariamente)
                   path("__debug__/", include("debug_toolbar.urls")),
 
                   # SWAGGER URLs

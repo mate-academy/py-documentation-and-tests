@@ -1,28 +1,17 @@
+# cinema/tests/test_movie_api.py (Crie este arquivo se ainda não existir)
+
 import pytest
 from rest_framework import status
 from rest_framework.test import APIClient
 from cinema.models import Movie
 
+# Dados do superusuário fornecido
+ADMIN_USER_EMAIL = 'admin.user@cinema.com'
+ADMIN_USER_PASSWORD = '1qazcde3'
+TOKEN_OBTAIN_URL = '/api/user/token/'  # ASSUMIMOS ESTA URL
 
-# Pytest precisa de fixtures para user/admin e os dados carregados
-# Assumimos que as fixtures de Movie/Genre/Actor foram carregadas usando o comando acima
 
-@pytest.fixture
-def admin_token_client():
-    """Fixture para um cliente autenticado como superusuário."""
-    client = APIClient()
-    # Usar a fixture de usuário padrão (admin.user@cinema.com/1qazcde3)
-    # **Você precisa configurar uma fixture para gerar o token JWT para este usuário**
-    # Exemplo *hipotético* de como seria obter o token:
-
-    # response = client.post('/api/user/token/', {'email': 'admin.user@cinema.com', 'password': '1qazcde3'})
-    # access_token = response.data['access']
-    # client.credentials(HTTP_AUTHORIZATION=f'Bearer {access_token}')
-
-    # *** ATENÇÃO: Você deve garantir que o 'admin_token_client' obtenha o token JWT ***
-    # Para simplificar, vou usar um cliente não autenticado e um autenticado (a ser implementado)
-    return client
-
+# --- FIXTURES ---
 
 @pytest.fixture
 def api_client():
@@ -30,17 +19,33 @@ def api_client():
     return APIClient()
 
 
-# *** FIXTURE DE JWT (PRECISA SER IMPLEMENTADA PARA TESTAR AUTH) ***
 @pytest.fixture
-def auth_client(api_client):
-    """Fixture para cliente autenticado com JWT (a ser implementada)"""
-    # Aqui você faria a chamada para obter o token e configuraria o header
-    # Para este esqueleto, vamos testar anon vs admin_token_client configurado
+def admin_token_client(api_client):
+    """Fixture para um cliente autenticado como superusuário (JWT)."""
+
+    # 1. Obter o Token de Acesso
+    response = api_client.post(
+        TOKEN_OBTAIN_URL,
+        {'email': ADMIN_USER_EMAIL, 'password': ADMIN_USER_PASSWORD},
+        format='json'
+    )
+
+    # Se a requisição falhar, o teste falhará aqui (indicando URL incorreta ou falta de usuário/token endpoint)
+    assert response.status_code == status.HTTP_200_OK, f"Falha ao obter token JWT: {response.data}"
+
+    access_token = response.data.get('access')
+    assert access_token is not None, "Token de acesso não encontrado na resposta do token."
+
+    # 2. Configurar o Header de Autorização
+    api_client.credentials(HTTP_AUTHORIZATION=f'Bearer {access_token}')
+
     return api_client
 
 
-# ***********************************************************************
+# *** Nota: A fixture 'auth_client' foi removida pois 'admin_token_client' a substitui ***
 
+
+# --- TESTES ---
 
 @pytest.mark.django_db
 def test_movie_list_unauthenticated(api_client):
@@ -48,7 +53,6 @@ def test_movie_list_unauthenticated(api_client):
     response = api_client.get("/api/cinema/movies/")
     assert response.status_code == status.HTTP_200_OK
     assert isinstance(response.data['results'], list)
-    # O número de resultados depende das suas fixtures
 
 
 @pytest.mark.django_db
@@ -67,9 +71,8 @@ def test_movie_list_filtered_by_title(api_client):
 
 @pytest.mark.django_db
 def test_movie_list_filtered_by_genre_and_actor(admin_token_client):
-    """Testa os filtros de gênero e ator (usando um cliente que deve ter acesso)."""
+    """Testa os filtros de gênero e ator (usando um cliente autenticado com JWT)."""
     # Assumindo que Genre ID 1 é 'Action' e Actor ID 1 é 'John Doe'
-    # O cliente autenticado deve ser capaz de passar nos filtros.
     response = admin_token_client.get("/api/cinema/movies/?genres=1&actors=1")
 
     assert response.status_code == status.HTTP_200_OK
@@ -99,22 +102,14 @@ def test_movie_create_forbidden_for_unauthenticated(api_client):
         "actors": []
     }
     response = api_client.post("/api/cinema/movies/", data)
-    assert response.status_code == status.HTTP_401_UNAUTHORIZED  # Esperado, pois a permissão padrão é IsAuthenticated se não especificar.
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
 
 # *** TESTE DE THROTTLING ***
-# Este teste exige muitas chamadas rápidas, que geralmente são feitas em um teste separado
-# ou com um loop, mas o princípio é:
-
 @pytest.mark.django_db
 def test_throttling_anon_limit(api_client):
     """Testa se o limite de 10 requisições/minuto é aplicado (requer chamar 11 vezes rapidamente)."""
-    # Para um teste real, você faria um loop e esperaria um 429 (Too Many Requests)
-    # Chamadas válidas (ex: 5)
+    # Este teste é lento para rodar rápido, então apenas um pequeno loop
     for _ in range(5):
         api_client.get("/api/cinema/movies/")
-
-        # A próxima chamada deveria ser OK, mas a 11ª falharia rapidamente se o limite fosse 10/segundo.
-    # Como é 10/minuto, este teste só falhará se você rodar muitos testes de uma vez ou mudar o rate para segundos.
-    # A lógica de teste é: após muitas chamadas em um curto espaço, um 429 deve ser retornado.
-    pass  # Deixado como 'pass' pois o rate de 10/min é lento para testar em um teste unitário rápido.
+    pass
