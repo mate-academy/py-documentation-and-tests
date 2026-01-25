@@ -249,3 +249,52 @@ class PrivateMovieApiTests(TestCase):
 
         res = self.client.post(MOVIE_URL, payload)
         self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+
+
+class AdminMovieApiTests(TestCase):
+    """Test that admin user can create and manage movies successfully"""
+
+    def setUp(self):
+        self.client = APIClient()
+        self.admin_user = get_user_model().objects.create_superuser(
+            "admin@test.com",
+            "password123"
+        )
+        self.client.force_authenticate(self.admin_user)
+
+    def test_create_movie_successful(self):
+        """Test that an admin can successfully create a movie"""
+        genre = sample_genre(name="Sci-Fi")
+        actor = sample_actor(first_name="Keanu", last_name="Reeves")
+
+        payload = {
+            "title": "The Matrix",
+            "description": "A sci-fi classic",
+            "duration": 136,
+            "genres": [genre.id],
+            "actors": [actor.id],
+        }
+
+        res = self.client.post(MOVIE_URL, payload)
+
+        # Check response
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+
+        # Verify the movie was created correctly in the DB
+        movie = Movie.objects.get(id=res.data["id"])
+        self.assertEqual(movie.title, payload["title"])
+        self.assertEqual(movie.description, payload["description"])
+        self.assertEqual(movie.duration, payload["duration"])
+        self.assertIn(genre, movie.genres.all())
+        self.assertIn(actor, movie.actors.all())
+
+    def test_create_movie_missing_required_field(self):
+        """Test that creating a movie fails if required fields are missing"""
+        payload = {
+            "description": "No title provided",
+            "duration": 90,
+        }
+
+        res = self.client.post(MOVIE_URL, payload)
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("title", res.data)
