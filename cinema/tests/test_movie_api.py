@@ -210,13 +210,9 @@ class AuthenticatedMovieTests(APITestCase):
 
         response = self.client.post(MOVIE_URL, payload)
 
-        self.assertIn(
+        self.assertEqual(
             response.status_code,
-            [
-                status.HTTP_401_UNAUTHORIZED,
-                status.HTTP_403_FORBIDDEN,
-                status.HTTP_405_METHOD_NOT_ALLOWED,
-            ]
+            status.HTTP_403_FORBIDDEN,
         )
 
     def test_update_movie(self):
@@ -232,11 +228,9 @@ class AuthenticatedMovieTests(APITestCase):
 
         response = self.client.put(url, payload)
 
-        self.assertIn(
+        self.assertEqual(
             response.status_code,
-            [
-                status.HTTP_403_FORBIDDEN,
-            ]
+            status.HTTP_403_FORBIDDEN,
         )
 
     def test_partial_update_movie(self):
@@ -245,11 +239,9 @@ class AuthenticatedMovieTests(APITestCase):
         url = reverse("cinema:movie-detail", args=[movie.id])
         response = self.client.patch(url, {"title": "Updated Title"})
 
-        self.assertIn(
+        self.assertEqual(
             response.status_code,
-            [
-                status.HTTP_403_FORBIDDEN,
-            ]
+            status.HTTP_403_FORBIDDEN,
         )
 
     def test_delete_movie(self):
@@ -337,3 +329,78 @@ class MovieFilterTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
+
+
+class AdminMovieTests(APITestCase):
+    def setUp(self):
+        self.user_payload = {
+            "email": "AdminTest.user@cinema.com",
+            "password": "UserAdminTest",
+        }
+
+        self.user = get_user_model().objects.create_superuser(
+            email=self.user_payload["email"],
+            password=self.user_payload["password"],
+        )
+
+        token_url = reverse("user:token_obtain_pair")
+
+        response = self.client.post(token_url, self.user_payload)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        self.token = response.data["access"]
+
+        self.client.credentials(
+            HTTP_AUTHORIZATION=f"Bearer {self.token}"
+        )
+
+    def test_admin_create_movie(self):
+        action = sample_genre(name="Action")
+        keanu = sample_actor(first_name="Keanu", last_name="Reeves")
+        payload = {
+            "title": "Avatar",
+            "description": "Description",
+            "duration": 90,
+            "genres": [action.id],
+            "actors": [keanu.id],
+        }
+
+        response = self.client.post(MOVIE_URL, payload)
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_201_CREATED,
+        )
+
+    def test_admin_update_movie(self):
+        movie = sample_movie()
+        action = sample_genre(name="Action")
+        keanu = sample_actor(first_name="Keanu", last_name="Reeves")
+
+        payload = {
+            "title": "Updated Title",
+            "description": movie.description,
+            "duration": movie.duration,
+            "genres": [action.id],
+            "actors": [keanu.id]
+        }
+
+        url = reverse("cinema:movie-detail", args=[movie.id])
+        response = self.client.put(url, payload)
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
+
+    def test_admin_delete_movie(self):
+        movie = sample_movie()
+
+        url = reverse("cinema:movie-detail", args=[movie.id])
+        response = self.client.delete(url)
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
