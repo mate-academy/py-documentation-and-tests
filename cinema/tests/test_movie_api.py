@@ -3,10 +3,11 @@ import os
 
 from PIL import Image
 from django.contrib.auth import get_user_model
+from django.template.defaultfilters import title
 from django.test import TestCase
 from django.urls import reverse
 
-from rest_framework.test import APIClient
+from rest_framework.test import APIClient, APITestCase
 from rest_framework import status
 
 from cinema.models import Movie, MovieSession, CinemaHall, Genre, Actor
@@ -157,3 +158,115 @@ class MovieImageUploadTests(TestCase):
         res = self.client.get(MOVIE_SESSION_URL)
 
         self.assertIn("movie_image", res.data[0].keys())
+
+
+class AuthenticatedMovieTests(APITestCase):
+    def setUp(self):
+        self.user_payload = {
+            "email": "test.user@cinema.com",
+            "password": "UserTest",
+        }
+
+        self.user = get_user_model().objects.create_user(
+            email=self.user_payload["email"],
+            password=self.user_payload["password"],
+        )
+
+        token_url = reverse("user:token_obtain_pair")
+
+        response = self.client.post(token_url, self.user_payload)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        self.token = response.data["access"]
+
+        self.client.credentials(
+            HTTP_AUTHORIZATION=f"Bearer {self.token}"
+        )
+
+    def test_list_movies(self):
+        sample_movie()
+        sample_movie(title="Avatar")
+
+        response = self.client.get(MOVIE_URL)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 2)
+
+    def test_retrieve_movie(self):
+        movie = sample_movie()
+
+        url = reverse("cinema:movie-detail", args=[movie.id])
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["title"], movie.title)
+
+    def test_create_movie_not_allowed(self):
+        url = reverse("cinema:movie-list")
+
+        payload = {
+            "title": "Avatar",
+            "description": "Description",
+            "duration": 90,
+        }
+
+        response = self.client.post(MOVIE_URL, payload)
+
+        self.assertIn(
+            response.status_code,
+            [
+                status.HTTP_401_UNAUTHORIZED,
+                status.HTTP_403_FORBIDDEN,
+                status.HTTP_405_METHOD_NOT_ALLOWED,
+            ]
+        )
+
+    def test_update_movie(self):
+        movie = sample_movie()
+
+        url = reverse("cinema:movie-detail", args=[movie.id])
+
+        payload = {
+            "title": "Updated Title",
+            "description": movie.description,
+            "duration": movie.duration,
+        }
+
+        response = self.client.put(url, payload)
+
+        self.assertIn(
+            response.status_code,
+            [
+                status.HTTP_200_OK,
+                status.HTTP_403_FORBIDDEN,
+            ]
+        )
+
+    def test_partial_update_movie(self):
+        movie = sample_movie()
+
+        url = reverse("cinema:movie-detail", args=[movie.id])
+        response = self.client.patch(url, {"title": "Updated Title"})
+
+        self.assertIn(
+            response.status_code,
+            [
+                status.HTTP_200_OK,
+                status.HTTP_403_FORBIDDEN,
+            ]
+        )
+
+    def test_delete_movie(self):
+        movie = sample_movie()
+
+        url = reverse("cinema:movie-detail", args=[movie.id])
+        response = self.client.delete(url)
+
+        self.assertIn(
+            response.status_code,
+            [
+                status.HTTP_204_NO_CONTENT,
+                status.HTTP_403_FORBIDDEN,
+            ]
+        )
