@@ -59,7 +59,6 @@ def sample_movie_session(**params):
 
 
 def image_upload_url(movie_id):
-    """Return URL for recipe image upload"""
     return reverse("cinema:movie-upload-image", args=[movie_id])
 
 
@@ -80,7 +79,8 @@ class MovieImageUploadTests(TestCase):
         self.movie_session = sample_movie_session(movie=self.movie)
 
     def tearDown(self):
-        self.movie.image.delete()
+        if self.movie.image:
+            self.movie.image.delete()
 
     def test_upload_image_to_movie(self):
         """Test uploading an image to movie"""

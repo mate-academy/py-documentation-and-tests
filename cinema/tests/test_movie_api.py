@@ -100,7 +100,6 @@ class AuthenticatedMovieAPITests(TestCase):
         movie.actors.add(actor)
 
         res = self.client.get(MOVIE_URL)
-        print(res)
 
         movies = Movie.objects.all()
         serializer = MovieSerializer(movies, many=True)
@@ -126,7 +125,7 @@ class AuthenticatedMovieAPITests(TestCase):
             }
         )
 
-        serializer_filtered = MovieDetailSerializer(movie)
+        serializer_filtered = MovieListSerializer(movie)
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertIn(serializer_filtered.data, res.data["results"])
