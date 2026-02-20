@@ -86,9 +86,11 @@ class MovieDetailSerializer(serializers.ModelSerializer):
 
 
 class MovieImageSerializer(serializers.ModelSerializer):
+    image = serializers.ImageField()
+
     class Meta:
         model = Movie
-        fields = ("id", "image")
+        fields = ("image",)
 
 
 class MovieSessionSerializer(serializers.ModelSerializer):
@@ -128,7 +130,7 @@ class TicketSerializer(serializers.ModelSerializer):
             attrs["row"],
             attrs["seat"],
             attrs["movie_session"].cinema_hall,
-            ValidationError
+            ValidationError,
         )
         return data
 
