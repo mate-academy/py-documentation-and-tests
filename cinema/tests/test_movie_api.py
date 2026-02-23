@@ -50,7 +50,7 @@ def sample_actor(**params):
 
 
 def sample_movie_session(**params):
-    cinema_hall = CinemaHall.objects.create(name="Blue", rows=20, seats_in_row=20)
+    cinema_hall = sample_cinema_hall()
 
     defaults = {
         "show_time": "2022-06-02 14:00:00",
@@ -281,9 +281,8 @@ class TestAuthenticatedMovieSessions(TestCase):
     def test_filter_movie_session_by_movie_id(self):
         movie1 = sample_movie(title="Sci-Fi Movie")
         movie2 = sample_movie(title="Thriller Movie")
-        cinema_hall = sample_cinema_hall()
-        sample_movie_session(movie=movie1, cinema_hall=cinema_hall)
-        sample_movie_session(movie=movie2, cinema_hall=cinema_hall)
+        sample_movie_session(movie=movie1)
+        sample_movie_session(movie=movie2)
 
         res = self.client.get(MOVIE_SESSION_URL, {"movie": movie1.id})
         self.assertEqual(res.status_code, status.HTTP_200_OK)
@@ -303,16 +302,13 @@ class TestAuthenticatedMovieSessions(TestCase):
 
     def test_filter_movie_session_by_date(self):
         movie = sample_movie()
-        cinema_hall = sample_cinema_hall()
 
         session1 = sample_movie_session(
             movie=movie,
-            cinema_hall=cinema_hall,
             show_time=datetime(2024, 6, 1, 14, 0)
         )
         session2 = sample_movie_session(
             movie=movie,
-            cinema_hall=cinema_hall,
             show_time=datetime(2024, 7, 15, 18, 0)
         )
 

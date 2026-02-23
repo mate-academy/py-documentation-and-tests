@@ -203,7 +203,7 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
                 name="movie",
                 description="Filter by movie id (ex /?movie=1)",
                 required=False,
-                type={"type": "array", "items": {"type": "integer"}},
+                type=int,
             )
         ],
     )
