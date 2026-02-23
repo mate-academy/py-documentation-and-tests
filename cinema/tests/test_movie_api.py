@@ -1,8 +1,11 @@
 import tempfile
 import os
+from datetime import datetime
 
 from PIL import Image
 from django.contrib.auth import get_user_model
+from django.db.models import F
+from django.db.models.aggregates import Count
 from django.test import TestCase
 from django.urls import reverse
 
@@ -10,11 +13,13 @@ from rest_framework.test import APIClient
 from rest_framework import status
 
 from cinema.models import Movie, MovieSession, CinemaHall, Genre, Actor
-from cinema.serializers import MovieListSerializer, MovieSerializer
+from cinema.serializers import (
+    MovieListSerializer,
+    MovieSessionListSerializer
+)
 
 MOVIE_URL = reverse("cinema:movie-list")
 MOVIE_SESSION_URL = reverse("cinema:moviesession-list")
-User = get_user_model()
 
 
 def sample_movie(**params):
@@ -64,6 +69,12 @@ def image_upload_url(movie_id):
 
 def detail_url(movie_id):
     return reverse("cinema:movie-detail", args=[movie_id])
+
+
+def sample_cinema_hall(**params):
+    defaults = {"name": "Blue", "rows": 10, "seats_in_row": 10}
+    defaults.update(params)
+    return CinemaHall.objects.create(**defaults)
 
 
 class MovieImageUploadTests(TestCase):
@@ -159,32 +170,6 @@ class MovieImageUploadTests(TestCase):
         self.assertIn("movie_image", res.data[0].keys())
 
 
-def detail_url(movie_id):
-    return reverse("cinema:movie-detail", args=[movie_id])
-
-
-def sample_genre(**params):
-    defaults = {"name": "Drama"}
-    defaults.update(params)
-    return Genre.objects.create(**defaults)
-
-
-def sample_actor(**params):
-    defaults = {"first_name": "John", "last_name": "Doe"}
-    defaults.update(params)
-    return Actor.objects.create(**defaults)
-
-
-def sample_movie(**params):
-    defaults = {
-        "title": "Sample Movie",
-        "description": "Sample description",
-        "duration": 120,
-    }
-    defaults.update(params)
-    return Movie.objects.create(**defaults)
-
-
 class UnauthenticatedMovieApiTests(TestCase):
     def setUp(self):
         self.client = APIClient()
@@ -197,7 +182,7 @@ class UnauthenticatedMovieApiTests(TestCase):
 class AuthenticatedMovieApiTests(TestCase):
     def setUp(self):
         self.client = APIClient()
-        self.user = User.objects.create_user(
+        self.user = get_user_model().objects.create_user(
             email="user@test.com",
             password="testpass123",
         )
@@ -221,6 +206,19 @@ class AuthenticatedMovieApiTests(TestCase):
         movies = Movie.objects.prefetch_related("genres", "actors")
         serializer = MovieListSerializer(movies, many=True)
         self.assertEqual(res.data, serializer.data)
+
+    def test_filter_movie_by_title(self):
+        sample_movie(title="Sci-Fi Movie")
+        sample_movie(title="Thriller Movie")
+        sample_movie(title="Other Movie")
+        query = "th"
+
+        res = self.client.get(MOVIE_URL, {"title": query})
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+
+        movies = Movie.objects.filter(title__icontains=query)
+        serializer = MovieListSerializer(movies, many=True)
+        self.assertEqual(serializer.data, res.data)
 
     def test_filter_by_multiple_genres(self):
         genre1 = sample_genre(name="Sci-Fi")
@@ -271,10 +269,65 @@ class AuthenticatedMovieApiTests(TestCase):
         self.assertFalse(Movie.objects.filter(title="Unauthorized Movie").exists())
 
 
+class TestAuthenticatedMovieSessions(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.user = get_user_model().objects.create_user(
+            email="one@test.com",
+            password="abctest123password",
+        )
+        self.client.force_authenticate(self.user)
+
+    def test_filter_movie_session_by_movie_id(self):
+        movie1 = sample_movie(title="Sci-Fi Movie")
+        movie2 = sample_movie(title="Thriller Movie")
+        cinema_hall = sample_cinema_hall()
+        sample_movie_session(movie=movie1, cinema_hall=cinema_hall)
+        sample_movie_session(movie=movie2, cinema_hall=cinema_hall)
+
+        res = self.client.get(MOVIE_SESSION_URL, {"movie": movie1.id})
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+
+        sessions = (
+            MovieSession.objects.filter(movie_id=movie1.id)
+            .select_related("movie", "cinema_hall")
+            .annotate(
+                tickets_available=(
+                        F("cinema_hall__rows") * F("cinema_hall__seats_in_row")
+                        - Count("tickets")
+                )
+            )
+        )
+        serializer = MovieSessionListSerializer(sessions, many=True)
+        self.assertEqual(serializer.data, res.data)
+
+    def test_filter_movie_session_by_date(self):
+        movie = sample_movie()
+        cinema_hall = sample_cinema_hall()
+
+        session1 = sample_movie_session(
+            movie=movie,
+            cinema_hall=cinema_hall,
+            show_time=datetime(2024, 6, 1, 14, 0)
+        )
+        session2 = sample_movie_session(
+            movie=movie,
+            cinema_hall=cinema_hall,
+            show_time=datetime(2024, 7, 15, 18, 0)
+        )
+
+        res = self.client.get(MOVIE_SESSION_URL, {"date": "2024-06-01"})
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+
+        ids = [s["id"] for s in res.data]
+        self.assertIn(session1.id, ids)
+        self.assertNotIn(session2.id, ids)
+
+
 class AdminMovieApiTests(TestCase):
     def setUp(self):
         self.client = APIClient()
-        self.admin = User.objects.create_user(
+        self.admin = get_user_model().objects.create_user(
             email="admin@test.com", password="adminpass123", is_staff=True
         )
         self.client.force_authenticate(self.admin)

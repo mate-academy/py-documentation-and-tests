@@ -150,7 +150,6 @@ class MovieViewSet(
         ],
     )
     def list(self, request):
-        # your non-standard behaviour
         return super().list(request)
 
 
@@ -191,6 +190,25 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
             return MovieSessionDetailSerializer
 
         return MovieSessionSerializer
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="date",
+                description="Filter by date (ex /?date=2024-06-30)",
+                required=False,
+                type={"type": "string", "format": "date"}
+            ),
+            OpenApiParameter(
+                name="movie",
+                description="Filter by movie id (ex /?movie=1)",
+                required=False,
+                type={"type": "array", "items": {"type": "integer"}},
+            )
+        ],
+    )
+    def list(self, request):
+        return super().list(request)
 
 
 class OrderPagination(PageNumberPagination):
