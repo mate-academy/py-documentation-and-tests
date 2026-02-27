@@ -83,7 +83,12 @@ class UnauthorizedCinemaApiTests(TestCase):
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_auth_required_create(self):
-        res = self.client.get(MOVIE_URL, {"title": "Test"})
+        res = self.client.post(MOVIE_URL, {"title": "Test"})
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_auth_required_image_upload(self):
+        url = image_upload_url(1)
+        res = self.client.post(url, {"image": "test"}, format="multipart")
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
