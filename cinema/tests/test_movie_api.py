@@ -159,6 +159,22 @@ class MovieImageUploadTests(TestCase):
 
         self.assertIn("movie_image", res.data[0].keys())
 
+    def test_upload_image_forbidden_for_non_admin(self):
+        user = get_user_model().objects.create_user(
+            email="test@test.test", password="testpassword"
+        )
+        self.client.force_authenticate(user)
+
+        movie = sample_movie()
+        url = image_upload_url(movie.id)
+
+        with tempfile.NamedTemporaryFile(suffix=".jpg") as ntf:
+            img = Image.new("RGB", (10, 10))
+            img.save(ntf, format="JPEG")
+            ntf.seek(0)
+            res = self.client.post(url, {"image": ntf}, format="multipart")
+
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
 
 class UnauthenticatedMovieApiTest(TestCase):
     def setUp(self):
