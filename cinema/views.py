@@ -140,12 +140,12 @@ class MovieViewSet(
             OpenApiParameter(
                 "genres",
                 type={"type": "array", "items": {"type": "number"}},
-                description="Filter by genre IDs (comma separated, e.g., ?genres=1,2)",
+                description="Filter by genre IDs (e.g., ?genres=1,2)",
             ),
             OpenApiParameter(
                 "actors",
                 type={"type": "array", "items": {"type": "number"}},
-                description="Filter by actor IDs (comma separated, e.g., ?actors=5,6)",
+                description="Filter by actor IDs (e.g., ?actors=5,6)",
             ),
         ]
     )
@@ -198,7 +198,8 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
             OpenApiParameter(
                 "date",
                 type=OpenApiTypes.DATE,
-                description="Filter sessions by date (format: YYYY-MM-DD, e.g., ?date=2026-02-27)",
+                description="Filter sessions by date "
+                "(format: YYYY-MM-DD, e.g., ?date=2026-02-27)",
             ),
             OpenApiParameter(
                 "movie",
@@ -210,6 +211,7 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
     def list(self, request, *args, **kwargs):
         """Retrieve the movie sessions with filters"""
         return super().list(request, *args, **kwargs)
+
 
 class OrderPagination(PageNumberPagination):
     page_size = 10
