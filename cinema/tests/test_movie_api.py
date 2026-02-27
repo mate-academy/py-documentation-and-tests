@@ -172,6 +172,12 @@ class UnauthenticatedMovieApiTest(TestCase):
         res = self.client.get(MOVIE_URL)
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
 
+    def test_retrieve_movie_detail_unauthenticated_forbidden(self):
+        movie = sample_movie()
+        url = detail_url(movie.id)
+        res = self.client.get(url)
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
 
 class AuthenticatedMovieApiTest(TestCase):
     def setUp(self):
@@ -209,6 +215,32 @@ class AuthenticatedMovieApiTest(TestCase):
 
         self.assertIn(serializer_with.data, res.data)
         self.assertNotIn(serializer_without.data, res.data)
+
+    def test_filter_movies_by_title(self):
+        movie1 = sample_movie(title="Matrix")
+        movie2 = sample_movie(title="Avatar")
+
+        res = self.client.get(MOVIE_URL, data={"title": "Mat"})
+
+        serializer1 = MovieListSerializer(movie1)
+        serializer2 = MovieListSerializer(movie2)
+
+        self.assertIn(serializer1.data, res.data)
+        self.assertNotIn(serializer2.data, res.data)
+
+    def test_filter_movies_by_actors(self):
+        movie1 = sample_movie(title="The Matrix")
+        movie2 = sample_movie(title="Titanic")
+        actor = sample_actor(first_name="Keanu", last_name="Reeves")
+        movie1.actors.add(actor)
+
+        res = self.client.get(MOVIE_URL, data={"actors": f"{actor.id}"})
+
+        serializer1 = MovieListSerializer(movie1)
+        serializer2 = MovieListSerializer(movie2)
+
+        self.assertIn(serializer1.data, res.data)
+        self.assertNotIn(serializer2.data, res.data)
 
     def test_retrieve_movie_details(self):
         movie = sample_movie()
