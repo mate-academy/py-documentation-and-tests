@@ -76,6 +76,16 @@ class UnauthorizedCinemaApiTests(TestCase):
         res = self.client.get(MOVIE_URL)
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
 
+    def test_auth_required_detail(self):
+        movie = sample_movie()
+        url = detail_url(movie.id)
+        res = self.client.get(url)
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_auth_required_create(self):
+        res = self.client.get(MOVIE_URL, {"title": "Test"})
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
 
 class AuthorizedMovieApiTests(TestCase):
 
@@ -86,6 +96,15 @@ class AuthorizedMovieApiTests(TestCase):
             password="testPASSWORD",
         )
         self.client.force_authenticate(user=self.user)
+
+    def test_filter_movies_by_title(self):
+        sample_movie(title="Avatar")
+        sample_movie(title="Batman")
+
+        res = self.client.get(MOVIE_URL, {"title": "avatar"})
+
+        self.assertEqual(len(res.data), 1)
+        self.assertEqual(res.data[0]["title"], "Avatar")
 
     def test_movies_list(self):
         sample_movie()
@@ -147,6 +166,12 @@ class AuthorizedMovieApiTests(TestCase):
         res = self.client.post(MOVIE_URL, payload)
         self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
         self.assertFalse(Movie.objects.filter(title="Stolen Movie").exists())
+
+    def test_image_upload_forbidden(self):
+        movie = sample_movie()
+        url = image_upload_url(movie.id)
+        res = self.client.post(url, {"image": "some_data"}, format="multipart")
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
 
 
 class AdminMovieApiTests(TestCase):
