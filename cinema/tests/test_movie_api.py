@@ -9,8 +9,18 @@ from django.urls import reverse
 from rest_framework.test import APIClient
 from rest_framework import status
 
-from cinema.models import Movie, MovieSession, CinemaHall, Genre, Actor
-from cinema.serializers import MovieListSerializer
+from cinema.models import (
+    Movie,
+    MovieSession,
+    CinemaHall,
+    Genre,
+    Actor
+)
+
+from cinema.serializers import (
+    MovieListSerializer,
+    MovieDetailSerializer
+)
 
 MOVIE_URL = reverse("cinema:movie-list")
 MOVIE_SESSION_URL = reverse("cinema:moviesession-list")
@@ -189,6 +199,15 @@ class AdminMovieApiTests(TestCase):
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(res.data, serializer.data)
 
+    def test_retrieve(self):
+        movies = Movie.objects.all()
+        serializer = MovieDetailSerializer(movies, many=True)
+
+        res = self.client.get(MOVIE_URL, args=(self.movie.id,))
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data, serializer.data)
+
     def test_movies_filter_by_genre(self):
         movie1 = self.movie
         movie2 = sample_movie(title="Example")
@@ -272,6 +291,13 @@ class UserMovieAPITest(TestCase):
             "user111@example.com", "password"
         )
         self.client.force_authenticate(self.user)
+        self.movie = sample_movie()
+        self.genre = sample_genre()
+        self.actor = sample_actor()
+        self.movie_session = sample_movie_session(movie=self.movie)
+
+    def tearDown(self):
+        self.movie.image.delete()
 
     def test_create_forbidden(self):
         payload = {
@@ -281,3 +307,23 @@ class UserMovieAPITest(TestCase):
         }
         res = self.client.post(MOVIE_URL, payload)
         self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_upload_image_forbidden(self):
+        url = image_upload_url(self.movie.id)
+        with tempfile.NamedTemporaryFile(suffix=".jpg") as ntf:
+            img = Image.new("RGB", (10, 10))
+            img.save(ntf, format="JPEG")
+            ntf.seek(0)
+            res = self.client.post(url, {"image": ntf}, format="multipart")
+        self.movie.refresh_from_db()
+
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_retrieve(self):
+        movies = Movie.objects.all()
+        serializer = MovieDetailSerializer(movies, many=True)
+
+        res = self.client.get(MOVIE_URL, args=(self.movie.id,))
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data, serializer.data)

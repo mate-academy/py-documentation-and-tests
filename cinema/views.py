@@ -136,7 +136,7 @@ class MovieViewSet(
         ),
         OpenApiParameter(
             "title",
-            type={"type": "list", "items": {"type": "str"}},
+            type={"type": "str"},
             description="Filter by title (ex. ?title=Interstellar)",
         )
     ])
@@ -186,12 +186,12 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
     @extend_schema(parameters=[
         OpenApiParameter(
             "date",
-            type={"type": "list", "items": {"type": "date"}},
+            type={"type": "str"},
             description="Filter by date (ex. ?date=2020-10-01)",
         ),
         OpenApiParameter(
             "movie",
-            type={"type": "list", "items": {"type": "number"}},
+            type={"type": "number"},
             description="Filter by movie id (ex. ?movie=1)",
         )
     ])
