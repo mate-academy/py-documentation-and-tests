@@ -173,9 +173,37 @@ class MovieImageUploadTests(TestCase):
 class UnauthenticatedMovieAPITest(TestCase):
     def setUp(self):
         self.client = APIClient()
+        self.movie = sample_movie()
+
+    def tearDown(self):
+        self.movie.image.delete()
 
     def test_auth_required(self):
         res = self.client.get(MOVIE_URL)
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_retrieve_unavailable(self):
+        res = self.client.get(detail_url(self.movie.id))
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_create_unavailable(self):
+        payload = {
+            "title": "Title",
+            "description": "Description",
+            "duration": 90
+        }
+        res = self.client.post(MOVIE_URL, payload)
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_upload_image_unavailable(self):
+        url = image_upload_url(self.movie.id)
+        with tempfile.NamedTemporaryFile(suffix=".jpg") as ntf:
+            img = Image.new("RGB", (10, 10))
+            img.save(ntf, format="JPEG")
+            ntf.seek(0)
+            res = self.client.post(url, {"image": ntf}, format="multipart")
+        self.movie.refresh_from_db()
+
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
@@ -200,10 +228,14 @@ class AdminMovieApiTests(TestCase):
         self.assertEqual(res.data, serializer.data)
 
     def test_retrieve(self):
-        movies = Movie.objects.all()
-        serializer = MovieDetailSerializer(movies, many=True)
+        movie = sample_movie(
+            title="New title",
+        )
+        movie.genres.add(self.genre.id)
+        movie.actors.add(self.actor.id)
 
-        res = self.client.get(MOVIE_URL, args=(self.movie.id,))
+        serializer = MovieDetailSerializer(movie)
+        res = self.client.get(detail_url(movie.id))
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(res.data, serializer.data)
@@ -320,10 +352,14 @@ class UserMovieAPITest(TestCase):
         self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_retrieve(self):
-        movies = Movie.objects.all()
-        serializer = MovieDetailSerializer(movies, many=True)
+        movie = sample_movie(
+            title="New title",
+        )
+        movie.genres.add(self.genre.id)
+        movie.actors.add(self.actor.id)
 
-        res = self.client.get(MOVIE_URL, args=(self.movie.id,))
+        serializer = MovieDetailSerializer(movie)
+        res = self.client.get(detail_url(movie.id))
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(res.data, serializer.data)
