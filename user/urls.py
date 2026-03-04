@@ -5,8 +5,8 @@ from user.views import (
 )
 
 from rest_framework_simplejwt.views import (
-   TokenObtainPairView,
-   TokenRefreshView,
+    TokenObtainPairView,
+    TokenRefreshView,
 )
 
 
