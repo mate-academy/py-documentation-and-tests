@@ -4,7 +4,7 @@ from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import viewsets, mixins, status
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAdminUser
+from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
@@ -26,31 +26,19 @@ from cinema.serializers import (
 )
 
 
-class GenreViewSet(
-    mixins.CreateModelMixin,
-    mixins.ListModelMixin,
-    GenericViewSet,
-):
+class GenreViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, GenericViewSet):
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
     permission_classes = (IsAdminOrReadOnly,)
 
 
-class ActorViewSet(
-    mixins.CreateModelMixin,
-    mixins.ListModelMixin,
-    GenericViewSet,
-):
+class ActorViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, GenericViewSet):
     queryset = Actor.objects.all()
     serializer_class = ActorSerializer
     permission_classes = (IsAdminOrReadOnly,)
 
 
-class CinemaHallViewSet(
-    mixins.CreateModelMixin,
-    mixins.ListModelMixin,
-    GenericViewSet,
-):
+class CinemaHallViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, GenericViewSet):
     queryset = CinemaHall.objects.all()
     serializer_class = CinemaHallSerializer
     permission_classes = (IsAdminOrReadOnly,)
@@ -61,6 +49,7 @@ class MovieViewSet(
     mixins.CreateModelMixin,
     mixins.RetrieveModelMixin,
     mixins.UpdateModelMixin,
+    mixins.DestroyModelMixin,
     GenericViewSet,
 ):
     queryset = Movie.objects.prefetch_related("genres", "actors")
@@ -75,20 +64,15 @@ class MovieViewSet(
         title = self.request.query_params.get("title")
         genres = self.request.query_params.get("genres")
         actors = self.request.query_params.get("actors")
-
         queryset = self.queryset
-
         if title:
             queryset = queryset.filter(title__icontains=title)
-
         if genres:
             genres_ids = self._params_to_ints(genres)
             queryset = queryset.filter(genres__id__in=genres_ids)
-
         if actors:
             actors_ids = self._params_to_ints(actors)
             queryset = queryset.filter(actors__id__in=actors_ids)
-
         return queryset.distinct()
 
     def get_serializer_class(self):
@@ -100,39 +84,20 @@ class MovieViewSet(
             return MovieImageSerializer
         return MovieSerializer
 
-    @action(
-        methods=["POST"],
-        detail=True,
-        url_path="upload-image",
-        permission_classes=[IsAdminUser],
-    )
+    @action(methods=["POST"], detail=True, url_path="upload-image", permission_classes=[IsAdminUser])
     def upload_image(self, request, pk=None):
         movie = self.get_object()
         serializer = self.get_serializer(movie, data=request.data)
-
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
-
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     @extend_schema(
         parameters=[
-            OpenApiParameter(
-                "genres",
-                type={"type": "array", "items": {"type": "number"}},
-                description="Filter by genre ids (ex. ?genres=1,2,5)",
-            ),
-            OpenApiParameter(
-                "actors",
-                type={"type": "array", "items": {"type": "number"}},
-                description="Filter by actor ids (ex. ?actors=1,2,5)",
-            ),
-            OpenApiParameter(
-                "title",
-                type=OpenApiTypes.STR,
-                description="Filter by movie title (ex. ?title=Inception)",
-            ),
+            OpenApiParameter("genres", type={"type": "array", "items": {"type": "number"}}, description="Filter by genre ids"),
+            OpenApiParameter("actors", type={"type": "array", "items": {"type": "number"}}, description="Filter by actor ids"),
+            OpenApiParameter("title", type=OpenApiTypes.STR, description="Filter by title"),
         ]
     )
     def list(self, request, *args, **kwargs):
@@ -156,16 +121,12 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         date = self.request.query_params.get("date")
         movie_id = self.request.query_params.get("movie")
-
         queryset = self.queryset
-
         if date:
             date = datetime.strptime(date, "%Y-%m-%d").date()
             queryset = queryset.filter(show_time__date=date)
-
         if movie_id:
             queryset = queryset.filter(movie_id=int(movie_id))
-
         return queryset
 
     def get_serializer_class(self):
@@ -175,34 +136,11 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
             return MovieSessionDetailSerializer
         return MovieSessionSerializer
 
-    @extend_schema(
-        parameters=[
-            OpenApiParameter(
-                "movie",
-                type=OpenApiTypes.INT,
-                description="Filter by movie id (ex. ?movie=1)",
-            ),
-            OpenApiParameter(
-                "date",
-                type=OpenApiTypes.DATE,
-                description="Filter by date (ex. ?date=2022-10-25)",
-            ),
-        ]
-    )
-    def list(self, request, *args, **kwargs):
-        return super().list(request, *args, **kwargs)
 
-
-class OrderViewSet(
-    mixins.ListModelMixin,
-    mixins.CreateModelMixin,
-    GenericViewSet,
-):
-    queryset = Order.objects.prefetch_related(
-        "tickets__movie_session__movie", "tickets__movie_session__cinema_hall"
-    )
+class OrderViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, GenericViewSet):
+    queryset = Order.objects.prefetch_related("tickets__movie_session__movie", "tickets__movie_session__cinema_hall")
     serializer_class = OrderSerializer
-    pagination_class = None
+    permission_classes = (IsAuthenticated,)
 
     def get_queryset(self):
         return self.queryset.filter(user=self.request.user)
