@@ -6,5 +6,5 @@ pep8-naming
 django-debug-toolbar
 djangorestframework
 djangorestframework-simplejwt
-drf-spectacular
+drf-yasg
 Pillow
