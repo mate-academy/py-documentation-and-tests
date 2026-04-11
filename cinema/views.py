@@ -130,13 +130,12 @@ class MovieViewSet(
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
     @extend_schema(
         parameters=[
             OpenApiParameter(
-                name= "title",
-                type= OpenApiTypes.STR,
-                description= "Movie title filtering",
+                name="title",
+                type=OpenApiTypes.STR,
+                description="Movie title filtering",
             ),
             OpenApiParameter(
                 name="genres",
@@ -154,7 +153,6 @@ class MovieViewSet(
     )
     def list(self, request, *args, **kwargs):
         return super().list(request, *args, **kwargs)
-
 
 
 class MovieSessionViewSet(viewsets.ModelViewSet):
@@ -195,6 +193,24 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
             return MovieSessionDetailSerializer
 
         return MovieSessionSerializer
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="date",
+                type=OpenApiTypes.STR,
+                description="Movie date filtering",
+            ),
+            OpenApiParameter(
+                name="movie",
+                type=OpenApiTypes.STR,
+                description="Movie name filtering",
+            )
+        ]
+
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
 
 
 class OrderPagination(PageNumberPagination):
