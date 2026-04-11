@@ -312,25 +312,3 @@ class MovieAdminTests(TestCase):
         url = MOVIE_URL
         res = self.client.post(url, test_movie)
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
