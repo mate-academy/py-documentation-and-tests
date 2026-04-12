@@ -4,6 +4,7 @@ from django.db.models import F, Count
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import viewsets, mixins, status
+from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
@@ -134,17 +135,15 @@ class MovieViewSet(
             OpenApiParameter(name="genres",
                              description="Filter by genres id",
                              required=False,
-                             location=OpenApiParameter.INT,
-                             type={"type": "array", "items":
-                                   {"type": "integer"}},
+                             location=OpenApiParameter.QUERY,
+                             type=OpenApiTypes.INT,
                              style="form",
                              explode=True),
             OpenApiParameter(name="actors",
                              description="Filter by actors id",
                              required=False,
-                             location=OpenApiParameter.INT,
-                             type={"type": "array", "items":
-                                   {"type": "integer"}},
+                             location=OpenApiParameter.QUERY,
+                             type=OpenApiTypes.INT,
                              style="form",
                              explode=True)])
     def list(self, request, *args, **kwargs):
