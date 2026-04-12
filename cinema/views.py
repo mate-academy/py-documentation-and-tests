@@ -10,6 +10,7 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
+from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from cinema.models import Genre, Actor, CinemaHall, Movie, MovieSession, Order
 from cinema.permissions import IsAdminOrIfAuthenticatedReadOnly
@@ -69,7 +70,7 @@ class MovieViewSet(
 ):
     queryset = Movie.objects.prefetch_related("genres", "actors")
     serializer_class = MovieSerializer
-    authentication_classes = (TokenAuthentication,)
+    authentication_classes = (JWTAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
     @staticmethod
@@ -133,17 +134,17 @@ class MovieViewSet(
                              type=OpenApiTypes.STR,
                              description="Filter by title"),
             OpenApiParameter(name="genres",
-                             description="Filter by genres id",
+                             description="Filter by genres id string",
                              required=False,
                              location=OpenApiParameter.QUERY,
-                             type=OpenApiTypes.INT,
+                             type=OpenApiTypes.STR,
                              style="form",
                              explode=True),
             OpenApiParameter(name="actors",
-                             description="Filter by actors id",
+                             description="Filter by actors id string",
                              required=False,
                              location=OpenApiParameter.QUERY,
-                             type=OpenApiTypes.INT,
+                             type=OpenApiTypes.STR,
                              style="form",
                              explode=True)])
     def list(self, request, *args, **kwargs):
@@ -197,8 +198,7 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
                              description="Filter by movie id",
                              required=False,
                              location=OpenApiParameter.QUERY,
-                             type={"type": "array", "items":
-                                   {"type": "integer"}},
+                             type=OpenApiTypes.INT,
                              style="form",
                              explode=True),])
     def list(self, request, *args, **kwargs):
