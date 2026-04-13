@@ -208,7 +208,7 @@ class AuthenticatedMovieApiTests(TestCase):
 
     def test_filter_movies_by_genres_and_authors_and_title(self):
         movie1 = sample_movie()
-        movie2 = sample_movie(title="movie1")
+        movie2 = sample_movie(title="movie_test")
 
         genre1 = Genre.objects.create(name="genre1")
         genre2 = Genre.objects.create(name="genre2")
