@@ -223,7 +223,7 @@ class AuthenticatedMovieApiTests(TestCase):
 
         res = self.client.get(
             MOVIE_URL,
-            {"title": "title","genres": f"{genre1.id},{genre2.id}",
+            {"title": movie2.title,"genres": f"{genre1.id},{genre2.id}",
             "actors": f"{actor1.id},{actor2.id}"})
 
         serializer1 = MovieListSerializer(movie1)
