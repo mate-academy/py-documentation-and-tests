@@ -43,9 +43,8 @@ def sample_actor(**params):
 
 
 def sample_movie_session(**params):
-    cinema_hall = CinemaHall.objects.create(
-        name="Blue", rows=20, seats_in_row=20
-    )
+    cinema_hall = CinemaHall.objects.create(name="Blue",
+                                            rows=20, seats_in_row=20)
 
     defaults = {
         "show_time": "2022-06-02 14:00:00",
@@ -145,7 +144,7 @@ class MovieImageUploadTests(TestCase):
             self.client.post(url, {"image": ntf}, format="multipart")
         res = self.client.get(MOVIE_URL)
 
-        self.assertIn("image", res.data[0].keys())
+        self.assertIn("image", res.data["results"][0].keys())
 
     def test_image_url_is_shown_on_movie_session_detail(self):
         url = image_upload_url(self.movie.id)
@@ -156,4 +155,4 @@ class MovieImageUploadTests(TestCase):
             self.client.post(url, {"image": ntf}, format="multipart")
         res = self.client.get(MOVIE_SESSION_URL)
 
-        self.assertIn("movie_image", res.data[0].keys())
+        self.assertIn("movie_image", res.data["results"][0].keys())
