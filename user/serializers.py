@@ -1,6 +1,7 @@
-from django.contrib.auth import get_user_model, authenticate
-from rest_framework import serializers
+from django.contrib.auth import authenticate, get_user_model
 from django.utils.translation import gettext as _
+from rest_framework import serializers
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -25,11 +26,9 @@ class UserSerializer(serializers.ModelSerializer):
         return user
 
 
-class AuthTokenSerializer(serializers.Serializer):
+class AuthTokenSerializer(TokenObtainPairSerializer):
+    username_field = get_user_model().EMAIL_FIELD
     email = serializers.CharField(label=_("Email"))
-    password = serializers.CharField(
-        label=_("Password"), style={"input_type": "password"}
-    )
 
     def validate(self, attrs):
         email = attrs.get("email")
@@ -41,15 +40,15 @@ class AuthTokenSerializer(serializers.Serializer):
             if user:
                 if not user.is_active:
                     msg = _("User account is disabled.")
-                    raise serializers.ValidationError(
-                        msg, code="authorization"
-                    )
+                    raise serializers.ValidationError(msg, code="authorization")
             else:
                 msg = _("Unable to log in with provided credentials.")
                 raise serializers.ValidationError(msg, code="authorization")
         else:
-            msg = _("Must include 'username' and 'password'.")
+            msg = _("Must include 'email' and 'password'.")
             raise serializers.ValidationError(msg, code="authorization")
 
-        attrs["user"] = user
-        return attrs
+        data = super().validate(attrs)
+        data["user_id"] = self.user.id
+        data["email"] = self.user.email
+        return data
