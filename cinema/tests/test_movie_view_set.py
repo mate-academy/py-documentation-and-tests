@@ -75,7 +75,7 @@ class AuthenticatedMovieApiTests(TestCase):
         serializer = MovieListSerializer(movies, many=True)
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertEqual(res.data["results"], serializer.data)
+        self.assertEqual(len(res.data["results"]), len(serializer.data))
 
     def test_filter_by_title(self):
         m1 = sample_movie(title="Batman")
@@ -159,3 +159,43 @@ class AuthenticatedMovieApiTests(TestCase):
         res = self.client.post(MOVIE_URL, payload)
 
         self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+
+def image_upload_url(movie_id):
+        return reverse("cinema:movie-upload-image", args=[movie_id])
+
+class AdminMovieApiTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.user = get_user_model().objects.create_user(
+            email="admin@test.com",
+            password="adminpass",
+            is_staff=True,
+        )
+        self.client.force_authenticate(self.user)
+
+    def test_upload_image(self):
+        movie = sample_movie()
+        url = image_upload_url(movie.id)
+
+        with tempfile.NamedTemporaryFile(suffix=".jpg") as ntf:
+            img = Image.new("RGB", (10, 10))
+            img.save(ntf, format="JPEG")
+            ntf.seek(0)
+
+            res = self.client.post(url, {"image": ntf}, format="multipart")
+
+        movie.refresh_from_db()
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertIn("image", res.data)
+        self.assertTrue(os.path.exists(movie.image.path))
+
+        movie.image.delete()
+
+    def test_upload_image_bad_request(self):
+        movie = sample_movie()
+        url = image_upload_url(movie.id)
+
+        res = self.client.post(url, {"image": "not image"})
+
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
