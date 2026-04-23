@@ -1,6 +1,5 @@
 import tempfile
 import os
-
 from PIL import Image
 from django.contrib.auth import get_user_model
 from django.test import TestCase
@@ -157,3 +156,110 @@ class MovieImageUploadTests(TestCase):
         res = self.client.get(MOVIE_SESSION_URL)
 
         self.assertIn("movie_image", res.data[0].keys())
+
+
+class MovieApiTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.user = get_user_model().objects.create_superuser(
+            "admin@test.com", "password"
+        )
+        self.client.force_authenticate(self.user)
+        self.genre = sample_genre(name="Action")
+        self.actor = sample_actor(first_name="Brad", last_name="Pitt")
+
+    def test_list_movies(self):
+        sample_movie(title="Movie 1")
+        sample_movie(title="Movie 2")
+
+        res = self.client.get(MOVIE_URL)
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(res.data), 2)
+        titles = [movie["title"] for movie in res.data]
+        self.assertIn("Movie 1", titles)
+        self.assertIn("Movie 2", titles)
+
+    def test_filter_movies_by_genres(self):
+        genre2 = sample_genre(name="Comedy")
+        movie1 = sample_movie(title="Action Movie")
+        movie2 = sample_movie(title="Comedy Movie")
+        movie1.genres.add(self.genre)
+        movie2.genres.add(genre2)
+
+        res = self.client.get(MOVIE_URL, {"genres": f"{self.genre.id}"})
+
+        self.assertEqual(len(res.data), 1)
+        self.assertEqual(res.data[0]["title"], "Action Movie")
+
+    def test_filter_movies_by_actors(self):
+        actor2 = sample_actor(first_name="Tom", last_name="Cruise")
+        movie1 = sample_movie(title="Brad Movie")
+        movie2 = sample_movie(title="Tom Movie")
+        movie1.actors.add(self.actor)
+        movie2.actors.add(actor2)
+
+        res = self.client.get(MOVIE_URL, {"actors": f"{self.actor.id}"})
+
+        self.assertEqual(len(res.data), 1)
+        self.assertEqual(res.data[0]["title"], "Brad Movie")
+
+    def test_retrieve_movie_detail(self):
+        movie = sample_movie()
+        movie.genres.add(self.genre)
+        movie.actors.add(self.actor)
+
+        url = detail_url(movie.id)
+        res = self.client.get(url)
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data["title"], movie.title)
+        self.assertEqual(res.data["genres"][0]["name"], self.genre.name)
+        self.assertEqual(res.data["actors"][0]["first_name"], self.actor.first_name)
+
+    def test_create_movie(self):
+        payload = {
+            "title": "New Movie",
+            "description": "New Description",
+            "duration": 120,
+            "genres": [self.genre.id],
+            "actors": [self.actor.id],
+        }
+        res = self.client.post(MOVIE_URL, payload)
+
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        movie = Movie.objects.get(id=res.data["id"])
+        self.assertEqual(movie.title, payload["title"])
+
+    def test_create_movie_invalid(self):
+        payload = {"title": ""}
+        res = self.client.post(MOVIE_URL, payload)
+
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+class UnauthenticatedMovieApiTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.movie = sample_movie()
+
+    def test_auth_required_to_list_movies(self):
+        res = self.client.get(MOVIE_URL)
+
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_auth_required_to_create_movie(self):
+        payload = {
+            "title": "Title",
+            "description": "Description",
+            "duration": 90,
+        }
+        res = self.client.post(MOVIE_URL, payload)
+
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_auth_required_to_upload_image(self):
+        url = image_upload_url(self.movie.id)
+        res = self.client.post(url, {"image": "some_data"}, format="multipart")
+
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
