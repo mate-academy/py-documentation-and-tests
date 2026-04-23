@@ -9,7 +9,14 @@ from django.urls import reverse
 from rest_framework.test import APIClient
 from rest_framework import status
 
-from cinema.models import Movie, MovieSession, CinemaHall, Genre, Actor
+from cinema.models import (
+    Movie,
+    MovieSession,
+    CinemaHall,
+    Genre,
+    Actor
+)
+from cinema.serializers import MovieListSerializer, MovieDetailSerializer
 
 MOVIE_URL = reverse("cinema:movie-list")
 MOVIE_SESSION_URL = reverse("cinema:moviesession-list")
@@ -157,3 +164,123 @@ class MovieImageUploadTests(TestCase):
         res = self.client.get(MOVIE_SESSION_URL)
 
         self.assertIn("movie_image", res.data[0].keys())
+
+
+class UnauthenticatedMovieAPITests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+
+    def test_auth_required(self):
+        res = self.client.get(MOVIE_URL)
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+
+class AuthenticatedMovieAPITests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.user = get_user_model().objects.create_user(
+            "test@test.test", "passwordtest"
+        )
+        self.client.force_authenticate(self.user)
+
+    def test_movie_list(self):
+        sample_movie()
+
+        res = self.client.get(MOVIE_URL)
+        movies = Movie.objects.all()
+        serializer = MovieListSerializer(movies, many=True)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data, serializer.data)
+
+    def test_movie_detail(self):
+        movie_1 = sample_movie()
+
+        res = self.client.get(detail_url(movie_1.id))
+        serializer = MovieDetailSerializer(movie_1)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data, serializer.data)
+
+    def test_filter_movie_by_title(self):
+        movie_1 = sample_movie()
+        movie_2 = sample_movie(title="Movie 2")
+
+        res = self.client.get(MOVIE_URL, {"title": movie_1.title})
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(res.data), 1)
+        self.assertEqual(movie_1.title, res.data[0]["title"])
+        self.assertEqual(res.data[0]["id"], movie_1.id)
+        self.assertNotEqual(res.data[0]["id"], movie_2.id)
+
+    def test_filter_movie_by_genre(self):
+        movie_1 = sample_movie()
+        movie_2 = sample_movie(title="Movie 2")
+        genre_1 = sample_genre()
+        genre_2 = sample_genre(name="history")
+
+        movie_1.genres.add(genre_1)
+        movie_2.genres.add(genre_2)
+
+        res = self.client.get(MOVIE_URL, {"genres": genre_1.id})
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        ids = [m["id"] for m in res.data]
+
+        self.assertIn(movie_1.id, ids)
+        self.assertNotIn(movie_2.id, ids)
+
+    def test_filter_movie_by_actors(self):
+        movie_1 = sample_movie()
+        movie_2 = sample_movie(title="Movie 2")
+        actor_1 = sample_actor()
+        actor_2 = sample_actor(first_name="Piter", last_name="Brin")
+
+        movie_1.actors.add(actor_1)
+        movie_2.actors.add(actor_2)
+
+        res = self.client.get(MOVIE_URL, {"actors": actor_1.id})
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        ids = [m["id"] for m in res.data]
+
+        self.assertIn(movie_1.id, ids)
+        self.assertNotIn(movie_2.id, ids)
+
+    def test_not_admin_cannot_create(self):
+        genre = sample_genre()
+        actor = sample_actor()
+
+        payload = {
+            "title": "Movie 5",
+            "description": "Sample description 5",
+            "duration": 60,
+            "genres": [genre.id],
+            "actors": [actor.id],
+        }
+
+        res = self.client.post(MOVIE_URL, payload, format="multipart")
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+
+
+class AdminAuthenticatedMovieAPITests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.user_admin = get_user_model().objects.create_superuser(
+            email="admin@admin.test", password="passwordadmin", is_staff=True
+        )
+        self.client.force_authenticate(self.user_admin)
+
+    def test_create_movie(self):
+        genre = sample_genre()
+        actor = sample_actor()
+
+        payload = {
+            "title": "Movie 5",
+            "description": "Sample description 5",
+            "duration": 60,
+            "genres": [genre.id],
+            "actors": [actor.id],
+        }
+
+        res = self.client.post(MOVIE_URL, payload, format="multipart")
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+
+        movie = Movie.objects.get(id=res.data["id"])
+        self.assertEqual(movie.title, payload["title"])
