@@ -140,12 +140,12 @@ class MovieViewSet(
             ),
             OpenApiParameter(
                 name="genres",
-                type=OpenApiTypes.NUMBER,
+                type=OpenApiTypes.STR,
                 description="filter movies by genres id"
             ),
             OpenApiParameter(
                 name="actors",
-                type=OpenApiTypes.NUMBER,
+                type=OpenApiTypes.STR,
                 description="filter movies by actors id"
             ),
         ]
