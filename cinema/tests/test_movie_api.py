@@ -269,3 +269,11 @@ class MovieApiAdminTests(TestCase):
                 res.status_code,
                 status.HTTP_400_BAD_REQUEST
             )
+
+    def test_duration_field_negative(self):
+        self.data["duration"] = -10
+        res = self.client.post(MOVIE_URL, self.data)
+        self.assertEqual(
+            res.status_code,
+            status.HTTP_400_BAD_REQUEST
+        )
