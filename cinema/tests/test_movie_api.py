@@ -10,6 +10,7 @@ from rest_framework.test import APIClient
 from rest_framework import status
 
 from cinema.models import Movie, MovieSession, CinemaHall, Genre, Actor
+from cinema.serializers import MovieSerializer
 
 MOVIE_URL = reverse("cinema:movie-list")
 MOVIE_SESSION_URL = reverse("cinema:moviesession-list")
@@ -24,12 +25,14 @@ def detail_url(movie_id):
     return reverse("cinema:movie-detail", args=[movie_id])
 
 
-def sample_user(**params):
+def sample_user(admin: bool = False, **params):
     defaults = {
         "email": "simple_user@example.example",
         "password": "UserPassword123"
     }
     defaults.update(params)
+    if admin:
+        defaults["is_staff"] = True
     return get_user_model().objects.create_user(**defaults)
 
 
@@ -227,3 +230,42 @@ class MovieApiAuthenticatedTests(TestCase):
             res.status_code,
             status.HTTP_403_FORBIDDEN
         )
+
+
+class MovieApiAdminTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        user = sample_user(admin=True)
+        self.client.force_authenticate(user)
+        self.genre = sample_genre()
+        self.actor = sample_actor()
+        self.data = {
+            "title": "new movie",
+            "description": "new movie description",
+            "duration": 120,
+            "genres": [self.genre.id],
+            "actors": [self.actor.id]
+        }
+
+    def test_movie_create_admin_access(self):
+        res = self.client.post(MOVIE_URL, data=self.data)
+        movie = Movie.objects.get(id=1)
+        serializer = MovieSerializer(movie)
+        self.assertEqual(
+            res.status_code,
+            status.HTTP_201_CREATED
+        )
+        self.assertEqual(
+            res.data,
+            serializer.data
+        )
+
+    def test_movie_create_admin_with_luck_of_data(self):
+        for key in self.data:
+            data = self.data.copy()
+            data.pop(key)
+            res = self.client.post(MOVIE_URL, data=data)
+            self.assertEqual(
+                res.status_code,
+                status.HTTP_400_BAD_REQUEST
+            )
