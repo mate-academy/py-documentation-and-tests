@@ -15,6 +15,24 @@ MOVIE_URL = reverse("cinema:movie-list")
 MOVIE_SESSION_URL = reverse("cinema:moviesession-list")
 
 
+def image_upload_url(movie_id):
+    """Return URL for recipe image upload"""
+    return reverse("cinema:movie-upload-image", args=[movie_id])
+
+
+def detail_url(movie_id):
+    return reverse("cinema:movie-detail", args=[movie_id])
+
+
+def sample_user(**params):
+    defaults = {
+        "email": "simple_user@example.example",
+        "password": "UserPassword123"
+    }
+    defaults.update(params)
+    return get_user_model().objects.create_user(**defaults)
+
+
 def sample_movie(**params):
     defaults = {
         "title": "Sample movie",
@@ -55,15 +73,6 @@ def sample_movie_session(**params):
     defaults.update(params)
 
     return MovieSession.objects.create(**defaults)
-
-
-def image_upload_url(movie_id):
-    """Return URL for recipe image upload"""
-    return reverse("cinema:movie-upload-image", args=[movie_id])
-
-
-def detail_url(movie_id):
-    return reverse("cinema:movie-detail", args=[movie_id])
 
 
 class MovieImageUploadTests(TestCase):
@@ -157,3 +166,23 @@ class MovieImageUploadTests(TestCase):
         res = self.client.get(MOVIE_SESSION_URL)
 
         self.assertIn("movie_image", res.data[0].keys())
+
+
+class MovieApiUnAuthenticatedTests(TestCase):
+    def setUp(self):
+        self.movie = sample_movie()
+        self.client = APIClient()
+
+    def test_movie_list_access(self):
+        res = self.client.get(MOVIE_URL)
+        self.assertEqual(
+            res.status_code,
+            status.HTTP_401_UNAUTHORIZED
+        )
+
+    def test_movie_detail_access(self):
+        res = self.client.get(detail_url(movie_id=self.movie.id))
+        self.assertEqual(
+            res.status_code,
+            status.HTTP_401_UNAUTHORIZED
+        )
