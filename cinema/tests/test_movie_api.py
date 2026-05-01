@@ -186,3 +186,44 @@ class MovieApiUnAuthenticatedTests(TestCase):
             res.status_code,
             status.HTTP_401_UNAUTHORIZED
         )
+
+
+class MovieApiAuthenticatedTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        user = sample_user()
+        self.client.force_authenticate(user)
+        self.movie = sample_movie()
+
+    def test_movie_list_authenticated_access(self):
+        res = self.client.get(MOVIE_URL)
+        self.assertEqual(
+            res.status_code,
+            status.HTTP_200_OK
+        )
+
+    def test_movie_detail_access(self):
+        res = self.client.get(detail_url(movie_id=self.movie.id))
+        self.assertEqual(
+            res.status_code,
+            status.HTTP_200_OK
+        )
+
+    def test_movie_create_access(self):
+        genre = sample_genre()
+        actor = sample_actor()
+        data = {
+            "title": "new movie",
+            "description": "new movie description",
+            "duration": 120,
+            "genres": [genre.id],
+            "actors": [actor.id]
+        }
+        res = self.client.post(
+            MOVIE_URL,
+            data=data
+        )
+        self.assertEqual(
+            res.status_code,
+            status.HTTP_403_FORBIDDEN
+        )
