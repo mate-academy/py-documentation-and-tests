@@ -43,6 +43,11 @@ class MovieSerializer(serializers.ModelSerializer):
             "actors",
         )
 
+    def validate_duration(self, value):
+        if value <= 0:
+            raise serializers.ValidationError("Duration must be positive")
+        return value
+
 
 class MovieListSerializer(serializers.ModelSerializer):
 
