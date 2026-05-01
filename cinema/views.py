@@ -125,7 +125,6 @@ class MovieViewSet(
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
     @extend_schema(
         parameters=[
             OpenApiParameter(
@@ -186,7 +185,6 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
             return MovieSessionDetailSerializer
 
         return MovieSessionSerializer
-
 
     @extend_schema(
         parameters=[
