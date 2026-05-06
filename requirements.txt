@@ -1,6 +1,6 @@
 asgiref==3.11.1
 attrs==26.1.0
-Django==6.0.5
+Django==5.2.14
 django-debug-toolbar==6.3.0
 django-stubs==6.0.3
 django-stubs-ext==6.0.3
