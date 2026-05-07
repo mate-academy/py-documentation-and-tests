@@ -10,6 +10,7 @@ from rest_framework.test import APIClient
 from rest_framework import status
 
 from cinema.models import Movie, MovieSession, CinemaHall, Genre, Actor
+from cinema.serializers import MovieListSerializer, MovieDetailSerializer
 
 MOVIE_URL = reverse("cinema:movie-list")
 MOVIE_SESSION_URL = reverse("cinema:moviesession-list")
@@ -157,3 +158,117 @@ class MovieImageUploadTests(TestCase):
         res = self.client.get(MOVIE_SESSION_URL)
 
         self.assertIn("movie_image", res.data[0].keys())
+
+
+class test_unauthenticated_movieviewset(TestCase):
+    def setUp(self):
+        # Create a sample movie so we have something to try and retrieve
+        self.movie = sample_movie()
+
+    def test_items_list(self) -> None:
+        url = reverse("cinema:movie-list")
+        res = self.client.get(url)
+
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_items_retrieve(self) -> None:
+        url = detail_url(self.movie.id)
+        res = self.client.get(url)
+
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+
+class test_authenticated_movieviewset(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.user = get_user_model().objects.create_user(
+            "test@test.com",
+            "testpass"
+        )
+        self.client.force_authenticate(self.user)
+
+        # Let's create two movies with distinct data so we can test the filters!
+        self.movie1 = sample_movie(title="Inception")
+        self.movie2 = sample_movie(title="Batman")
+
+    def test_items_list(self) -> None:
+        url = reverse("cinema:movie-list")
+        res = self.client.get(url)  # get a list of data from url
+
+        items = Movie.objects.all()  # get a list of data from db
+        serializer = MovieListSerializer(items, many=True)
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(serializer.data, res.data)
+
+    def test_items_retrieve(self) -> None:
+        item = sample_movie(title="Test")
+        url = reverse("cinema:movie-detail", args=[item.id])
+        res = self.client.get(url)
+
+        serializer = MovieDetailSerializer(item)
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(serializer.data, res.data)
+
+    def test_filter_movies_by_title(self):
+        url = reverse("cinema:movie-list")
+
+        # 1. Make a GET request, but add the query parameter to the URL!
+        res = self.client.get(url, {"title": "incep"})
+
+        # 2. Serialize ONLY the movie you expect to get back
+        serializer1 = MovieListSerializer(self.movie1)
+        serializer2 = MovieListSerializer(self.movie2)
+
+        self.assertIn(serializer1.data, res.data)
+        self.assertNotIn(serializer2.data, res.data)
+
+    def test_filter_movies_by_genres(self):
+        # 1. Create the genres using your helper
+        genre1 = sample_genre(name="Action")
+        genre2 = sample_genre(name="Drama")
+
+        # 2. Attach them to the movies we created in setUp
+        self.movie1.genres.add(genre1)
+        self.movie2.genres.add(genre2)
+
+        # 3. Create a movie with NO genres to prove it gets filtered out
+        movie3 = sample_movie(title="Comedy Movie")
+
+        url = reverse("cinema:movie-list")
+
+        # 4. Make the GET request passing BOTH genre IDs as a comma-separated string
+        res = self.client.get(url, {"genres": f"{genre1.id},{genre2.id}"})
+
+        # 5. Serialize the movies
+        serializer1 = MovieListSerializer(self.movie1)
+        serializer2 = MovieListSerializer(self.movie2)
+        serializer3 = MovieListSerializer(movie3)
+
+        # 6. Assert movie1 and movie2 are in the response, but movie3 is NOT!
+        self.assertIn(serializer1.data, res.data)
+        self.assertIn(serializer2.data, res.data)
+        self.assertNotIn(serializer3.data, res.data)
+
+    def test_filter_movies_by_actors(self):
+        actor1 = sample_actor(first_name="Keanu", last_name="Reeves")
+        actor2 = sample_actor(first_name="Christian", last_name="Bale")
+
+        self.movie1.actors.add(actor1)
+        self.movie2.actors.add(actor2)
+
+        movie3 = sample_movie(title="No Actor Movie")
+
+        url = reverse("cinema:movie-list")
+
+        # Pass the comma-separated IDs!
+        res = self.client.get(url, {"actors": f"{actor1.id},{actor2.id}"})
+
+        serializer1 = MovieListSerializer(self.movie1)
+        serializer2 = MovieListSerializer(self.movie2)
+        serializer3 = MovieListSerializer(movie3)
+
+        self.assertIn(serializer1.data, res.data)
+        self.assertIn(serializer2.data, res.data)
+        self.assertNotIn(serializer3.data, res.data)
