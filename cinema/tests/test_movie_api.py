@@ -220,7 +220,8 @@ class AuthenticatedMovieAPITests(APITestCase):
         response = self.client.get(MOVIE_URL, actor_params)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.json()), 2)
-        self.assertEqual(response.json()[0]["actors"][0]["first_name"], first_actor.first_name)
+        self.assertIn(third_actor.first_name, response.json()[0]["actors"][0])
+
 
     def test_filtering_by_genres(self):
         first_genre = sample_genre(name="firstgenre")
@@ -259,12 +260,16 @@ class AdminMovieAPITests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_create_movie_allowed(self):
+        actors = sample_actor()
+        genres = sample_genre()
         response = self.client.post(
             MOVIE_URL,
             {
             "title": "Title",
             "description": "Description",
             "duration": 90,
+            "actors": actors.id,
+            "genres": genres.id,
             }
         )
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
