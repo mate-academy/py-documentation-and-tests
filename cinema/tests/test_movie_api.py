@@ -185,13 +185,15 @@ class AdminMovieApiTests(TestCase):
         self.client.force_authenticate(self.admin)
 
     def test_create_movie(self):
-        """Admin can create a movie with empty genres/actors."""
+        """Admin can create a movie."""
+        genre = sample_genre()
+        actor = sample_actor()
         payload = {
             "title": "New Movie",
             "description": "A great film",
             "duration": 120,
-            "genres": [],
-            "actors": [],
+            "genres": [genre.id],
+            "actors": [actor.id],
         }
         res = self.client.post(MOVIE_URL, payload, format="json")
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
@@ -218,25 +220,26 @@ class AdminMovieApiTests(TestCase):
         self.assertEqual(genres.count(), 2)
         self.assertIn(genre1, genres)
         self.assertIn(genre2, genres)
-        
+
     def test_create_movie_with_actors(self):
-            """Admin can create a movie with actors."""
-            actor1 = sample_actor(first_name="Tom", last_name="Hanks")
-            actor2 = sample_actor(first_name="Meryl", last_name="Streep")
-            payload = {
-                "title": "Drama Film",
-                "description": "Emotional story",
-                "duration": 110,
-                "genres": [sample_genre().id],
-                "actors": [actor1.id, actor2.id],
-            }
-            res = self.client.post(MOVIE_URL, payload, format="json")
-            self.assertEqual(res.status_code, status.HTTP_201_CREATED)
-            movie = Movie.objects.get(id=res.data["id"])
-            actors = movie.actors.all()
-            self.assertEqual(actors.count(), 2)
-            self.assertIn(actor1, actors)
-            self.assertIn(actor2, actors)
+        """Admin can create a movie with actors."""
+        actor1 = sample_actor(first_name="Tom", last_name="Hanks")
+        actor2 = sample_actor(first_name="Meryl", last_name="Streep")
+        payload = {
+            "title": "Drama Film",
+            "description": "Emotional story",
+            "duration": 110,
+            "genres": [sample_genre().id],
+            "actors": [actor1.id, actor2.id],
+        }
+        res = self.client.post(MOVIE_URL, payload, format="json")
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        movie = Movie.objects.get(id=res.data["id"])
+        actors = movie.actors.all()
+        self.assertEqual(actors.count(), 2)
+        self.assertIn(actor1, actors)
+        self.assertIn(actor2, actors)
+
 
 class MovieImageUploadTests(TestCase):
     def setUp(self):
