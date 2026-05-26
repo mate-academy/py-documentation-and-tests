@@ -218,7 +218,8 @@ class AdminMovieApiTests(TestCase):
         self.assertEqual(genres.count(), 2)
         self.assertIn(genre1, genres)
         self.assertIn(genre2, genres)
-        def test_create_movie_with_actors(self):
+        
+    def test_create_movie_with_actors(self):
             """Admin can create a movie with actors."""
             actor1 = sample_actor(first_name="Tom", last_name="Hanks")
             actor2 = sample_actor(first_name="Meryl", last_name="Streep")
