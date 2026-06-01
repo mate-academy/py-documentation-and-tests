@@ -1,13 +1,12 @@
-import tempfile
 import os
+import tempfile
 
 from PIL import Image
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
-
-from rest_framework.test import APIClient
 from rest_framework import status
+from rest_framework.test import APIClient, APITestCase
 
 from cinema.models import Movie, MovieSession, CinemaHall, Genre, Actor
 
@@ -157,3 +156,148 @@ class MovieImageUploadTests(TestCase):
         res = self.client.get(MOVIE_SESSION_URL)
 
         self.assertIn("movie_image", res.data[0].keys())
+
+
+class UnauthenticatedMovieAPITestCase(APITestCase):
+    def setUp(self):
+        self.client = APIClient()
+
+    def test_auth_required(self):
+        response = self.client.get(MOVIE_URL)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+
+class AuthenticatedMovieAPITestCase(APITestCase):
+    def setUp(self):
+        self.client = APIClient()
+        user = get_user_model().objects.create_user(
+            email="user@exampleemail.com", password="password"
+        )
+        self.client.force_authenticate(user=user)
+
+        self.genre_1 = sample_genre()
+        self.genre_2 = sample_genre(name="Horror")
+        self.genre_3 = sample_genre(name="Comedy")
+
+        self.actor_1 = sample_actor()
+        self.actor_2 = sample_actor(first_name="Johnny", last_name="Deep")
+        self.actor_3 = sample_actor(first_name="Brad", last_name="Pitt")
+
+        self.movie_drama = sample_movie()
+        self.movie_drama.genres.add(self.genre_1)
+        self.movie_drama.actors.add(self.actor_1)
+
+        self.movie_horror = sample_movie(
+            title="movie_2", description="Description 2", duration=131
+        )
+
+        self.movie_horror.genres.add(self.genre_2)
+        self.movie_horror.actors.add(self.actor_2)
+
+        self.movie_comedy = sample_movie(
+            title="movie_3", description="Description 3", duration=132
+        )
+
+        self.movie_comedy.genres.add(self.genre_3)
+        self.movie_comedy.actors.add(self.actor_3)
+
+    def test_movie_list(self):
+        response = self.client.get(MOVIE_URL)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.json()), 3)
+
+    def test_movie_filtering_by_actors(self):
+
+        filtering_params_actor_1 = {"actors": self.actor_2.id}
+        filtering_params_actor_2 = {"actors": self.actor_3.id}
+
+        response = self.client.get(MOVIE_URL, filtering_params_actor_1)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.json()), 1)
+        self.assertEqual(response.json()[0]["title"], self.movie_horror.title)
+
+        response = self.client.get(MOVIE_URL, filtering_params_actor_2)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.json()), 1)
+        self.assertEqual(response.json()[0]["title"], self.movie_comedy.title)
+
+    def test_movie_filtering_by_genres(self):
+
+        filtering_params_genres_1 = {"genres": self.genre_2.id}
+        filtering_params_genres_2 = {"genres": self.genre_3.id}
+
+        response = self.client.get(MOVIE_URL, filtering_params_genres_1)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.json()), 1)
+        self.assertEqual(response.json()[0]["title"], self.movie_horror.title)
+
+        response = self.client.get(MOVIE_URL, filtering_params_genres_2)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.json()), 1)
+        self.assertEqual(response.json()[0]["title"], self.movie_comedy.title)
+
+    def test_movie_filtering_by_titles(self):
+
+        filtering_params_titles_1 = {"title": self.movie_horror.title}
+        filtering_params_titles_2 = {"title": self.movie_comedy.title}
+
+        response = self.client.get(MOVIE_URL, filtering_params_titles_1)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.json()), 1)
+        self.assertEqual(response.json()[0]["title"], self.movie_horror.title)
+
+        response = self.client.get(MOVIE_URL, filtering_params_titles_2)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.json()), 1)
+        self.assertEqual(response.json()[0]["title"], self.movie_comedy.title)
+
+    def test_single_movie(self):
+        url = reverse(
+            "cinema:movie-detail", kwargs={"pk": self.movie_horror.id}
+        )
+
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.json()["title"], self.movie_horror.title)
+
+    def test_create_movie(self):
+        payload = {
+            "title": "Default_title",
+            "description": "Default_description",
+            "duration": 111,
+            "genres": [self.genre_1.id],
+            "actors": [self.actor_1.id],
+        }
+
+        response = self.client.post(MOVIE_URL, payload)
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertFalse(Movie.objects.filter(title=payload["title"]).exists())
+
+
+class AdminMovieAPITestCase(APITestCase):
+    def setUp(self):
+        self.client = APIClient()
+        admin_user = get_user_model().objects.create_user(
+            email="admin@admintest.com", password="password", is_staff=True
+        )
+        self.client.force_authenticate(user=admin_user)
+
+    def test_create_movie(self):
+        genre = sample_genre()
+        actor = sample_actor()
+
+        payload = {
+            "title": "Default_title",
+            "description": "Default_description",
+            "duration": 111,
+            "genres": [genre.id],
+            "actors": [actor.id],
+        }
+
+        response = self.client.post(MOVIE_URL, payload)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.json()["title"], payload["title"])
+        self.assertTrue(Movie.objects.filter(title=payload["title"]).exists())
