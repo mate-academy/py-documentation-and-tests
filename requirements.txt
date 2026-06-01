@@ -8,3 +8,4 @@ djangorestframework
 djangorestframework-simplejwt
 drf-spectacular
 Pillow
+django-filter==25.2
