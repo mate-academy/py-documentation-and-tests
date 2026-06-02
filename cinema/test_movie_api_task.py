@@ -27,7 +27,7 @@ def sample_movie(**params):
 
 class UnauthenticatedMovieApiTest(TestCase):
     def setUp(self) -> None:
-       self.client = APIClient()
+        self.client = APIClient()
 
     def test_auth_required(self):
         res = self.client.get(MOVIE_URL)
