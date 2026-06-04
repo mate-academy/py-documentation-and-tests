@@ -1,6 +1,12 @@
 from datetime import datetime
 
 from django.db.models import F, Count
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import (
+    OpenApiParameter,
+    extend_schema,
+    extend_schema_view,
+)
 from rest_framework import viewsets, mixins, status
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import action
@@ -26,6 +32,43 @@ from cinema.serializers import (
     OrderListSerializer,
     MovieImageSerializer,
 )
+
+
+MOVIE_LIST_PARAMETERS = [
+    OpenApiParameter(
+        "title",
+        OpenApiTypes.STR,
+        OpenApiParameter.QUERY,
+        description="Filter movies by title, case-insensitive.",
+    ),
+    OpenApiParameter(
+        "genres",
+        OpenApiTypes.STR,
+        OpenApiParameter.QUERY,
+        description="Filter movies by comma-separated genre ids.",
+    ),
+    OpenApiParameter(
+        "actors",
+        OpenApiTypes.STR,
+        OpenApiParameter.QUERY,
+        description="Filter movies by comma-separated actor ids.",
+    ),
+]
+
+MOVIE_SESSION_LIST_PARAMETERS = [
+    OpenApiParameter(
+        "date",
+        OpenApiTypes.DATE,
+        OpenApiParameter.QUERY,
+        description="Filter movie sessions by date in YYYY-MM-DD format.",
+    ),
+    OpenApiParameter(
+        "movie",
+        OpenApiTypes.INT,
+        OpenApiParameter.QUERY,
+        description="Filter movie sessions by movie id.",
+    ),
+]
 
 
 class GenreViewSet(
@@ -61,6 +104,9 @@ class CinemaHallViewSet(
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
 
+@extend_schema_view(
+    list=extend_schema(parameters=MOVIE_LIST_PARAMETERS)
+)
 class MovieViewSet(
     mixins.ListModelMixin,
     mixins.CreateModelMixin,
@@ -128,6 +174,9 @@ class MovieViewSet(
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+@extend_schema_view(
+    list=extend_schema(parameters=MOVIE_SESSION_LIST_PARAMETERS)
+)
 class MovieSessionViewSet(viewsets.ModelViewSet):
     queryset = (
         MovieSession.objects.all()
