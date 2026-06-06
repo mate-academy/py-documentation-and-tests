@@ -157,3 +157,88 @@ class MovieImageUploadTests(TestCase):
         res = self.client.get(MOVIE_SESSION_URL)
 
         self.assertIn("movie_image", res.data[0].keys())
+
+class UnauthenticatedMovieApiTests(TestCase):
+    """Test suite for unauthenticated user access (guests)"""
+
+    def setUp(self):
+        self.client = APIClient()
+        self.movie = sample_movie()
+
+    def test_auth_required_for_movie_list(self):
+        """Verify that anonymous users are blocked from accessing the movie list"""
+        res = self.client.get(MOVIE_URL)
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_auth_required_for_movie_detail(self):
+        """Verify that anonymous users are blocked from accessing movie details"""
+        url = detail_url(self.movie.id)
+        res = self.client.get(url)
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_anonymous_cannot_create_movie(self):
+        """Verify that anonymous users are blocked from creating a movie"""
+        payload = {"title": "New Movie", "duration": 120, "description": "Desc"}
+        res = self.client.post(MOVIE_URL, payload)
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+class AuthenticatedMovieApiTests(TestCase):
+    """Test suite for authenticated, regular (non-admin) users"""
+
+    def setUp(self):
+        self.client = APIClient()
+        self.user = get_user_model().objects.create_user(
+            "user@myproject.com", "password123"
+        )
+        self.client.force_authenticate(self.user)
+
+    def test_regular_user_cannot_create_movie(self):
+        """Verify that regular authenticated users cannot create movies (403 Forbidden)"""
+        payload = {"title": "Premium Movie", "duration": 100}
+        res = self.client.post(MOVIE_URL, payload)
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_filter_movies_by_title(self):
+        """Test filtering movies using the 'title' query parameter (?title=...)"""
+        movie1 = sample_movie(title="Terminator")
+        movie2 = sample_movie(title="Inception")
+
+        res = self.client.get(MOVIE_URL, {"title": "term"})
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(res.data), 1)
+        self.assertEqual(res.data[0]["title"], movie1.title)
+
+    def test_filter_movies_by_genres(self):
+        """Test filtering movies using the 'genres' ID query parameter (?genres=1,2)"""
+        genre1 = sample_genre(name="Action")
+        genre2 = sample_genre(name="Comedy")
+
+        movie1 = sample_movie(title="Die Hard")
+        movie1.genres.add(genre1)
+
+        movie2 = sample_movie(title="The Hangover")
+        movie2.genres.add(genre2)
+
+        res = self.client.get(MOVIE_URL, {"genres": f"{genre1.id}"})
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(res.data), 1)
+        self.assertEqual(res.data[0]["title"], movie1.title)
+
+    def test_filter_movies_by_actors(self):
+        """Test filtering movies using the 'actors' ID query parameter (?actors=1,2)"""
+        actor1 = sample_actor(first_name="Arnold", last_name="Schwarzenegger")
+        actor2 = sample_actor(first_name="Leonardo", last_name="DiCaprio")
+
+        movie1 = sample_movie(title="Predator")
+        movie1.actors.add(actor1)
+
+        movie2 = sample_movie(title="Shutter Island")
+        movie2.actors.add(actor2)
+
+        res = self.client.get(MOVIE_URL, {"actors": f"{actor1.id}"})
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(res.data), 1)
+        self.assertEqual(res.data[0]["title"], movie1.title)
