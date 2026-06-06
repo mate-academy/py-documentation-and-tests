@@ -216,9 +216,11 @@ class AuthenticatedMovieApiTests(TestCase):
 
         movie1 = sample_movie(title="Die Hard")
         movie1.genres.add(genre1)
+        movie1.refresh_from_db()
 
         movie2 = sample_movie(title="The Hangover")
         movie2.genres.add(genre2)
+        movie2.refresh_from_db()
 
         res = self.client.get(MOVIE_URL, {"genres": f"{genre1.id}"})
 
