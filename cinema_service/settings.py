@@ -156,6 +156,9 @@ SPECTACULAR_SETTINGS = {
 }
 
 REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+    ],
     "DEFAULT_THROTTLE_CLASSES": [
         "rest_framework.throttling.AnonRateThrottle",
         "rest_framework.throttling.UserRateThrottle",
@@ -164,4 +167,10 @@ REST_FRAMEWORK = {
         "anon": "10/minute",
         "user": "30/minute",
     }
+}
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": 3600,
+    "REFRESH_TOKEN_LIFETIME": 86400,
+    "ROTATE_REFRESH_TOKENS": False,
 }
