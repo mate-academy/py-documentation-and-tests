@@ -232,3 +232,44 @@ class MovieImageUploadTests(APITestCase):
         res = self.client.get(MOVIE_SESSION_URL)
 
         self.assertIn("movie_image", res.data[0].keys())
+
+
+class AdminMovieApiTests(APITestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(
+            email="admin@test.com",
+            password="adminpassword123",
+            is_staff=True
+        )
+        refresh = RefreshToken.for_user(self.user)
+        auth_header = f"Bearer {str(refresh.access_token)}"  # noqa: UnresolvedReferences
+        self.client.credentials(HTTP_AUTHORIZATION=auth_header)
+
+        self.genre = Genre.objects.create(name="Action")
+        self.actor = Actor.objects.create(first_name="John", last_name="Doe")
+
+        self.movie = Movie.objects.create(
+            title="Test Movie",
+            description="Test description",
+            duration=120
+        )
+        self.movie.genres.add(self.genre)
+        self.movie.actors.add(self.actor)
+
+    def test_create_movie_successful(self):
+        payload = {
+            "title": "New Admin Movie",
+            "description": "New description",
+            "duration": 100,
+            "genres": [self.genre.id],
+            "actors": [self.actor.id],
+        }
+        res = self.client.post(MOVIE_URL, payload)
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(res.data["title"], payload["title"])
+
+    def test_retrieve_movie_detail(self):
+        url = reverse("cinema:movie-detail", args=[self.movie.id])
+        res = self.client.get(url)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data["title"], self.movie.title)
