@@ -76,10 +76,10 @@ class MovieListTests(TestCase):
         )
 
     def test_list_movies_unauthenticated(self):
-        movie = sample_movie()
+        sample_movie()
         res = self.client.get(MOVIE_URL)
 
-        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_list_movies_authenticated(self):
         movie = sample_movie()
@@ -108,7 +108,7 @@ class MovieListTests(TestCase):
         }
         res = self.client.post(MOVIE_URL, payload)
 
-        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_create_movie_by_regular_user(self):
         payload = {
@@ -122,12 +122,15 @@ class MovieListTests(TestCase):
         self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_create_movie_by_admin(self):
+        genre = sample_genre()
+        actor = sample_actor()
+
         payload = {
             "title": "New movie",
             "description": "Description",
             "duration": 120,
-            "genres": [],
-            "actors": [],
+            "genres": [genre.id],
+            "actors": [actor.id],
         }
         self.client.force_authenticate(self.admin)
         res = self.client.post(MOVIE_URL, payload, format="json")
@@ -147,8 +150,8 @@ class MovieListTests(TestCase):
         self.assertEqual(res.data["duration"], movie.duration)
 
     def test_filter_movies_by_title(self):
-        movie1 = sample_movie(title="Action Movie")
-        movie2 = sample_movie(title="Drama Movie")
+        sample_movie(title="Action Movie")
+        sample_movie(title="Drama Movie")
 
         self.client.force_authenticate(self.user)
         res = self.client.get(MOVIE_URL, {"title": "Action"})
@@ -279,8 +282,8 @@ class MovieImageUploadTests(TestCase):
                     "title": "Title",
                     "description": "Description",
                     "duration": 90,
-                    "genres": [1],
-                    "actors": [1],
+                    "genres": [self.genre.id],
+                    "actors": [self.actor.id],
                     "image": ntf,
                 },
                 format="multipart",
