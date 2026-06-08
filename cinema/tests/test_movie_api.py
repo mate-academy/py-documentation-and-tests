@@ -3,13 +3,15 @@ import os
 
 from PIL import Image
 from django.contrib.auth import get_user_model
+from django.template.defaultfilters import title
 from django.test import TestCase
 from django.urls import reverse
 
-from rest_framework.test import APIClient
+from rest_framework.test import APITestCase
 from rest_framework import status
 
 from cinema.models import Movie, MovieSession, CinemaHall, Genre, Actor
+from cinema.serializers import MovieListSerializer, MovieDetailSerializer
 
 MOVIE_URL = reverse("cinema:movie-list")
 MOVIE_SESSION_URL = reverse("cinema:moviesession-list")
@@ -157,3 +159,151 @@ class MovieImageUploadTests(TestCase):
         res = self.client.get(MOVIE_SESSION_URL)
 
         self.assertIn("movie_image", res.data[0].keys())
+
+
+class TestUnauthenticatedMovieViewSet(APITestCase):
+    def test_auth_required(self):
+        response = self.client.get(MOVIE_URL)
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_401_UNAUTHORIZED
+        )
+
+
+class TestAuthenticatedMovieViewSet(APITestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(
+            email="user@gmail.com", password="1qazcde3"
+        )
+        self.client.force_authenticate(self.user)
+
+        self.vikings = sample_movie(title="Vikings")
+        self.odyssey = sample_movie(title="Odyssey")
+        self.vikings_serializer = MovieListSerializer(self.vikings)
+        self.odyssey_serializer = MovieListSerializer(self.odyssey)
+
+
+    def test_list_movies(self):
+        sample_movie()
+        sample_movie()
+
+        response = self.client.get(MOVIE_URL)
+        movies = Movie.objects.all()
+        serializer = MovieListSerializer(movies, many=True)
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK
+        )
+        self.assertEqual(
+            response.data,
+            serializer.data
+        )
+
+    def test_list_movies_filter_by_title(self):
+        response = self.client.get(MOVIE_URL, query_params={
+            "title": "vik"
+        })
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn(self.vikings_serializer.data, response.data)
+        self.assertNotIn(self.odyssey_serializer.data, response.data)
+
+    def test_list_movies_filter_by_genres(self):
+        history = sample_genre(name="History")
+        action = sample_genre(name="Action")
+        drama = sample_genre()
+
+        self.vikings.genres.set([history, action])
+        self.odyssey.genres.set([history, drama])
+
+        response = self.client.get(MOVIE_URL, query_params={
+            "genres": f"{history.pk}"
+        })
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn(self.vikings_serializer.data, response.data)
+        self.assertIn(self.odyssey_serializer.data, response.data)
+
+        response = self.client.get(MOVIE_URL, query_params={
+            "genres": f"{action.pk}"
+        })
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn(self.vikings_serializer.data, response.data)
+        self.assertNotIn(self.odyssey_serializer.data, response.data)
+
+        response = self.client.get(MOVIE_URL, query_params={
+            "genres": f"{drama.pk}"
+        })
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertNotIn(self.vikings_serializer.data, response.data)
+        self.assertIn(self.odyssey_serializer.data, response.data)
+
+    def test_list_movies_filter_by_actors(self):
+        ragnar = sample_actor(first_name="Travis", last_name="Fimmel")
+        odysseus = sample_actor(first_name="Mett", last_name="Damon")
+        test = sample_actor()
+
+        self.vikings.actors.set([ragnar.pk, test.pk])
+        self.odyssey.actors.set([odysseus.pk, test.pk])
+
+        response = self.client.get(MOVIE_URL, query_params={
+            "actors": f"{test.pk}"
+        })
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn(self.vikings_serializer.data, response.data)
+        self.assertIn(self.odyssey_serializer.data, response.data)
+
+        response = self.client.get(MOVIE_URL, query_params={
+            "actors": f"{ragnar.pk}"
+        })
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn(self.vikings_serializer.data, response.data)
+        self.assertNotIn(self.odyssey_serializer.data, response.data)
+
+        response = self.client.get(MOVIE_URL, query_params={
+            "actors": f"{odysseus.pk}"
+        })
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertNotIn(self.vikings_serializer.data, response.data)
+        self.assertIn(self.odyssey_serializer.data, response.data)
+
+    def test_movie_detail(self):
+        response = self.client.get(detail_url(self.vikings.id))
+        self.assertEqual(response.data, self.vikings_serializer.data)
+
+    def test_movie_create_forbidden(self):
+        data = {
+            "title": "Walking Dead",
+            "description": "About Walking Dead",
+            "duration": 120
+        }
+        response = self.client.post(MOVIE_URL, data=data)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
+class TestAdminMovieViewSet(APITestCase):
+    def setUp(self):
+        self.admin = get_user_model().objects.create_superuser(
+            email="admin@gmail.com", password="1qazcde3"
+        )
+        self.client.force_authenticate(self.admin)
+        self.vikings = sample_movie(title="Vikings")
+
+    def test_movie_create_allow(self):
+        actor = sample_actor()
+        genre = sample_genre()
+
+        data = {
+            "title": "Walking Dead",
+            "description": "About Walking Dead",
+            "duration": 120,
+            "genres": [genre.pk],
+            "actors": [actor.pk]
+        }
+        response = self.client.post(MOVIE_URL, data=data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
