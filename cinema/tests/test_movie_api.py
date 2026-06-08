@@ -3,11 +3,10 @@ import os
 
 from PIL import Image
 from django.contrib.auth import get_user_model
-from django.template.defaultfilters import title
 from django.test import TestCase
 from django.urls import reverse
 
-from rest_framework.test import APITestCase
+from rest_framework.test import APITestCase, APIClient
 from rest_framework import status
 
 from cinema.models import Movie, MovieSession, CinemaHall, Genre, Actor
@@ -274,7 +273,8 @@ class TestAuthenticatedMovieViewSet(APITestCase):
 
     def test_movie_detail(self):
         response = self.client.get(detail_url(self.vikings.id))
-        self.assertEqual(response.data, self.vikings_serializer.data)
+        serializer = MovieDetailSerializer(self.vikings)
+        self.assertEqual(response.data, serializer.data)
 
     def test_movie_create_forbidden(self):
         data = {
