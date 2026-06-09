@@ -1,0 +1,1205 @@
+openapi: 3.0.3
+info:
+  title: Cinema API
+  version: 1.0.0
+  description: Cinema service API documentation
+paths:
+  /api/cinema/actors/:
+    get:
+      operationId: cinema_actors_list
+      tags:
+      - cinema
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Actor'
+          description: ''
+    post:
+      operationId: cinema_actors_create
+      tags:
+      - cinema
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Actor'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Actor'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Actor'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Actor'
+          description: ''
+  /api/cinema/cinema_halls/:
+    get:
+      operationId: cinema_cinema_halls_list
+      tags:
+      - cinema
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CinemaHall'
+          description: ''
+    post:
+      operationId: cinema_cinema_halls_create
+      tags:
+      - cinema
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CinemaHall'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CinemaHall'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CinemaHall'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CinemaHall'
+          description: ''
+  /api/cinema/genres/:
+    get:
+      operationId: cinema_genres_list
+      tags:
+      - cinema
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Genre'
+          description: ''
+    post:
+      operationId: cinema_genres_create
+      tags:
+      - cinema
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Genre'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Genre'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Genre'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Genre'
+          description: ''
+  /api/cinema/movie_sessions/:
+    get:
+      operationId: cinema_movie_sessions_list
+      parameters:
+      - in: query
+        name: date
+        schema:
+          type: string
+          format: date
+        description: 'Filter movie sessions by date. Format: YYYY-MM-DD'
+      - in: query
+        name: movie
+        schema:
+          type: integer
+        description: Filter movie sessions by movie id
+      tags:
+      - cinema
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MovieSessionList'
+          description: ''
+    post:
+      operationId: cinema_movie_sessions_create
+      parameters:
+      - in: query
+        name: date
+        schema:
+          type: string
+          format: date
+        description: 'Filter movie sessions by date. Format: YYYY-MM-DD'
+      - in: query
+        name: movie
+        schema:
+          type: integer
+        description: Filter movie sessions by movie id
+      tags:
+      - cinema
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MovieSession'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MovieSession'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MovieSession'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MovieSession'
+          description: ''
+  /api/cinema/movie_sessions/{id}/:
+    get:
+      operationId: cinema_movie_sessions_retrieve
+      parameters:
+      - in: query
+        name: date
+        schema:
+          type: string
+          format: date
+        description: 'Filter movie sessions by date. Format: YYYY-MM-DD'
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this movie session.
+        required: true
+      - in: query
+        name: movie
+        schema:
+          type: integer
+        description: Filter movie sessions by movie id
+      tags:
+      - cinema
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MovieSessionDetail'
+          description: ''
+    put:
+      operationId: cinema_movie_sessions_update
+      parameters:
+      - in: query
+        name: date
+        schema:
+          type: string
+          format: date
+        description: 'Filter movie sessions by date. Format: YYYY-MM-DD'
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this movie session.
+        required: true
+      - in: query
+        name: movie
+        schema:
+          type: integer
+        description: Filter movie sessions by movie id
+      tags:
+      - cinema
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MovieSession'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MovieSession'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MovieSession'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MovieSession'
+          description: ''
+    patch:
+      operationId: cinema_movie_sessions_partial_update
+      parameters:
+      - in: query
+        name: date
+        schema:
+          type: string
+          format: date
+        description: 'Filter movie sessions by date. Format: YYYY-MM-DD'
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this movie session.
+        required: true
+      - in: query
+        name: movie
+        schema:
+          type: integer
+        description: Filter movie sessions by movie id
+      tags:
+      - cinema
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedMovieSession'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedMovieSession'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedMovieSession'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MovieSession'
+          description: ''
+    delete:
+      operationId: cinema_movie_sessions_destroy
+      parameters:
+      - in: query
+        name: date
+        schema:
+          type: string
+          format: date
+        description: 'Filter movie sessions by date. Format: YYYY-MM-DD'
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this movie session.
+        required: true
+      - in: query
+        name: movie
+        schema:
+          type: integer
+        description: Filter movie sessions by movie id
+      tags:
+      - cinema
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/cinema/movies/:
+    get:
+      operationId: cinema_movies_list
+      parameters:
+      - in: query
+        name: actors
+        schema:
+          type: string
+        description: 'Filter movies by actor ids. Example: ?actors=1,2'
+      - in: query
+        name: genres
+        schema:
+          type: string
+        description: 'Filter movies by genre ids. Example: ?genres=1,2'
+      - in: query
+        name: title
+        schema:
+          type: string
+        description: Filter movies by title
+      tags:
+      - cinema
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MovieList'
+          description: ''
+    post:
+      operationId: cinema_movies_create
+      parameters:
+      - in: query
+        name: actors
+        schema:
+          type: string
+        description: 'Filter movies by actor ids. Example: ?actors=1,2'
+      - in: query
+        name: genres
+        schema:
+          type: string
+        description: 'Filter movies by genre ids. Example: ?genres=1,2'
+      - in: query
+        name: title
+        schema:
+          type: string
+        description: Filter movies by title
+      tags:
+      - cinema
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Movie'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Movie'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Movie'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Movie'
+          description: ''
+  /api/cinema/movies/{id}/:
+    get:
+      operationId: cinema_movies_retrieve
+      parameters:
+      - in: query
+        name: actors
+        schema:
+          type: string
+        description: 'Filter movies by actor ids. Example: ?actors=1,2'
+      - in: query
+        name: genres
+        schema:
+          type: string
+        description: 'Filter movies by genre ids. Example: ?genres=1,2'
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this movie.
+        required: true
+      - in: query
+        name: title
+        schema:
+          type: string
+        description: Filter movies by title
+      tags:
+      - cinema
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MovieDetail'
+          description: ''
+  /api/cinema/movies/{id}/upload-image/:
+    post:
+      operationId: cinema_movies_upload_image_create
+      description: Endpoint for uploading image to specific movie
+      parameters:
+      - in: query
+        name: actors
+        schema:
+          type: string
+        description: 'Filter movies by actor ids. Example: ?actors=1,2'
+      - in: query
+        name: genres
+        schema:
+          type: string
+        description: 'Filter movies by genre ids. Example: ?genres=1,2'
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this movie.
+        required: true
+      - in: query
+        name: title
+        schema:
+          type: string
+        description: Filter movies by title
+      tags:
+      - cinema
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MovieImage'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MovieImage'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MovieImage'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MovieImage'
+          description: ''
+  /api/cinema/orders/:
+    get:
+      operationId: cinema_orders_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - cinema
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedOrderListList'
+          description: ''
+    post:
+      operationId: cinema_orders_create
+      tags:
+      - cinema
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Order'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Order'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Order'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+          description: ''
+  /api/token/:
+    post:
+      operationId: token_create
+      description: |-
+        Takes a set of user credentials and returns an access and refresh JSON web
+        token pair to prove the authentication of those credentials.
+      tags:
+      - token
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPair'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPair'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPair'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenObtainPair'
+          description: ''
+  /api/token/refresh/:
+    post:
+      operationId: token_refresh_create
+      description: |-
+        Takes a refresh type JSON web token and returns an access type JSON web
+        token if the refresh token is valid.
+      tags:
+      - token
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRefresh'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenRefresh'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenRefresh'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenRefresh'
+          description: ''
+  /api/user/login/:
+    post:
+      operationId: user_login_create
+      tags:
+      - user
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AuthToken'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AuthToken'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthToken'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthToken'
+          description: ''
+  /api/user/me/:
+    get:
+      operationId: user_me_retrieve
+      tags:
+      - user
+      security:
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+    put:
+      operationId: user_me_update
+      tags:
+      - user
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/User'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/User'
+        required: true
+      security:
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+    patch:
+      operationId: user_me_partial_update
+      tags:
+      - user
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedUser'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedUser'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedUser'
+      security:
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+  /api/user/register/:
+    post:
+      operationId: user_register_create
+      tags:
+      - user
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/User'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/User'
+        required: true
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+components:
+  schemas:
+    Actor:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        first_name:
+          type: string
+          maxLength: 255
+        last_name:
+          type: string
+          maxLength: 255
+        full_name:
+          type: string
+          readOnly: true
+      required:
+      - first_name
+      - full_name
+      - id
+      - last_name
+    AuthToken:
+      type: object
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+      required:
+      - email
+      - password
+    CinemaHall:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 255
+        rows:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+        seats_in_row:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+        capacity:
+          type: integer
+          readOnly: true
+      required:
+      - capacity
+      - id
+      - name
+      - rows
+      - seats_in_row
+    Genre:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 255
+      required:
+      - id
+      - name
+    Movie:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          maxLength: 255
+        description:
+          type: string
+        duration:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+        genres:
+          type: array
+          items:
+            type: integer
+        actors:
+          type: array
+          items:
+            type: integer
+      required:
+      - actors
+      - description
+      - duration
+      - genres
+      - id
+      - title
+    MovieDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          maxLength: 255
+        description:
+          type: string
+        duration:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+        genres:
+          type: array
+          items:
+            $ref: '#/components/schemas/Genre'
+          readOnly: true
+        actors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Actor'
+          readOnly: true
+        image:
+          type: string
+          format: uri
+          nullable: true
+      required:
+      - actors
+      - description
+      - duration
+      - genres
+      - id
+      - title
+    MovieImage:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        image:
+          type: string
+          format: uri
+          nullable: true
+      required:
+      - id
+    MovieList:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          maxLength: 255
+        description:
+          type: string
+        duration:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+        genres:
+          type: array
+          items:
+            type: string
+          readOnly: true
+        actors:
+          type: array
+          items:
+            type: string
+          readOnly: true
+        image:
+          type: string
+          format: uri
+          nullable: true
+      required:
+      - actors
+      - description
+      - duration
+      - genres
+      - id
+      - title
+    MovieSession:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        show_time:
+          type: string
+          format: date-time
+        movie:
+          type: integer
+        cinema_hall:
+          type: integer
+      required:
+      - cinema_hall
+      - id
+      - movie
+      - show_time
+    MovieSessionDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        show_time:
+          type: string
+          format: date-time
+        movie:
+          allOf:
+          - $ref: '#/components/schemas/MovieList'
+          readOnly: true
+        cinema_hall:
+          allOf:
+          - $ref: '#/components/schemas/CinemaHall'
+          readOnly: true
+        taken_places:
+          type: array
+          items:
+            $ref: '#/components/schemas/TicketSeats'
+          readOnly: true
+      required:
+      - cinema_hall
+      - id
+      - movie
+      - show_time
+      - taken_places
+    MovieSessionList:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        show_time:
+          type: string
+          format: date-time
+        movie_title:
+          type: string
+          readOnly: true
+        movie_image:
+          type: string
+          format: uri
+          readOnly: true
+        cinema_hall_name:
+          type: string
+          readOnly: true
+        cinema_hall_capacity:
+          type: integer
+          readOnly: true
+        tickets_available:
+          type: integer
+          readOnly: true
+      required:
+      - cinema_hall_capacity
+      - cinema_hall_name
+      - id
+      - movie_image
+      - movie_title
+      - show_time
+      - tickets_available
+    Order:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        tickets:
+          type: array
+          items:
+            $ref: '#/components/schemas/Ticket'
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - tickets
+    OrderList:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        tickets:
+          type: array
+          items:
+            $ref: '#/components/schemas/TicketList'
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - tickets
+    PaginatedOrderListList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderList'
+    PatchedMovieSession:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        show_time:
+          type: string
+          format: date-time
+        movie:
+          type: integer
+        cinema_hall:
+          type: integer
+    PatchedUser:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        email:
+          type: string
+          format: email
+          title: Email address
+          maxLength: 254
+        password:
+          type: string
+          writeOnly: true
+          maxLength: 128
+          minLength: 5
+        is_staff:
+          type: boolean
+          readOnly: true
+          title: Staff status
+          description: Designates whether the user can log into this admin site.
+    Ticket:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        row:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+        seat:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+        movie_session:
+          type: integer
+      required:
+      - id
+      - movie_session
+      - row
+      - seat
+    TicketList:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        row:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+        seat:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+        movie_session:
+          allOf:
+          - $ref: '#/components/schemas/MovieSessionList'
+          readOnly: true
+      required:
+      - id
+      - movie_session
+      - row
+      - seat
+    TicketSeats:
+      type: object
+      properties:
+        row:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+        seat:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+      required:
+      - row
+      - seat
+    TokenObtainPair:
+      type: object
+      properties:
+        email:
+          type: string
+          writeOnly: true
+        password:
+          type: string
+          writeOnly: true
+        access:
+          type: string
+          readOnly: true
+        refresh:
+          type: string
+          readOnly: true
+      required:
+      - access
+      - email
+      - password
+      - refresh
+    TokenRefresh:
+      type: object
+      properties:
+        access:
+          type: string
+          readOnly: true
+        refresh:
+          type: string
+          writeOnly: true
+      required:
+      - access
+      - refresh
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        email:
+          type: string
+          format: email
+          title: Email address
+          maxLength: 254
+        password:
+          type: string
+          writeOnly: true
+          maxLength: 128
+          minLength: 5
+        is_staff:
+          type: boolean
+          readOnly: true
+          title: Staff status
+          description: Designates whether the user can log into this admin site.
+      required:
+      - email
+      - id
+      - is_staff
+      - password
+  securitySchemes:
+    jwtAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    tokenAuth:
+      type: apiKey
+      in: header
+      name: Authorization
+      description: Token-based authentication with required prefix "Token"
