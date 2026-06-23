@@ -160,20 +160,23 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
     serializer_class = MovieSessionSerializer
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
-    OpenApiParameter(
-        name="date",
-        type=OpenApiTypes.DATE,
-        description=(
-            "Filter movie sessions by date. "
-            "Format: YYYY-MM-DD."
-        ),
-    ),
-    OpenApiParameter(
-        name="movie",
-        type=OpenApiTypes.INT,
-        description="Filter movie sessions by movie id.",
-    ),
-
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="date",
+                type=OpenApiTypes.DATE,
+                description=(
+                    "Filter movie sessions by date. "
+                    "Format: YYYY-MM-DD."
+                ),
+            ),
+            OpenApiParameter(
+                name="movie",
+                type=OpenApiTypes.INT,
+                description="Filter movie sessions by movie id.",
+            ),
+        ]
+    )
     def list(self, request, *args, **kwargs):
         return super().list(request, *args, **kwargs)
 
@@ -221,7 +224,7 @@ class OrderViewSet(
     permission_classes = (IsAuthenticated,)
 
     def get_queryset(self):
-        return Order.objects.filter(user=self.request.user)
+        return self.queryset.filter(user=self.request.user)
 
     def get_serializer_class(self):
         if self.action == "list":
