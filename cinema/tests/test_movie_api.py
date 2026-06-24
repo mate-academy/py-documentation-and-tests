@@ -3,7 +3,6 @@ import os
 
 from PIL import Image
 from django.contrib.auth import get_user_model
-from django.db.migrations import serializer
 from django.test import TestCase
 from django.urls import reverse
 
@@ -12,7 +11,6 @@ from rest_framework import status
 
 from cinema.models import Movie, MovieSession, CinemaHall, Genre, Actor
 from cinema.serializers import (
-    MovieSerializer,
     MovieListSerializer,
     MovieDetailSerializer,
 )
