@@ -1,116 +1,113 @@
-import pytest
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient
+from django.test import TestCase
 
 from cinema.models import Movie, Genre, Actor
 from user.models import User
 
 
-pytestmark = pytest.mark.django_db
-
-
 MOVIE_URL = reverse("cinema:movie-list")
 
 
-@pytest.fixture
-def user():
-    return User.objects.create_user(
-        email="user@test.com",
-        password="testpass123",
-    )
+class MovieViewSetTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
 
+        self.user = User.objects.create_user(
+            email="user@test.com",
+            password="testpass123",
+        )
 
-@pytest.fixture
-def admin():
-    return User.objects.create_superuser(
-        email="admin@test.com",
-        password="adminpass123",
-    )
+        self.admin = User.objects.create_superuser(
+            email="admin@test.com",
+            password="adminpass123",
+        )
 
+        self.genre = Genre.objects.create(name="Action")
+        self.actor = Actor.objects.create(first_name="Tom", last_name="Hanks")
 
-@pytest.fixture
-def client():
-    return APIClient()
+        self.movie = Movie.objects.create(
+            title="Test Movie",
+            description="Test description",
+            duration=120
+        )
 
+        self.movie.genres.add(self.genre)
+        self.movie.actors.add(self.actor)
 
-@pytest.fixture
-def auth_client(user):
-    client = APIClient()
-    client.force_authenticate(user=user)
-    return client
+    def auth_user(self):
+        self.client.force_authenticate(user=self.user)
 
+    def auth_admin(self):
+        self.client.force_authenticate(user=self.admin)
 
-@pytest.fixture
-def admin_client(admin):
-    client = APIClient()
-    client.force_authenticate(user=admin)
-    return client
+    def test_list_movies(self):
+        res = self.client.get(MOVIE_URL)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertGreaterEqual(len(res.data), 1)
 
+    def test_retrieve_movie(self):
+        url = reverse("cinema:movie-detail", args=[self.movie.id])
+        res = self.client.get(url)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data["id"], self.movie.id)
 
-@pytest.fixture
-def genre():
-    return Genre.objects.create(name="Action")
+    def test_create_movie_admin(self):
+        self.auth_admin()
 
+        payload = {
+            "title": "New Movie",
+            "description": "Some description",
+            "duration": 100,
+            "genres": [self.genre.id],
+            "actors": [self.actor.id],
+        }
 
-@pytest.fixture
-def actor():
-    return Actor.objects.create(first_name="Tom", last_name="Hanks")
+        res = self.client.post(MOVIE_URL, payload)
 
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        self.assertTrue(Movie.objects.filter(title="New Movie").exists())
 
-@pytest.fixture
-def movie(genre, actor):
-    movie = Movie.objects.create(title="Test Movie")
-    movie.genres.add(genre)
-    movie.actors.add(actor)
-    return movie
+    def test_create_movie_forbidden(self):
+        self.auth_user()
 
+        payload = {
+            "title": "Bad Movie",
+            "description": "Some description",
+            "duration": 100,
+            "genres": [self.genre.id],
+            "actors": [self.actor.id],
+        }
 
-def test_list_movies(client, movie):
-    res = client.get(MOVIE_URL)
-    assert res.status_code == status.HTTP_200_OK
-    assert len(res.data) >= 1
+        res = self.client.post(MOVIE_URL, payload)
 
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
 
-def test_retrieve_movie(client, movie):
-    url = reverse("cinema:movie-detail", args=[movie.id])
-    res = client.get(url)
-    assert res.status_code == status.HTTP_200_OK
-    assert res.data["id"] == movie.id
+    def test_create_movie_anon(self):
+        payload = {
+            "title": "Anon Movie",
+            "description": "Some description",
+            "duration": 100,
+            "genres": [self.genre.id],
+            "actors": [self.actor.id],
+        }
 
+        res = self.client.post(MOVIE_URL, payload)
 
-def test_create_movie_admin(admin_client):
-    payload = {"title": "New Movie"}
-    res = admin_client.post(MOVIE_URL, payload)
-    assert res.status_code == status.HTTP_201_CREATED
-    assert Movie.objects.filter(title="New Movie").exists()
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
 
+    def test_filter_by_title(self):
+        res = self.client.get(MOVIE_URL, {"title": "Test"})
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertGreaterEqual(len(res.data), 1)
 
-def test_create_movie_forbidden(auth_client):
-    payload = {"title": "Bad Movie"}
-    res = auth_client.post(MOVIE_URL, payload)
-    assert res.status_code == status.HTTP_403_FORBIDDEN
+    def test_filter_by_genre(self):
+        res = self.client.get(MOVIE_URL, {"genres": self.genre.id})
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertGreaterEqual(len(res.data), 1)
 
-
-def test_create_movie_anon(client):
-    payload = {"title": "Anon Movie"}
-    res = client.post(MOVIE_URL, payload)
-    assert res.status_code == status.HTTP_403_FORBIDDEN
-
-
-def test_filter_by_title(client, movie):
-    res = client.get(MOVIE_URL, {"title": "Test"})
-    assert res.status_code == status.HTTP_200_OK
-    assert len(res.data) >= 1
-
-
-def test_filter_by_genre(client, movie, genre):
-    res = client.get(MOVIE_URL, {"genres": genre.id})
-    assert res.status_code == status.HTTP_200_OK
-    assert len(res.data) >= 1
-
-
-def test_filter_by_actor(client, movie, actor):
-    res = client.get(MOVIE_URL, {"actors": actor.id})
-    assert res.status_code == status.HTTP_200_OK
-    assert len(res.data) >= 1
+    def test_filter_by_actor(self):
+        res = self.client.get(MOVIE_URL, {"actors": self.actor.id})
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertGreaterEqual(len(res.data), 1)
