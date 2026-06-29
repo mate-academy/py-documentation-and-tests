@@ -210,9 +210,7 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
     def get_queryset(self):
-        date = self.request.request.query_params.get("date") if hasattr(
-            self.request, "request"
-        ) else self.request.query_params.get("date")
+        date = self.request.query_params.get("date")
         movie_id_str = self.request.query_params.get("movie")
 
         queryset = self.queryset
