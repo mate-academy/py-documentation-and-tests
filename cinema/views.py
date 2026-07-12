@@ -179,16 +179,23 @@ class MovieList(mixins.ListModelMixin, mixins.CreateModelMixin, GenericAPIView):
     @extend_schema(
         description="Retrieve a list of movies with optional filters.",
         parameters=[
-            OpenApiParameter("title", type=OpenApiTypes.STR, required=False),
+            OpenApiParameter(
+                "title",
+                type=OpenApiTypes.STR,
+                required=False,
+                description="Filter movies by title substring (case-insensitive).",
+            ),
             OpenApiParameter(
                 "genres",
                 type={"type": "array", "items": {"type": "integer"}},
                 required=False,
+                description="Filter movies by a comma-separated list of genre IDs (e.g., 1,2,3).",
             ),
             OpenApiParameter(
                 "actors",
                 type={"type": "array", "items": {"type": "integer"}},
                 required=False,
+                description="Filter movies by a comma-separated list of actor IDs (e.g., 1,2,3).",
             ),
         ],
     )
@@ -287,8 +294,18 @@ class MovieSessionList(
     @extend_schema(
         description="Retrieve a list of movie sessions with optional filters.",
         parameters=[
-            OpenApiParameter("date", type=OpenApiTypes.DATE, required=False),
-            OpenApiParameter("movie", type=OpenApiTypes.INT, required=False),
+            OpenApiParameter(
+                "date",
+                type=OpenApiTypes.DATE,
+                required=False,
+                description="Filter movie sessions by date in YYYY-MM-DD format.",
+            ),
+            OpenApiParameter(
+                "movie",
+                type=OpenApiTypes.INT,
+                required=False,
+                description="Filter movie sessions by a specific movie ID.",
+            ),
         ],
     )
     def get(self, request, *args, **kwargs):
@@ -307,7 +324,7 @@ class MovieSessionDetail(
     queryset = MovieSession.objects.all().select_related("movie", "cinema_hall")
     serializer_class = MovieSessionSerializer
     authentication_classes = (JWTAuthentication,)
-    permission_classes = (IsAdminOrIfAuthorizedReadOnly if 'IsAdminOrIfAuthorizedReadOnly' in globals() else IsAdminOrIfAuthenticatedReadOnly,)
+    permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
     def get_serializer_class(self):
         if self.request.method == "GET":
