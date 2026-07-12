@@ -1,13 +1,15 @@
 from datetime import datetime
 
 from django.db.models import F, Count
-from rest_framework import viewsets, mixins, status
-from rest_framework.authentication import TokenAuthentication
-from rest_framework.decorators import action
-from rest_framework.pagination import PageNumberPagination
+from django.http import Http404
+from rest_framework import mixins, status
+from rest_framework.views import APIView
+from rest_framework.generics import GenericAPIView
+from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
-from rest_framework.viewsets import GenericViewSet, ReadOnlyModelViewSet
+from drf_spectacular.utils import extend_schema, OpenApiParameter
+from drf_spectacular.types import OpenApiTypes
 
 from cinema.models import Genre, Actor, CinemaHall, Movie, MovieSession, Order
 from cinema.permissions import IsAdminOrIfAuthenticatedReadOnly
@@ -28,57 +30,128 @@ from cinema.serializers import (
 )
 
 
-class GenreViewSet(
-    mixins.CreateModelMixin,
-    mixins.ListModelMixin,
-    GenericViewSet,
+class GenreList(mixins.ListModelMixin, mixins.CreateModelMixin, GenericAPIView):
+    queryset = Genre.objects.all()
+    serializer_class = GenreSerializer
+    authentication_classes = (JWTAuthentication,)
+    permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
+
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        return self.create(request, *args, **kwargs)
+
+
+class GenreDetail(
+    mixins.RetrieveModelMixin,
+    mixins.UpdateModelMixin,
+    mixins.DestroyModelMixin,
+    GenericAPIView,
 ):
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
-    authentication_classes = (TokenAuthentication,)
+    authentication_classes = (JWTAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
+    def get(self, request, *args, **kwargs):
+        return self.retrieve(request, *args, **kwargs)
 
-class ActorViewSet(
-    mixins.CreateModelMixin,
-    mixins.ListModelMixin,
-    GenericViewSet,
+    def put(self, request, *args, **kwargs):
+        return self.update(request, *args, **kwargs)
+
+    def patch(self, request, *args, **kwargs):
+        return self.partial_update(request, *args, **kwargs)
+
+    def delete(self, request, *args, **kwargs):
+        return self.destroy(request, *args, **kwargs)
+
+
+class ActorList(mixins.ListModelMixin, mixins.CreateModelMixin, GenericAPIView):
+    queryset = Actor.objects.all()
+    serializer_class = ActorSerializer
+    authentication_classes = (JWTAuthentication,)
+    permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
+
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        return self.create(request, *args, **kwargs)
+
+
+class ActorDetail(
+    mixins.RetrieveModelMixin,
+    mixins.UpdateModelMixin,
+    mixins.DestroyModelMixin,
+    GenericAPIView,
 ):
     queryset = Actor.objects.all()
     serializer_class = ActorSerializer
-    authentication_classes = (TokenAuthentication,)
+    authentication_classes = (JWTAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
+    def get(self, request, *args, **kwargs):
+        return self.retrieve(request, *args, **kwargs)
 
-class CinemaHallViewSet(
-    mixins.CreateModelMixin,
-    mixins.ListModelMixin,
-    GenericViewSet,
+    def put(self, request, *args, **kwargs):
+        return self.update(request, *args, **kwargs)
+
+    def patch(self, request, *args, **kwargs):
+        return self.partial_update(request, *args, **kwargs)
+
+    def delete(self, request, *args, **kwargs):
+        return self.destroy(request, *args, **kwargs)
+
+
+class CinemaHallList(mixins.ListModelMixin, mixins.CreateModelMixin, GenericAPIView):
+    queryset = CinemaHall.objects.all()
+    serializer_class = CinemaHallSerializer
+    authentication_classes = (JWTAuthentication,)
+    permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
+
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        return self.create(request, *args, **kwargs)
+
+
+class CinemaHallDetail(
+    mixins.RetrieveModelMixin,
+    mixins.UpdateModelMixin,
+    mixins.DestroyModelMixin,
+    GenericAPIView,
 ):
     queryset = CinemaHall.objects.all()
     serializer_class = CinemaHallSerializer
-    authentication_classes = (TokenAuthentication,)
+    authentication_classes = (JWTAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
+    def get(self, request, *args, **kwargs):
+        return self.retrieve(request, *args, **kwargs)
 
-class MovieViewSet(
-    mixins.ListModelMixin,
-    mixins.CreateModelMixin,
-    mixins.RetrieveModelMixin,
-    viewsets.GenericViewSet,
-):
+    def put(self, request, *args, **kwargs):
+        return self.update(request, *args, **kwargs)
+
+    def patch(self, request, *args, **kwargs):
+        return self.partial_update(request, *args, **kwargs)
+
+    def delete(self, request, *args, **kwargs):
+        return self.destroy(request, *args, **kwargs)
+
+
+class MovieList(mixins.ListModelMixin, mixins.CreateModelMixin, GenericAPIView):
     queryset = Movie.objects.prefetch_related("genres", "actors")
     serializer_class = MovieSerializer
-    authentication_classes = (TokenAuthentication,)
+    authentication_classes = (JWTAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
     @staticmethod
     def _params_to_ints(qs):
-        """Converts a list of string IDs to a list of integers"""
         return [int(str_id) for str_id in qs.split(",")]
 
     def get_queryset(self):
-        """Retrieve the movies with filters"""
         title = self.request.query_params.get("title")
         genres = self.request.query_params.get("genres")
         actors = self.request.query_params.get("actors")
@@ -99,36 +172,91 @@ class MovieViewSet(
         return queryset.distinct()
 
     def get_serializer_class(self):
-        if self.action == "list":
+        if self.request.method == "GET":
             return MovieListSerializer
-
-        if self.action == "retrieve":
-            return MovieDetailSerializer
-
-        if self.action == "upload_image":
-            return MovieImageSerializer
-
         return MovieSerializer
 
-    @action(
-        methods=["POST"],
-        detail=True,
-        url_path="upload-image",
-        permission_classes=[IsAdminUser],
+    @extend_schema(
+        description="Retrieve a list of movies with optional filters.",
+        parameters=[
+            OpenApiParameter(
+                "title",
+                type=OpenApiTypes.STR,
+                required=False,
+                description="Filter movies by title substring (case-insensitive).",
+            ),
+            OpenApiParameter(
+                "genres",
+                type={"type": "array", "items": {"type": "integer"}},
+                required=False,
+                description="Filter movies by a comma-separated list of genre IDs (e.g., 1,2,3).",
+            ),
+            OpenApiParameter(
+                "actors",
+                type={"type": "array", "items": {"type": "integer"}},
+                required=False,
+                description="Filter movies by a comma-separated list of actor IDs (e.g., 1,2,3).",
+            ),
+        ],
     )
-    def upload_image(self, request, pk=None):
-        """Endpoint for uploading image to specific movie"""
-        movie = self.get_object()
-        serializer = self.get_serializer(movie, data=request.data)
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
 
+    def post(self, request, *args, **kwargs):
+        return self.create(request, *args, **kwargs)
+
+
+class MovieDetail(
+    mixins.RetrieveModelMixin,
+    mixins.UpdateModelMixin,
+    mixins.DestroyModelMixin,
+    GenericAPIView,
+):
+    queryset = Movie.objects.prefetch_related("genres", "actors")
+    serializer_class = MovieSerializer
+    authentication_classes = (JWTAuthentication,)
+    permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
+
+    def get_serializer_class(self):
+        if self.request.method == "GET":
+            return MovieDetailSerializer
+        return MovieSerializer
+
+    def get(self, request, *args, **kwargs):
+        return self.retrieve(request, *args, **kwargs)
+
+    def put(self, request, *args, **kwargs):
+        return self.update(request, *args, **kwargs)
+
+    def patch(self, request, *args, **kwargs):
+        return self.partial_update(request, *args, **kwargs)
+
+    def delete(self, request, *args, **kwargs):
+        return self.destroy(request, *args, **kwargs)
+
+
+class MovieUploadImage(APIView):
+    authentication_classes = (JWTAuthentication,)
+    permission_classes = (IsAdminUser,)
+
+    def get_object(self, pk):
+        try:
+            return Movie.objects.get(pk=pk)
+        except Movie.DoesNotExist:
+            raise Http404
+
+    def post(self, request, pk, *args, **kwargs):
+        movie = self.get_object(pk)
+        serializer = MovieImageSerializer(movie, data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
-
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class MovieSessionViewSet(viewsets.ModelViewSet):
+class MovieSessionList(
+    mixins.ListModelMixin, mixins.CreateModelMixin, GenericAPIView
+):
     queryset = (
         MovieSession.objects.all()
         .select_related("movie", "cinema_hall")
@@ -140,7 +268,7 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
         )
     )
     serializer_class = MovieSessionSerializer
-    authentication_classes = (TokenAuthentication,)
+    authentication_classes = (JWTAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
     def get_queryset(self):
@@ -159,41 +287,84 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
         return queryset
 
     def get_serializer_class(self):
-        if self.action == "list":
+        if self.request.method == "GET":
             return MovieSessionListSerializer
-
-        if self.action == "retrieve":
-            return MovieSessionDetailSerializer
-
         return MovieSessionSerializer
 
+    @extend_schema(
+        description="Retrieve a list of movie sessions with optional filters.",
+        parameters=[
+            OpenApiParameter(
+                "date",
+                type=OpenApiTypes.DATE,
+                required=False,
+                description="Filter movie sessions by date in YYYY-MM-DD format.",
+            ),
+            OpenApiParameter(
+                "movie",
+                type=OpenApiTypes.INT,
+                required=False,
+                description="Filter movie sessions by a specific movie ID.",
+            ),
+        ],
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
 
-class OrderPagination(PageNumberPagination):
-    page_size = 10
-    max_page_size = 100
+    def post(self, request, *args, **kwargs):
+        return self.create(request, *args, **kwargs)
 
 
-class OrderViewSet(
-    mixins.ListModelMixin,
-    mixins.CreateModelMixin,
-    GenericViewSet,
+class MovieSessionDetail(
+    mixins.RetrieveModelMixin,
+    mixins.UpdateModelMixin,
+    mixins.DestroyModelMixin,
+    GenericAPIView,
 ):
+    queryset = MovieSession.objects.all().select_related("movie", "cinema_hall")
+    serializer_class = MovieSessionSerializer
+    authentication_classes = (JWTAuthentication,)
+    permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
+
+    def get_serializer_class(self):
+        if self.request.method == "GET":
+            return MovieSessionDetailSerializer
+        return MovieSessionSerializer
+
+    def get(self, request, *args, **kwargs):
+        return self.retrieve(request, *args, **kwargs)
+
+    def put(self, request, *args, **kwargs):
+        return self.update(request, *args, **kwargs)
+
+    def patch(self, request, *args, **kwargs):
+        return self.partial_update(request, *args, **kwargs)
+
+    def delete(self, request, *args, **kwargs):
+        return self.destroy(request, *args, **kwargs)
+
+
+class OrderList(mixins.ListModelMixin, mixins.CreateModelMixin, GenericAPIView):
     queryset = Order.objects.prefetch_related(
         "tickets__movie_session__movie", "tickets__movie_session__cinema_hall"
     )
     serializer_class = OrderSerializer
-    pagination_class = OrderPagination
-    authentication_classes = (TokenAuthentication,)
+    authentication_classes = (JWTAuthentication,)
     permission_classes = (IsAuthenticated,)
 
     def get_queryset(self):
-        return Order.objects.filter(user=self.request.user)
+        return self.queryset.filter(user=self.request.user)
 
     def get_serializer_class(self):
-        if self.action == "list":
+        if self.request.method == "GET":
             return OrderListSerializer
-
         return OrderSerializer
+
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        return self.create(request, *args, **kwargs)
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
