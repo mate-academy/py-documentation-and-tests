@@ -19,7 +19,7 @@ from cinema.serializers import (
     MovieImageSerializer,
     MovieSessionSerializer,
     MovieSessionListSerializer,
-    MovieSessionDetailSerializer,
+    MovieSessionDetailSerializer, MovieListSerializer, MovieDetailSerializer,
 )
 
 
@@ -74,6 +74,32 @@ class MovieViewSet(
     serializer_class = MovieSerializer
     authentication_classes = (JWTAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
+
+    def get_queryset(self):
+        queryset = self.queryset
+        params = self.request.query_params
+
+        title = params.get("title")
+        genres = params.get("genres")
+        actors = params.get("actors")
+
+        if title:
+            queryset = queryset.filter(title__icontains=title)
+        if genres:
+            genre_ids = [int(g) for g in genres.split(",") if g.isdigit()]
+            queryset = queryset.filter(genres__id__in=genre_ids)
+        if actors:
+            actor_ids = [int(a) for a in actors.split(",") if a.isdigit()]
+            queryset = queryset.filter(actors__id__in=actor_ids)
+
+        return queryset.distinct()
+
+    def get_serializer_class(self):
+        if self.action == "list":
+            return MovieListSerializer
+        if self.action == "retrieve":
+            return MovieDetailSerializer
+        return MovieSerializer
 
     @extend_schema(
         description="Retrieve a list of movies with optional filters",
@@ -138,6 +164,18 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
             return MovieSessionDetailSerializer
         return MovieSessionSerializer
 
+    def get_queryset(self):
+        queryset = self.queryset
+        date = self.request.query_params.get("date")
+        movie = self.request.query_params.get("movie")
+
+        if date:
+            queryset = queryset.filter(show_time__date=date)
+        if movie:
+            queryset = queryset.filter(movie_id=movie)
+
+        return queryset
+
     @extend_schema(
         description="Retrieve a list of movie sessions with optional filters",
         parameters=[
@@ -167,19 +205,20 @@ class OrderPagination(PageNumberPagination):
 class OrderViewSet(
     mixins.ListModelMixin, mixins.CreateModelMixin, GenericViewSet
 ):
-    queryset = Order.objects.prefetch_related(
-        "tickets__movie_session__movie", "tickets__movie_session__cinema_hall"
-    )
+    queryset = Order.objects.none()
     serializer_class = OrderSerializer
     pagination_class = OrderPagination
     authentication_classes = (JWTAuthentication,)
     permission_classes = (IsAuthenticated,)
 
+    def get_queryset(self):
+        return (
+            Order.objects.filter(user=self.request.user)
+            .prefetch_related(
+                "tickets__movie_session__movie",
+                "tickets__movie_session__cinema_hall",
+            )
+        )
+
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
-
-    @extend_schema(
-        description="Retrieve a list of user orders or create a new one"
-    )
-    def list(self, request, *args, **kwargs):
-        return super().list(request, *args, **kwargs)

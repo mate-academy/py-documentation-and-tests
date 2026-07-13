@@ -24,27 +24,32 @@ class MovieViewSetTests(APITestCase):
         self.movie.actors.add(self.actor)
 
         self.url = reverse("cinema:movie-list")
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.token}")
 
     def test_list_movies_unauthorized(self):
+        self.client.credentials()  # скидаємо токен
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_list_movies_authorized(self):
-        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.token}")
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertGreaterEqual(len(response.data), 1)
 
     def test_filter_movies_by_title(self):
-        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.token}")
         response = self.client.get(self.url, {"title": "Test"})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["title"], "Test Movie")
 
     def test_filter_movies_by_genre(self):
-        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.token}")
         response = self.client.get(self.url, {"genres": str(self.genre.id)})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
+        self.assertIn("Action", response.data[0]["genres"])
 
     def test_filter_movies_by_actor(self):
-        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.token}")
         response = self.client.get(self.url, {"actors": str(self.actor.id)})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
+        self.assertIn("John Doe", response.data[0]["actors"])

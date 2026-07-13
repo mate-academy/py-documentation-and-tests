@@ -29,13 +29,18 @@ class OrderViewSetTests(APITestCase):
         )
 
         self.url = reverse("cinema:order-list")
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.token}")
 
-    def test_list_orders_unauthorized(self):
+    def test_list_orders_authorized(self):
+        order = Order.objects.create(user=self.user)
         response = self.client.get(self.url)
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        self.assertEqual(response.data["count"], 1)
+        self.assertEqual(len(response.data["results"]), 1)
+        self.assertEqual(response.data["results"][0]["id"], order.id)
 
     def test_create_order_with_ticket(self):
-        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.token}")
         payload = {
             "tickets": [
                 {"row": 1, "seat": 1, "movie_session": self.session.id}
@@ -46,8 +51,10 @@ class OrderViewSetTests(APITestCase):
         self.assertEqual(Order.objects.count(), 1)
         self.assertEqual(Ticket.objects.count(), 1)
 
-    def test_list_orders_authorized(self):
-        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.token}")
-        Order.objects.create(user=self.user)
-        response = self.client.get(self.url)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        order = Order.objects.first()
+        ticket = Ticket.objects.first()
+        self.assertEqual(order.user, self.user)
+        self.assertEqual(ticket.movie_session, self.session)
+        self.assertEqual(ticket.row, 1)
+        self.assertEqual(ticket.seat, 1)
+
