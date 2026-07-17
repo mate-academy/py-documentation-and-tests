@@ -3,7 +3,6 @@ import os
 
 import django
 from PIL import Image
-from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
@@ -12,7 +11,7 @@ from rest_framework.test import APIClient
 from rest_framework.test import APITestCase
 from rest_framework import status
 
-from cinema.models import Movie, MovieSession, CinemaHall, Genre, Actor
+from cinema.models import Movie, CinemaHall, MovieSession, Genre, Actor
 
 MOVIE_URL = reverse("cinema:movie-list")
 MOVIE_SESSION_URL = reverse("cinema:moviesession-list")
@@ -164,30 +163,63 @@ class MovieImageUploadTests(TestCase):
 
         self.assertIn("movie_image", res.data[0].keys())
 
+
 class MovieAPITests(APITestCase):
     def setUp(self):
-        self.user = get_user_model().objects.create_superuser(
-            email="admin.user@gmail.com", password="password", is_staff=True
+        self.client = APIClient()
+        self.user = get_user_model().objects.create_user(
+            email="admin@cinema.com", password="password123", is_staff=True
         )
-        self.client.force_authenticate(self.user)
-        self.url = reverse("cinema:movie-list")
-        self.genre = Genre.objects.create(name="Drama")
+        self.client.force_authenticate(user=self.user)
+
+        # Создаем объекты
+        self.genre = Genre.objects.create(name="Action")
         self.actor = Actor.objects.create(first_name="Tom", last_name="Hardy")
+        self.movie = Movie.objects.create(
+            title="Inception", description="Desc", duration=148
+        )
+        self.movie.genres.set([self.genre])
+        self.movie.actors.set([self.actor])
+
+        # URL-адреса
+        self.list_url = reverse("cinema:movie-list")
+        self.detail_url = reverse("cinema:movie-detail", args=[self.movie.id])
+
+    def test_list_movies(self):
+        res = self.client.get(self.list_url)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+
     def test_create_movie(self):
         payload = {
-            "title": "Test Movie",
-            "description": "Test desc",
+            "title": "New Movie",
+            "description": "Desc",
             "duration": 90,
             "genres": [self.genre.id],
             "actors": [self.actor.id]
         }
-        res = self.client.post(self.url, payload)
+        res = self.client.post(self.list_url, payload)
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(Movie.objects.count(), 1)
-    def test_list_movies(self):
-        movie = Movie.objects.create(title="Title", description="Description", duration=90,)
-        genre = Genre.objects.create(name="Action")  # Создаем жанр в базе
-        movie.genres.set([genre.id])
-        res = self.client.get(self.url)
+
+    def test_filter_movies_by_title(self):
+        res = self.client.get(self.list_url, {"title": "Inception"})
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data[0]["title"], "Inception")
+
+    def test_filter_movies_by_genre(self):
+        res = self.client.get(self.list_url, {"genres": self.genre.id})
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(len(res.data), 1)
+
+    def test_retrieve_movie(self):
+        res = self.client.get(self.detail_url)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data["title"], self.movie.title)
+
+    def test_update_movie(self):
+        payload = {"title": "Updated Title"}
+        res = self.client.patch(self.detail_url, payload)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+
+    def test_delete_movie(self):
+        res = self.client.delete(self.detail_url)
+        self.assertEqual(res.status_code, status.HTTP_204_NO_CONTENT)
