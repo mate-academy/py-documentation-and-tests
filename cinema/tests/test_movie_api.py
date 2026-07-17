@@ -7,11 +7,15 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 
+from cinema.tests.utils import (
+    sample_movie_session
+)
+
 from rest_framework.test import APIClient
 from rest_framework.test import APITestCase
 from rest_framework import status
 
-from cinema.models import Movie, CinemaHall, MovieSession, Genre, Actor
+from cinema.models import Movie, Genre, Actor
 
 MOVIE_URL = reverse("cinema:movie-list")
 MOVIE_SESSION_URL = reverse("cinema:moviesession-list")
@@ -45,21 +49,6 @@ def sample_actor(**params):
     defaults.update(params)
 
     return Actor.objects.create(**defaults)
-
-
-def sample_movie_session(**params):
-    cinema_hall = CinemaHall.objects.create(
-        name="Blue", rows=20, seats_in_row=20
-    )
-
-    defaults = {
-        "show_time": "2022-06-02 14:00:00",
-        "movie": None,
-        "cinema_hall": cinema_hall,
-    }
-    defaults.update(params)
-
-    return MovieSession.objects.create(**defaults)
 
 
 def image_upload_url(movie_id):
@@ -223,3 +212,11 @@ class MovieAPITests(APITestCase):
     def test_delete_movie(self):
         res = self.client.delete(self.detail_url)
         self.assertEqual(res.status_code, status.HTTP_204_NO_CONTENT)
+
+    def test_filter_movies_by_actors(self):
+        res = self.client.get(self.list_url, {"actors": self.actor.id})
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(res.data), 1)
+
+        full_name = f"{self.actor.first_name} {self.actor.last_name}"
+        self.assertIn(full_name, res.data[0]["actors"])
