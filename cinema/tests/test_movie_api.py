@@ -1,18 +1,24 @@
 import tempfile
 import os
 
+import django
 from PIL import Image
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 
 from rest_framework.test import APIClient
+from rest_framework.test import APITestCase
 from rest_framework import status
 
 from cinema.models import Movie, MovieSession, CinemaHall, Genre, Actor
 
 MOVIE_URL = reverse("cinema:movie-list")
 MOVIE_SESSION_URL = reverse("cinema:moviesession-list")
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "project_name.settings")
+django.setup()
 
 
 def sample_movie(**params):
@@ -157,3 +163,31 @@ class MovieImageUploadTests(TestCase):
         res = self.client.get(MOVIE_SESSION_URL)
 
         self.assertIn("movie_image", res.data[0].keys())
+
+class MovieAPITests(APITestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_superuser(
+            email="admin.user@gmail.com", password="password", is_staff=True
+        )
+        self.client.force_authenticate(self.user)
+        self.url = reverse("cinema:movie-list")
+        self.genre = Genre.objects.create(name="Drama")
+        self.actor = Actor.objects.create(first_name="Tom", last_name="Hardy")
+    def test_create_movie(self):
+        payload = {
+            "title": "Test Movie",
+            "description": "Test desc",
+            "duration": 90,
+            "genres": [self.genre.id],
+            "actors": [self.actor.id]
+        }
+        res = self.client.post(self.url, payload)
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(Movie.objects.count(), 1)
+    def test_list_movies(self):
+        movie = Movie.objects.create(title="Title", description="Description", duration=90,)
+        genre = Genre.objects.create(name="Action")  # Создаем жанр в базе
+        movie.genres.set([genre.id])
+        res = self.client.get(self.url)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(res.data), 1)
