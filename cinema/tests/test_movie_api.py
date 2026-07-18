@@ -44,9 +44,7 @@ def sample_actor(**params):
 
 
 def sample_movie_session(**params):
-    cinema_hall = CinemaHall.objects.create(
-        name="Blue", rows=20, seats_in_row=20
-    )
+    cinema_hall = CinemaHall.objects.create(name="Blue", rows=20, seats_in_row=20)
 
     defaults = {
         "show_time": "2022-06-02 14:00:00",
@@ -161,7 +159,7 @@ class MovieImageUploadTests(TestCase):
 
 
 class PublicMovieApiTests(APITestCase):
-     def test_auth_required(self):
+    def test_auth_required(self):
         res = self.client.get(MOVIE_URL)
 
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
@@ -248,9 +246,9 @@ class AuthenticatedMovieApiTests(APITestCase):
 
     def test_create_movie_forbidden(self):
         payload = {
-        "title": "Sample movie",
-        "description": "Sample description",
-        "duration": 90,
+            "title": "Sample movie",
+            "description": "Sample description",
+            "duration": 90,
         }
         res = self.client.post(MOVIE_URL, data=payload)
 
@@ -306,8 +304,6 @@ class AdminMovieApiTests(APITestCase):
         }
 
         res = self.client.post(MOVIE_URL, payload)
-
-        print(res.data)
 
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
 

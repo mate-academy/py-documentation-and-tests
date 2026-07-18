@@ -7,8 +7,12 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
-from drf_spectacular.utils import extend_schema, OpenApiParameter
-
+from drf_spectacular.utils import (
+    extend_schema,
+    extend_schema_view,
+    OpenApiParameter,
+    OpenApiTypes,
+)
 from cinema.models import Genre, Actor, CinemaHall, Movie, MovieSession, Order
 from cinema.permissions import IsAdminOrIfAuthenticatedReadOnly
 
@@ -58,6 +62,53 @@ class CinemaHallViewSet(
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
 
+@extend_schema_view(
+    list=extend_schema(
+        summary="Get movie list",
+        description=(
+            "Return a list of movies. Movies can be filtered "
+            "by title, genre IDs and actor IDs."
+        ),
+        parameters=[
+            OpenApiParameter(
+                name="title",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
+                description="Filter movies by title.",
+            ),
+            OpenApiParameter(
+                name="genres",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
+                description=(
+                    "Filter movies by genre IDs separated by commas. " "Example: 1,2,3."
+                ),
+            ),
+            OpenApiParameter(
+                name="actors",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
+                description=(
+                    "Filter movies by actor IDs separated by commas. " "Example: 1,2,3."
+                ),
+            ),
+        ],
+        responses=MovieListSerializer(many=True),
+    ),
+    retrieve=extend_schema(
+        summary="Get movie details",
+        description="Return detailed information about a movie by its ID.",
+        responses=MovieDetailSerializer,
+    ),
+    create=extend_schema(
+        summary="Create movie",
+        description=(
+            "Create a new movie. This operation is available " "only to admin users."
+        ),
+        request=MovieSerializer,
+        responses={201: MovieSerializer},
+    ),
+)
 class MovieViewSet(
     mixins.ListModelMixin,
     mixins.CreateModelMixin,
@@ -94,34 +145,6 @@ class MovieViewSet(
 
         return queryset.distinct()
 
-    @extend_schema(
-        parameters=[
-            OpenApiParameter(
-                name="title",
-                description="Filter by title",
-                required=False,
-                type=str,
-                location=OpenApiParameter.QUERY,
-            ),
-            OpenApiParameter(
-                name="genres",
-                description="Filter movies by genre IDs separated by commas.",
-                required=False,
-                type=str,
-                location=OpenApiParameter.QUERY,
-            ),
-            OpenApiParameter(
-                name="actors",
-                description="Filter movies by actor IDs separated by commas.",
-                required=False,
-                type=str,
-                location=OpenApiParameter.QUERY,
-            ),
-        ]
-    )
-    def list(self, request, *args, **kwargs):
-        return super().list(request, *args, **kwargs)
-
     def get_serializer_class(self):
         if self.action == "list":
             return MovieListSerializer
@@ -134,6 +157,15 @@ class MovieViewSet(
 
         return MovieSerializer
 
+    @extend_schema(
+        summary="Upload movie image",
+        description=(
+            "Upload an image for a specific movie. "
+            "This operation is available only to admin users."
+        ),
+        request=MovieImageSerializer,
+        responses={200: MovieImageSerializer},
+    )
     @action(
         methods=["POST"],
         detail=True,
@@ -208,8 +240,9 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
             ),
         ]
     )
-    def list(self, request, *args,   **kwargs):
+    def list(self, request, *args, **kwargs):
         return super().list(request, *args, **kwargs)
+
 
 class OrderPagination(PageNumberPagination):
     page_size = 10
