@@ -22,7 +22,7 @@ class AthorizedUsersTest(TestCase):
         url = reverse("cinema:movie-list")
         res = self.client.get(url)
         items = Movie.objects.all()
-        serializer = MovieSerializer(items, many=True)
+        serializer = MovieListSerializer(items, many=True)
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(res.data, serializer.data)
@@ -141,7 +141,7 @@ class FilterTests(TestCase):
         res = self.client.get(
             url,
             data={
-                "genres": ",".join(map(str, actors_ids)),
+                "actors": ",".join(map(str, actors_ids)),
             },
         )
 
