@@ -12,7 +12,7 @@ class AthorizedUsersTest(TestCase):
 
     def setUp(self):
         self.client = APIClient()
-        self.user = get_user_model().objects.create_user(
+        self.user = get_user_model().objects.create_superuser(
             "test@test.com",
             "test123"
         )
@@ -54,6 +54,52 @@ class AthorizedUsersTest(TestCase):
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(res.data, serializer.data)
+
+    def test_create_movie(self):
+        genre = Genre.objects.create(name="test_genre")
+
+        actor = Actor.objects.create(
+            first_name="test_first_name",
+            last_name="test_last_name",
+        )
+
+        payload = {
+            "title": "test_title",
+            "description": "test_description",
+            "duration": 12,
+            "genres": [genre.id],
+            "actors": [actor.id],
+        }
+
+        url = reverse("cinema:movie-list")
+
+        res = self.client.post(
+            url,
+            payload,
+            format="json",
+        )
+
+        self.assertEqual(
+            res.status_code,
+            status.HTTP_201_CREATED,
+            res.data,
+        )
+
+        movie = Movie.objects.get(id=res.data["id"])
+
+        self.assertEqual(movie.title, payload["title"])
+        self.assertEqual(movie.description, payload["description"])
+        self.assertEqual(movie.duration, payload["duration"])
+
+        self.assertEqual(
+            list(movie.genres.all()),
+            [genre],
+        )
+        self.assertEqual(
+            list(movie.actors.all()),
+            [actor],
+        )
+
 
 
 class FilterTests(TestCase):
