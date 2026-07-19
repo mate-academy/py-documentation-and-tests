@@ -7,6 +7,10 @@ from rest_framework.test import APIClient
 from cinema.models import Movie, Genre, Actor
 from cinema.serializers import MovieSerializer, MovieDetailSerializer, MovieListSerializer
 
+import tempfile
+import os
+
+from PIL import Image
 
 class AthorizedUsersTest(TestCase):
 
@@ -167,6 +171,75 @@ class AthorizedUsersTest(TestCase):
 
         self.assertEqual(res.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
+    def test_partial_update_movie_not_allowed(self):
+        genre = Genre.objects.create(name="test_genre")
+
+        actor = Actor.objects.create(
+            first_name="test_first_name",
+            last_name="test_last_name",
+        )
+
+        movie = Movie.objects.create(
+            title="title",
+            description="description",
+            duration=20,
+        )
+
+        movie.actors.add(actor)
+        movie.genres.add(genre)
+
+        url = reverse(
+            "cinema:movie-detail",
+            args=[movie.id],
+        )
+
+        payload = {
+            "title": "test_edited_title",
+            "description": "test_edited_description",
+        }
+
+        update_response = self.client.patch(
+            url,
+            data=payload,
+            format="json",
+        )
+
+        self.assertEqual(
+            update_response.status_code,
+            status.HTTP_405_METHOD_NOT_ALLOWED,
+            update_response.data,
+        )
+
+    def test_upload_image_to_movie(self):
+
+        genre = Genre.objects.create(name="test_genre")
+
+        actor = Actor.objects.create(
+            first_name="test_first_name",
+            last_name="test_last_name",
+        )
+
+        movie = Movie.objects.create(
+            title="title",
+            description="description",
+            duration=20,
+        )
+
+        movie.actors.add(actor)
+        movie.genres.add(genre)
+
+        url = reverse("cinema:movie-upload-image", args=[movie.id])
+
+        with tempfile.NamedTemporaryFile(suffix=".jpg") as ntf:
+            img = Image.new("RGB", (10, 10))
+            img.save(ntf, format="JPEG")
+            ntf.seek(0)
+            res = self.client.post(url, {"image": ntf}, format="multipart")
+        movie.refresh_from_db()
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertIn("image", res.data)
+        self.assertTrue(os.path.exists(movie.image.path))
 
 class FilterTests(TestCase):
     def setUp(self):
