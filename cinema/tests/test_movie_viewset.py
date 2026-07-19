@@ -100,6 +100,72 @@ class AthorizedUsersTest(TestCase):
             [actor],
         )
 
+    def test_update_movie_not_allowed(self):
+        genre = Genre.objects.create(name="test_genre")
+
+        actor = Actor.objects.create(
+            first_name="test_first_name",
+            last_name="test_last_name",
+        )
+
+        movie = Movie.objects.create(
+            title="title",
+            description="description",
+            duration=20,
+        )
+
+        movie.actors.add(actor)
+        movie.genres.add(genre)
+
+        url = reverse(
+            "cinema:movie-detail",
+            args=[movie.id],
+        )
+
+        payload = {
+            "title": "test_edited_title",
+            "description": "test_edited_description",
+        }
+
+        update_response = self.client.put(
+            url,
+            data=payload,
+            format="json",
+        )
+
+        self.assertEqual(
+            update_response.status_code,
+            status.HTTP_405_METHOD_NOT_ALLOWED,
+            update_response.data,
+        )
+
+
+    def test_delete_movie_not_allowed(self):
+
+        genre = Genre.objects.create(name="test_genre")
+
+        actor = Actor.objects.create(
+            first_name="test_first_name",
+            last_name="test_last_name",
+        )
+
+        movie = Movie.objects.create(
+            title="title",
+            description="description",
+            duration=20,
+        )
+
+        movie.actors.add(actor)
+        movie.genres.add(genre)
+
+        url = reverse(
+            "cinema:movie-detail",
+            args=[movie.id],
+        )
+
+        res = self.client.delete(url)
+
+        self.assertEqual(res.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
 class FilterTests(TestCase):
