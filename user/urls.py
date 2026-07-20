@@ -2,10 +2,7 @@ from django.urls import path
 from user.views import (
     MyTokenObtainPairView,
     MyTokenRefreshView,
-    MyTokenVerifyView
-)
-
-from user.views import (
+    MyTokenVerifyView,
     CreateUserView,
     ManageUserView
 )
