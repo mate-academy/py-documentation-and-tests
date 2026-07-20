@@ -4,7 +4,7 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient
 
-from cinema.models import Movie
+from cinema.models import Movie, Genre, Actor
 
 MOVIE_URL = reverse("cinema:movie-list")
 
@@ -84,36 +84,84 @@ class AuthenticatedMovieApiTest(TestCase):
 
         self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
 
-    class AdminMovieApiTests(TestCase):
-        def setUp(self):
-            self.client = APIClient()
-            self.admin_user = get_user_model().objects.create_superuser(
-                email="admin@admin.com",
-                password="adminpassword"
-            )
-            self.client.force_authenticate(self.admin_user)
+    def test_filter_movies_by_genres(self):
+        genre1 = Genre.objects.create(name="Genre 1")
+        genre2 = Genre.objects.create(name="Genre 2")
+        movie1 = sample_movie(title="Movie 1")
+        movie2 = sample_movie(title="Movie 2")
 
-        def test_create_movie(self):
-            payload = {"title": "Admin Movie", "duration": 130}
-            res = self.client.post(MOVIE_URL, payload)
-            self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        movie1.genres.add(genre1)
+        movie2.genres.add(genre2)
 
-        def test_update_movie(self):
-            movie = sample_movie()
-            url = detail_url(movie.id)
-            payload = {"title": "Updated by Admin"}
+        res = self.client.get(MOVIE_URL, {"genres": f"{genre1.id}"})
 
-            res = self.client.patch(url, payload)
-            movie.refresh_from_db()
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(res.data), 1)
+        self.assertEqual(res.data[0]["title"], movie1.title)
 
-            self.assertEqual(res.status_code, status.HTTP_200_OK)
-            self.assertEqual(movie.title, "Updated by Admin")
+    def test_filter_movies_by_actors(self):
+        actor1 = Actor.objects.create(
+            first_name="Actor 1",
+            last_name="Actor 1"
+        )
+        actor2 = Actor.objects.create(
+            first_name="Actor 2",
+            last_name="Actor 2"
+        )
+        movie1 = sample_movie(title="Movie 1")
+        movie2 = sample_movie(title="Movie 2")
 
-        def test_delete_movie(self):
-            movie = sample_movie()
-            url = detail_url(movie.id)
+        movie1.actors.add(actor1)
+        movie2.actors.add(actor2)
 
-            res = self.client.delete(url)
+        res = self.client.get(MOVIE_URL, {"actors": f"{actor1.id}"})
 
-            self.assertEqual(res.status_code, status.HTTP_204_NO_CONTENT)
-            self.assertFalse(Movie.objects.filter(id=movie.id).exists())
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(res.data), 1)
+        self.assertEqual(res.data[0]["title"], movie1.title)
+
+
+class AdminMovieApiTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.admin_user = get_user_model().objects.create_superuser(
+            email="admin@admin.com",
+            password="adminpassword"
+        )
+        self.client.force_authenticate(self.admin_user)
+
+    def test_create_movie(self):
+        genre = Genre.objects.create(name="Genre")
+        actor = Actor.objects.create(
+            first_name="Actor",
+            last_name="Actor"
+        )
+        payload = {
+            "title": "Admin Movie",
+            "description": "Admin Movie description",
+            "duration": 130,
+            "genres": [genre.id],
+            "actors": [actor.id]
+        }
+        res = self.client.post(MOVIE_URL, payload)
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+
+    def test_update_movie(self):
+        movie = sample_movie()
+        url = detail_url(movie.id)
+        payload = {"title": "Updated by Admin"}
+
+        res = self.client.patch(url, payload)
+        movie.refresh_from_db()
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(movie.title, "Updated by Admin")
+
+    def test_delete_movie(self):
+        movie = sample_movie()
+        url = detail_url(movie.id)
+
+        res = self.client.delete(url)
+
+        self.assertEqual(res.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(Movie.objects.filter(id=movie.id).exists())
