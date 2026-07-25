@@ -210,7 +210,7 @@ class AuthenticatedMovieViewSetTests(TestCase):
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(res.data, serializer.data)
 
-    def test_filer_movies_by_genres(self):
+    def test_filter_movies_by_genres(self):
         movie_without_genre = sample_movie()
         movie_with_genre_1 = sample_movie(title="Green Elephant")
         movie_with_genre_2 = sample_movie(title="Batman")
@@ -234,7 +234,7 @@ class AuthenticatedMovieViewSetTests(TestCase):
         self.assertIn(serializer_with_genre_2.data, res.data)
         self.assertNotIn(serializer_without_genre.data, res.data)
 
-    def test_filer_movies_by_actors(self):
+    def test_filter_movies_by_actors(self):
         movie_without_actor = sample_movie()
         movie_with_actor_1 = sample_movie(title="Green Elephant")
         movie_with_actor_2 = sample_movie(title="Batman")
@@ -258,7 +258,7 @@ class AuthenticatedMovieViewSetTests(TestCase):
         self.assertIn(serializer_with_actor_2.data, res.data)
         self.assertNotIn(serializer_without_actor.data, res.data)
 
-    def test_filer_movies_by_title(self):
+    def test_filter_movies_by_title(self):
         movie_without_title = sample_movie()
         movie_with_title_1 = sample_movie(title="Green Elephant")
         movie_with_title_2 = sample_movie(title="Batman")
@@ -273,7 +273,7 @@ class AuthenticatedMovieViewSetTests(TestCase):
         serializer_with_title_2 = MovieListSerializer(movie_with_title_2)
 
         self.assertIn(serializer_with_title_1.data, res.data)
-        self.assertIn(serializer_with_title_2.data, res.data)
+        self.assertNotIn(serializer_with_title_2.data, res.data)
         self.assertNotIn(serializer_without_title.data, res.data)
 
     def test_retrieve_movie_detail(self):
