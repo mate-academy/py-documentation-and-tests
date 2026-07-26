@@ -1,13 +1,15 @@
 from datetime import datetime
 
 from django.db.models import F, Count
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import viewsets, mixins, status
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
-from rest_framework.viewsets import GenericViewSet, ReadOnlyModelViewSet
+from rest_framework.viewsets import GenericViewSet
 
 from cinema.models import Genre, Actor, CinemaHall, Movie, MovieSession, Order
 from cinema.permissions import IsAdminOrIfAuthenticatedReadOnly
@@ -38,6 +40,30 @@ class GenreViewSet(
     authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
+    def get_queryset(self):
+        genre_name = self.request.query_params.get("genre_name")
+
+        queryset = self.queryset
+
+        if genre_name:
+            queryset = queryset.filter(name__icontains=genre_name)
+
+        return queryset
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="genre_name",
+                description="Filter by name",
+                type=str,
+                required=False,
+            ),
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        """List on genres"""
+        return super().list(request, *args, **kwargs)
+
 
 class ActorViewSet(
     mixins.CreateModelMixin,
@@ -65,6 +91,7 @@ class MovieViewSet(
     mixins.ListModelMixin,
     mixins.CreateModelMixin,
     mixins.RetrieveModelMixin,
+    mixins.UpdateModelMixin,
     viewsets.GenericViewSet,
 ):
     queryset = Movie.objects.prefetch_related("genres", "actors")
@@ -97,6 +124,34 @@ class MovieViewSet(
             queryset = queryset.filter(actors__id__in=actors_ids)
 
         return queryset.distinct()
+
+    @extend_schema(
+        methods=["GET"],
+        parameters=[
+            OpenApiParameter(
+                name="title",
+                description="Filter by title",
+                type=str, required=False
+            ),
+            OpenApiParameter(
+                name="genres",
+                description="Filter by genres id",
+                type=int,
+                many=True,
+                required=False,
+            ),
+            OpenApiParameter(
+                name="actors",
+                description="Filter by actors id",
+                type=int,
+                many=True,
+                required=False,
+            ),
+        ],
+    )
+    def list(self, request, *args, **kwargs):
+        """List of movies"""
+        return super().list(request, *args, **kwargs)
 
     def get_serializer_class(self):
         if self.action == "list":
@@ -157,6 +212,27 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(movie_id=int(movie_id_str))
 
         return queryset
+
+    @extend_schema(
+        methods=["GET"],
+        parameters=[
+            OpenApiParameter(
+                name="movie",
+                description="Filter by movie id",
+                type=int,
+                required=False
+            ),
+            OpenApiParameter(
+                name="date",
+                description="Filter by date",
+                type=OpenApiTypes.DATE,
+                required=False,
+            ),
+        ],
+    )
+    def list(self, request, *args, **kwargs):
+        """List of Movie Session"""
+        return super().list(request, *args, **kwargs)
 
     def get_serializer_class(self):
         if self.action == "list":
