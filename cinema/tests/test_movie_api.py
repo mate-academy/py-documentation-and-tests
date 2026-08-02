@@ -162,10 +162,7 @@ class MovieImageUploadTests(TestCase):
         self.assertIn("movie_image", res.data[0].keys())
 
 
-def detail_url(movie_id):
-    return reverse("cinema:movie-detail", args=(movie_id,))
-
-def semple_movie(**params) -> Movie:
+def sample_movie(**params) -> Movie:
     defaults = {
         "title": "Test Film",
         "description": "Test Film",
@@ -184,7 +181,7 @@ class UnAutenticatedMovieApiTests(TestCase):
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
-class UnAutenticatedMovieApiTests(TestCase):
+class AutenticatedMovieApiTests(TestCase):
     def setUp(self):
         self.client = APIClient()
         self.user = get_user_model().objects.create_user(
@@ -194,8 +191,8 @@ class UnAutenticatedMovieApiTests(TestCase):
         self.client.force_authenticate(user=self.user)
 
     def test_movies_list(self):
-        semple_movie()
-        movie_with_genre = semple_movie()
+        sample_movie()
+        movie_with_genre = sample_movie()
         genre_1 = Genre.objects.create(name="Genre 1")
         genre_2 = Genre.objects.create(name="Genre 2")
         movie_with_genre.genres.add(genre_1, genre_2)
@@ -206,9 +203,9 @@ class UnAutenticatedMovieApiTests(TestCase):
         self.assertEqual(res.status_code, status.HTTP_200_OK)
 
     def test_filter_movie_genres(self):
-        movie_without_genre = semple_movie()
-        movie_without_genres = semple_movie(title="Test Test")
-        movie_with_genres_1 = semple_movie(title="Film Film 123")
+        movie_without_genre = sample_movie()
+        movie_without_genres = sample_movie(title="Test Test")
+        movie_with_genres_1 = sample_movie(title="Film Film 123")
         genre_1 = Genre.objects.create(name="Genre 1")
         genre_2 = Genre.objects.create(name="Genre 2")
         movie_without_genres.genres.add(genre_1)
@@ -225,7 +222,7 @@ class UnAutenticatedMovieApiTests(TestCase):
         self.assertNotIn(serializer_with_genres.data, res.data)
 
     def test_retrieve_movie_detail(self):
-        movie = semple_movie()
+        movie = sample_movie()
         movie.genres.add(Genre.objects.create(name="Genre 1"))
         url = detail_url(movie.id)
         res = self.client.get(url)
@@ -233,7 +230,7 @@ class UnAutenticatedMovieApiTests(TestCase):
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(res.data, serializer.data)
 
-    def create_movie(self):
+    def test_create_movie(self):
         payload = {
             "title": "Test Film 123",
             "description": "Test Film 123 123",
