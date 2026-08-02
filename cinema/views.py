@@ -7,7 +7,12 @@ from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
-from rest_framework.viewsets import GenericViewSet, ReadOnlyModelViewSet
+from rest_framework.viewsets import GenericViewSet
+from drf_spectacular.utils import (
+    OpenApiParameter,
+    extend_schema,
+    OpenApiTypes
+)
 
 from cinema.models import Genre, Actor, CinemaHall, Movie, MovieSession, Order
 from cinema.permissions import IsAdminOrIfAuthenticatedReadOnly
@@ -35,7 +40,6 @@ class GenreViewSet(
 ):
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
-    authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
 
@@ -61,6 +65,25 @@ class CinemaHallViewSet(
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
 
+@extend_schema(
+    parameters=[
+        OpenApiParameter(
+            "title",
+            OpenApiTypes.STR,
+            description="Filter by movie title",
+        ),
+        OpenApiParameter(
+            "genres",
+            OpenApiTypes.STR,
+            description="Filter by genre ids(e.g. 3, 4)",
+        ),
+        OpenApiParameter(
+            "actors",
+            OpenApiTypes.STR,
+            description="Filter by actor ids(e.g. 3, 4)",
+        ),
+    ]
+)
 class MovieViewSet(
     mixins.ListModelMixin,
     mixins.CreateModelMixin,
@@ -128,6 +151,20 @@ class MovieViewSet(
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+@extend_schema(
+    parameters=[
+        OpenApiParameter(
+            "date",
+            OpenApiTypes.STR,
+            description="Filter by date (YYYY-MM-DD)",
+        ),
+        OpenApiParameter(
+            "movie",
+            OpenApiTypes.STR,
+            description="Filter by movie id",
+        ),
+    ]
+)
 class MovieSessionViewSet(viewsets.ModelViewSet):
     queryset = (
         MovieSession.objects.all()
