@@ -149,7 +149,7 @@ SPECTACULAR_SETTINGS = {
     "DESCRIPTION": "Cinema Service developed by ",
     "VERSION": "1.0",
     "SERVICE_INCLUDE_CHEMA": False,
-    "SWAGER_IN_SETTINGS": {
+    "SWAGGER_IN_SETTINGS": {
         "deepLinking": True,
         "defaultModelRendering": "model",
     }
