@@ -8,3 +8,4 @@ djangorestframework
 djangorestframework-simplejwt
 drf-spectacular
 Pillow
+django-oauth-toolkit==3.4.0
