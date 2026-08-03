@@ -1,6 +1,8 @@
 from datetime import datetime
 
 from django.db.models import F, Count
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import viewsets, mixins, status
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import action
@@ -82,8 +84,12 @@ class MovieViewSet(
         title = self.request.query_params.get("title")
         genres = self.request.query_params.get("genres")
         actors = self.request.query_params.get("actors")
+        duration = self.request.query_params.get("duration")
 
         queryset = self.queryset
+
+        if duration:
+            queryset = queryset.filter(duration=int(duration))
 
         if title:
             queryset = queryset.filter(title__icontains=title)
@@ -127,6 +133,29 @@ class MovieViewSet(
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="title",
+                type={"type": "array", "items": {"type": "string"}},
+                description="Filter by movie title id(ex. ?title=2,3)",
+            ),
+            OpenApiParameter(
+                name="genres",
+                type={"type": "array", "items": {"type": "string"}},
+                description="Filter by genre id(ex. ?genres=2,3)",
+            ),
+            OpenApiParameter(
+                name="actors",
+                type={"type": "array", "items": {"type": "string"}},
+                description="Filter by actor id(ex. ?actors=2,3)",
+            )
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        """Get list of movies"""
+        return super().list(request, *args, **kwargs)
+
 
 class MovieSessionViewSet(viewsets.ModelViewSet):
     queryset = (
@@ -166,6 +195,24 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
             return MovieSessionDetailSerializer
 
         return MovieSessionSerializer
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="movie",
+                type={"type": "array", "items": {"type": "string"}},
+                description="Filter by movie id(ex. ?title=2,3)",
+            ),
+            OpenApiParameter(
+                name="date",
+                type={"type": "array", "items": {"type": "datetime"}},
+                description="Filter by date id(ex. ?genres=2,3)",
+            )
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        """Get list of movie sessions"""
+        return super().list(request, *args, **kwargs)
 
 
 class OrderPagination(PageNumberPagination):
