@@ -1,0 +1,14 @@
+(venv) maks@maks-HP-ZBook-15-G6:~/PycharmProjects/py-documentation-and-tests$ flake8
+python manage.py check
+python manage.py test
+System check identified no issues (0 silenced).
+Found 13 test(s).
+Creating test database for alias 'default'...
+System check identified no issues (0 silenced).
+.............
+----------------------------------------------------------------------
+Ran 13 tests in 6.257s
+
+OK
+Destroying test database for alias 'default'...
+(venv) maks@maks-HP-ZBook-15-G6:~/PycharmProjects/py-documentation-and-tests$ grep -R -nE '/\+\+[^+]*\+\+/|/\*\*[^*]*\*\*/'
