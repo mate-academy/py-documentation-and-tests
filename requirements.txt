@@ -29,7 +29,7 @@ PyJWT==2.13.0
 pytokens==0.4.1
 PyYAML==6.0.3
 referencing==0.37.0
-rpds-py==2026.6.3
+rpds-py>=0.8.7,<1.0
 setuptools==83.0.0
 sqlparse==0.5.5
 types-PyYAML==6.0.12.20260724
