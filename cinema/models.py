@@ -64,14 +64,10 @@ class Movie(models.Model):
 class MovieSession(models.Model):
     show_time = models.DateTimeField()
     movie = models.ForeignKey(
-        Movie,
-        on_delete=models.CASCADE,
-        related_name="movie_sessions"
+        Movie, on_delete=models.CASCADE, related_name="movie_sessions"
     )
     cinema_hall = models.ForeignKey(
-        CinemaHall,
-        on_delete=models.CASCADE,
-        related_name="movie_sessions"
+        CinemaHall, on_delete=models.CASCADE, related_name="movie_sessions"
     )
 
     class Meta:
@@ -86,7 +82,7 @@ class Order(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name="orders"
+        related_name="orders",
     )
 
     def __str__(self):
@@ -98,14 +94,12 @@ class Order(models.Model):
 
 class Ticket(models.Model):
     movie_session = models.ForeignKey(
-        MovieSession,
-        on_delete=models.CASCADE,
-        related_name="tickets"
+        MovieSession, on_delete=models.CASCADE, related_name="tickets"
     )
     order = models.ForeignKey(
         Order,
         on_delete=models.CASCADE,
-        related_name="tickets"
+        related_name="tickets",
     )
     row = models.IntegerField()
     seat = models.IntegerField()
@@ -150,7 +144,8 @@ class Ticket(models.Model):
 
     def __str__(self):
         return (
-            f"{str(self.movie_session)} (row: {self.row}, seat: {self.seat})"
+            f"{str(self.movie_session)} "
+            f"(row: {self.row}, seat: {self.seat})"
         )
 
     class Meta:
