@@ -93,7 +93,8 @@ class MovieImageUploadTests(TestCase):
         )
 
     def tearDown(self):
-        self.movie.image.delete()
+        if self.movie.image and getattr(self.movie.image, "name", None):
+            self.movie.image.delete(save=False)
 
     def test_upload_image_to_movie(self):
         url = image_upload_url(self.movie.id)
