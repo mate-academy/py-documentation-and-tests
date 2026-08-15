@@ -196,6 +196,8 @@ class AuthenticateMovieApiTests(TestCase):
         res = self.client.get(MOVIE_URL)
         movies = Movie.objects.all()
         serializer = MovieListSerializer(movies, many=True)
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEquals(res.data, serializer.data)
 
     def test_filter_by_genres(self):
