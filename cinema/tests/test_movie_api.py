@@ -160,8 +160,6 @@ class MovieImageUploadTests(TestCase):
         self.assertIn("movie_image", res.data[0].keys())
 
 
-MOVIE_URL = reverse("cinema:movie-list")
-
 class UnauthenticateMovieApiTests(TestCase):
 
     def setUp(self) -> None:
@@ -201,27 +199,27 @@ class AuthenticateMovieApiTests(TestCase):
         self.assertEquals(res.data, serializer.data)
 
     def test_filter_by_genres(self):
-         movie_without_genre = sample_movie()
-         movie_with_genre_drama = sample_movie(title="Schindler's List")
-         movie_with_genre_comedy = sample_movie(title="Groundhog Day")
+        movie_without_genre = sample_movie()
+        movie_with_genre_drama = sample_movie(title="Schindler's List")
+        movie_with_genre_comedy = sample_movie(title="Groundhog Day")
 
-         genre_drame = sample_genre()
-         genre_comedy = sample_genre(name="Comedy")
+        genre_drame = sample_genre()
+        genre_comedy = sample_genre(name="Comedy")
 
-         movie_with_genre_drama.genres.add(genre_drame)
-         movie_with_genre_comedy.genres.add(genre_comedy)
+        movie_with_genre_drama.genres.add(genre_drame)
+        movie_with_genre_comedy.genres.add(genre_comedy)
 
-         res = self.client.get(
-             MOVIE_URL,
-             data={"genres": f"{genre_drame.id},{genre_comedy.id}"}
-         )
-         serializer_without_genre = MovieListSerializer(movie_without_genre)
-         serializer_with_genre_drama = MovieListSerializer(movie_with_genre_drama)
-         serializer_with_genre_comedy = MovieListSerializer(movie_with_genre_comedy)
+        res = self.client.get(
+            MOVIE_URL,
+            data={"genres": f"{genre_drame.id},{genre_comedy.id}"}
+        )
+        serializer_without_genre = MovieListSerializer(movie_without_genre)
+        serializer_with_genre_drama = MovieListSerializer(movie_with_genre_drama)
+        serializer_with_genre_comedy = MovieListSerializer(movie_with_genre_comedy)
 
-         self.assertIn(serializer_with_genre_comedy.data, res.data)
-         self.assertIn(serializer_with_genre_drama.data, res.data)
-         self.assertNotIn(serializer_without_genre.data, res.data)
+        self.assertIn(serializer_with_genre_comedy.data, res.data)
+        self.assertIn(serializer_with_genre_drama.data, res.data)
+        self.assertNotIn(serializer_without_genre.data, res.data)
 
     def test_filter_by_actors(self):
         movie_without_actors = sample_movie()
