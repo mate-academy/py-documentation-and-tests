@@ -27,6 +27,9 @@ from cinema.serializers import (
     MovieImageSerializer,
 )
 
+from drf_spectacular.utils import extend_schema, OpenApiParameter
+from drf_spectacular.types import OpenApiTypes
+
 
 class GenreViewSet(
     mixins.CreateModelMixin,
@@ -35,7 +38,6 @@ class GenreViewSet(
 ):
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
-    authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
 
@@ -46,7 +48,6 @@ class ActorViewSet(
 ):
     queryset = Actor.objects.all()
     serializer_class = ActorSerializer
-    authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
 
@@ -57,7 +58,6 @@ class CinemaHallViewSet(
 ):
     queryset = CinemaHall.objects.all()
     serializer_class = CinemaHallSerializer
-    authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
 
@@ -69,7 +69,6 @@ class MovieViewSet(
 ):
     queryset = Movie.objects.prefetch_related("genres", "actors")
     serializer_class = MovieSerializer
-    authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
     @staticmethod
@@ -127,6 +126,31 @@ class MovieViewSet(
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                "title",
+                type=str,
+                description="title of the movie",
+                required=False,
+            ),
+            OpenApiParameter(
+                "genres",
+                type={"type": "list", "items": {"type": "number"}},
+                description="id genres",
+                required=False,
+            ),
+            OpenApiParameter(
+                "actors",
+                type={"type": "list", "items": {"type": "number"}},
+                description="id actors",
+                required=False,
+            ),
+        ],
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
 
 class MovieSessionViewSet(viewsets.ModelViewSet):
     queryset = (
@@ -140,7 +164,6 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
         )
     )
     serializer_class = MovieSessionSerializer
-    authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
     def get_queryset(self):
@@ -167,6 +190,25 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
 
         return MovieSessionSerializer
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                "date",
+                type=str,
+                description="date of movie session",
+                required=False,
+            ),
+            OpenApiParameter(
+                "movie",
+                type=int,
+                description="id of the movie",
+                required=False,
+            ),
+        ],
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
 
 class OrderPagination(PageNumberPagination):
     page_size = 10
@@ -183,7 +225,6 @@ class OrderViewSet(
     )
     serializer_class = OrderSerializer
     pagination_class = OrderPagination
-    authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAuthenticated,)
 
     def get_queryset(self):
