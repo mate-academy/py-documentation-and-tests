@@ -6,7 +6,7 @@ from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
-from rest_framework.viewsets import GenericViewSet
+from rest_framework import viewsets
 
 from cinema.models import Genre, Actor, CinemaHall, Movie, MovieSession, Order
 from cinema.permissions import IsAdminOrIfAuthenticatedReadOnly
@@ -31,9 +31,9 @@ from drf_spectacular.types import OpenApiTypes
 
 
 class GenreViewSet(
-    mixins.CreateModelMixin,
-    mixins.ListModelMixin,
-    GenericViewSet,
+    viewsets.mixins.CreateModelMixin,
+    viewsets.mixins.ListModelMixin,
+    viewsets.GenericViewSet,
 ):
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
@@ -41,9 +41,9 @@ class GenreViewSet(
 
 
 class ActorViewSet(
-    mixins.CreateModelMixin,
-    mixins.ListModelMixin,
-    GenericViewSet,
+    viewsets.mixins.CreateModelMixin,
+    viewsets.mixins.ListModelMixin,
+    viewsets.GenericViewSet,
 ):
     queryset = Actor.objects.all()
     serializer_class = ActorSerializer
@@ -51,9 +51,9 @@ class ActorViewSet(
 
 
 class CinemaHallViewSet(
-    mixins.CreateModelMixin,
-    mixins.ListModelMixin,
-    GenericViewSet,
+    viewsets.mixins.CreateModelMixin,
+    viewsets.mixins.ListModelMixin,
+    viewsets.GenericViewSet,
 ):
     queryset = CinemaHall.objects.all()
     serializer_class = CinemaHallSerializer
@@ -61,9 +61,9 @@ class CinemaHallViewSet(
 
 
 class MovieViewSet(
-    mixins.ListModelMixin,
-    mixins.CreateModelMixin,
-    mixins.RetrieveModelMixin,
+    viewsets.mixins.ListModelMixin,
+    viewsets.mixins.CreateModelMixin,
+    viewsets.mixins.RetrieveModelMixin,
     viewsets.GenericViewSet,
 ):
     queryset = Movie.objects.prefetch_related("genres", "actors")
@@ -135,14 +135,16 @@ class MovieViewSet(
             ),
             OpenApiParameter(
                 name="genres",
-                type={"type": "array", "items": {"type": "integer"}},
+                type=OpenApiTypes.INT,
+                many=True,
                 location=OpenApiParameter.QUERY,
                 description="Filter movies by list of genre IDs (e.g. ?genres=1,2 or ?genres=1&genres=2).",
                 required=False,
             ),
             OpenApiParameter(
                 "actors",
-                type={"type": "array", "items": {"type": "integer"}},
+                type=OpenApiTypes.INT,
+                many=True,
                 location=OpenApiParameter.QUERY,
                 description="Filter movies by list of actor IDs (e.g. ?actors=1,2 or ?actors=1&actors=2).",
                 required=False,
@@ -218,9 +220,9 @@ class OrderPagination(PageNumberPagination):
 
 
 class OrderViewSet(
-    mixins.ListModelMixin,
-    mixins.CreateModelMixin,
-    GenericViewSet,
+    viewsets.mixins.ListModelMixin,
+    viewsets.mixins.CreateModelMixin,
+    viewsets.GenericViewSet,
 ):
     queryset = Order.objects.prefetch_related(
         "tickets__movie_session__movie", "tickets__movie_session__cinema_hall"
