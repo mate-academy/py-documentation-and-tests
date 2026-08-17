@@ -5,6 +5,7 @@ from django.test import TestCase
 from rest_framework import status
 from rest_framework.reverse import reverse
 from rest_framework.test import APIClient
+from rest_framework_simplejwt.tokens import RefreshToken
 
 from cinema.models import Movie, Genre, Actor
 from cinema.serializers import MovieDetailSerializer
@@ -52,7 +53,8 @@ class AuthenticatedCinemaApiTests(TestCase):
         self.movie_2.genres.set([self.genre3])
         self.movie_2.actors.set([self.actor3])
 
-        self.client.force_authenticate(self.user)
+        refresh = RefreshToken.for_user(self.user)
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {refresh.access_token}')
 
     def test_authenticated_user_can_get_movie_list(self):
         response = self.client.get(BASE_URL)
@@ -87,7 +89,8 @@ class AuthenticatedCinemaApiTests(TestCase):
             email="test@www.com",
             password="1234qweasdzx"
         )
-        self.client.force_authenticate(user)
+        refresh = RefreshToken.for_user(user)
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {refresh.access_token}')
         url = reverse("cinema:movie-upload-image", args=[self.movie_1.id])
         response = self.client.post(
             url,
