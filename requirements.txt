@@ -8,7 +8,7 @@ colorama==0.4.6
 Django==5.2.17
 django-debug-toolbar==7.1.1
 django-stubs==5.2.9
-django-stubs-ext==6.1.0
+django-stubs-ext==5.2.9
 djangorestframework==3.18.0
 djangorestframework-stubs==3.18.0
 djangorestframework_simplejwt==5.5.1
