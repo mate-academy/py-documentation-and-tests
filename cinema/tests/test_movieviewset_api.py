@@ -10,7 +10,7 @@ from cinema.serializers import (
     MovieDetailSerializer
 )
 
-MOVIE_URL = reverse ("cinema:movie-list")
+MOVIE_URL = reverse("cinema:movie-list")
 
 def sample_movie(**params) -> Movie:
     defaults = {
@@ -35,7 +35,7 @@ class AuthenticatedMovieViewSetTestCase(TestCase):
     def setUp(self):
         self.client = APIClient()
         self.user = get_user_model().objects.create_user(
-            email="test@test.test", password="testpassword"
+            email="admin.user@cinema.com", password="1qazcde3"
         )
         self.client.force_authenticate(self.user)
 
@@ -151,8 +151,8 @@ class AdminMovieTest(TestCase):
     def setUp(self):
         self.client = APIClient()
         self.user = get_user_model().objects.create_user(
-            email="test@test.test",
-            password="testpassword",
+            email="admin.user@cinema.com",
+            password="1qazcde3",
             is_staff=True
         )
         self.client.force_authenticate(self.user)

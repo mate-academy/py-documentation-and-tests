@@ -8,6 +8,7 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
+from drf_spectacular.types import OpenApiTypes
 
 from cinema.models import Genre, Actor, CinemaHall, Movie, MovieSession, Order
 from cinema.permissions import IsAdminOrIfAuthenticatedReadOnly
@@ -128,23 +129,17 @@ class MovieViewSet(
             OpenApiParameter(
                 name="title",
                 description="Filter by title",
-                type=str,
+                type=OpenApiTypes.STR,
             ),
             OpenApiParameter(
                 name="actors",
                 description="Filter by actors id",
-                type={
-                    "type": "array",
-                    "items": {"type": "number"}
-                },
+                type=OpenApiTypes.INT
             ),
             OpenApiParameter(
                 name="genres",
                 description="Filter by genres id",
-                type={
-                    "type": "array",
-                    "items": {"type": "number"}
-                },
+                type=OpenApiTypes.INT
             ),
         ]
     )
@@ -194,12 +189,12 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
     @extend_schema(
         parameters=[
             OpenApiParameter(
-                name="show_time",
+                name="date",
                 description="Filter movie sessions by date",
                 type=str,
             ),
             OpenApiParameter(
-                name="movies",
+                name="movie",
                 description="Filter movie sessions by movie id",
                 type={
                     "type": "array",
