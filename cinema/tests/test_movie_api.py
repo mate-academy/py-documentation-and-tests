@@ -66,6 +66,137 @@ def detail_url(movie_id):
     return reverse("cinema:movie-detail", args=[movie_id])
 
 
+class UnauthenticatedMovieApiTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+
+    def test_auth_required(self):
+        response = self.client.get(MOVIE_URL)
+
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+
+class AuthenticatedMovieApiTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.user = get_user_model().objects.create_user(
+            email="user@cinema.com",
+            password="password",
+        )
+        self.client.force_authenticate(self.user)
+
+    def test_list_movies(self):
+        sample_movie(title="Movie B")
+        sample_movie(title="Movie A")
+
+        response = self.client.get(MOVIE_URL)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            [movie["title"] for movie in response.data],
+            ["Movie A", "Movie B"],
+        )
+
+    def test_retrieve_movie(self):
+        movie = sample_movie()
+        genre = sample_genre()
+        actor = sample_actor()
+        movie.genres.add(genre)
+        movie.actors.add(actor)
+
+        response = self.client.get(detail_url(movie.id))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["title"], movie.title)
+        self.assertEqual(response.data["genres"][0]["name"], genre.name)
+        self.assertEqual(response.data["actors"][0]["id"], actor.id)
+
+    def test_filter_movies_by_title(self):
+        matching_movie = sample_movie(title="The Matrix")
+        sample_movie(title="Interstellar")
+
+        response = self.client.get(MOVIE_URL, {"title": "matrix"})
+
+        self.assertEqual(
+            [movie["id"] for movie in response.data],
+            [matching_movie.id],
+        )
+
+    def test_filter_movies_by_genres(self):
+        genre1 = sample_genre(name="Action")
+        genre2 = sample_genre(name="Comedy")
+        matching_movie1 = sample_movie(title="Action movie")
+        matching_movie2 = sample_movie(title="Comedy movie")
+        sample_movie(title="Drama movie")
+        matching_movie1.genres.add(genre1)
+        matching_movie2.genres.add(genre2)
+
+        response = self.client.get(
+            MOVIE_URL,
+            {"genres": f"{genre1.id},{genre2.id}"},
+        )
+
+        self.assertEqual(
+            {movie["id"] for movie in response.data},
+            {matching_movie1.id, matching_movie2.id},
+        )
+
+    def test_filter_movies_by_actors(self):
+        actor = sample_actor()
+        matching_movie = sample_movie(title="Matching movie")
+        sample_movie(title="Other movie")
+        matching_movie.actors.add(actor)
+
+        response = self.client.get(MOVIE_URL, {"actors": actor.id})
+
+        self.assertEqual(
+            [movie["id"] for movie in response.data],
+            [matching_movie.id],
+        )
+
+    def test_regular_user_cannot_create_movie(self):
+        response = self.client.post(
+            MOVIE_URL,
+            {
+                "title": "New movie",
+                "description": "Description",
+                "duration": 100,
+                "genres": [],
+                "actors": [],
+            },
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
+class AdminMovieApiTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.user = get_user_model().objects.create_superuser(
+            email="admin@cinema.com",
+            password="password",
+        )
+        self.client.force_authenticate(self.user)
+
+    def test_create_movie(self):
+        genre = sample_genre()
+        actor = sample_actor()
+        payload = {
+            "title": "New movie",
+            "description": "Description",
+            "duration": 100,
+            "genres": [genre.id],
+            "actors": [actor.id],
+        }
+
+        response = self.client.post(MOVIE_URL, payload)
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        movie = Movie.objects.get(id=response.data["id"])
+        self.assertEqual(list(movie.genres.all()), [genre])
+        self.assertEqual(list(movie.actors.all()), [actor])
+
+
 class MovieImageUploadTests(TestCase):
     def setUp(self):
         self.client = APIClient()
