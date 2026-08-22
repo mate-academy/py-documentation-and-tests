@@ -6,7 +6,7 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 
-from rest_framework.test import APIClient
+from rest_framework.test import APIClient, APITestCase
 from rest_framework import status
 
 from cinema.models import Movie, MovieSession, CinemaHall, Genre, Actor
@@ -64,6 +64,111 @@ def image_upload_url(movie_id):
 
 def detail_url(movie_id):
     return reverse("cinema:movie-detail", args=[movie_id])
+
+
+class MovieViewSetTestsUnauthenticated(TestCase):
+    def test_list_movies_no_access(self):
+        res = self.client.get(MOVIE_URL)
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+
+class MovieViewSetTestAuthenticated(TestCase):
+
+    def setUp(self):
+        self.client = APIClient()
+        self.user = get_user_model().objects.create_user(
+            "user@myproject.com", "password"
+        )
+        self.client.force_authenticate(self.user)
+        self.movie1 = sample_movie(title="Sample 1")
+        self.movie2 = sample_movie(title="Sample 2")
+        self.movie3 = sample_movie(title="Sample 3")
+        self.actor = sample_actor()
+        self.movie_session = sample_movie_session(movie=self.movie1)
+
+
+
+    def test_list_movies_with_access(self):
+        res = self.client.get(MOVIE_URL)
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(res.data), 3)
+
+    def test_detail_movie(self):
+        url = f"{MOVIE_URL}{self.movie1.id}/"
+        res = self.client.get(url)
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data["duration"], self.movie1.duration)
+        self.assertEqual(res.data["description"], self.movie1.description)
+
+    def test_filter_movies_by_title(self):
+        res = self.client.get(MOVIE_URL, {"title": "Sample"})
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(res.data), 3)
+
+    def test_filter_movies_by_genres(self):
+        genre = sample_genre()
+        self.movie1.genres.set([genre])
+        self.movie2.genres.set([genre])
+        self.movie3.genres.set([genre])
+        res = self.client.get(MOVIE_URL, {"genres": genre.pk})
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(res.data), 3)
+
+    def test_filter_movies_by_actors(self):
+        actor = sample_actor()
+        self.movie1.actors.set([actor])
+        self.movie2.actors.set([actor])
+        self.movie3.actors.set([actor])
+        res = self.client.get(MOVIE_URL, {"actors": actor.pk})
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(res.data), 3)
+
+
+class MovieCreateTest(TestCase):
+    def test_create_movies_no_access(self):
+        self.client = APIClient()
+        self.user = get_user_model().objects.create_user(
+            "user@myproject.com", "password"
+        )
+        self.client.force_authenticate(self.user)
+        url = MOVIE_URL
+        res = self.client.post(
+            url,
+            {
+                "title": "Sample movie",
+                "description": "Sample description",
+                "duration": 90,
+            },
+            format="json"
+        )
+
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(Movie.objects.count(), 0)
+
+    def test_create_movies_with_access(self):
+        self.client = APIClient()
+        self.user = get_user_model().objects.create_superuser(
+            "admin@myproject.com", "password"
+        )
+        self.client.force_authenticate(self.user)
+        url = MOVIE_URL
+        self.genre = sample_genre()
+        self.actor = sample_actor()
+        res = self.client.post(
+            url,
+            {
+                "title": "Sample movie",
+                "description": "Sample description",
+                "duration": 90,
+                "genres": [self.genre.id],
+                "actors": [self.actor.id],
+            },
+            format="json"
+        )
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(Movie.objects.count(), 1)
 
 
 class MovieImageUploadTests(TestCase):
