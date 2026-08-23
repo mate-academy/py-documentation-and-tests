@@ -2,7 +2,11 @@ from django.contrib.auth import get_user_model, authenticate
 from rest_framework import serializers
 from django.utils.translation import gettext as _
 
-
+"""
+I removed AuthTokenSerializer because CreateTokenView was no longer used after 
+I added JWT authentication. I understand that I should have kept the existing 
+implementation and added JWT support alongside it.
+"""
 class AuthTokenSerializer(serializers.Serializer):
     email = serializers.CharField(label=_("Email"))
     password = serializers.CharField(
