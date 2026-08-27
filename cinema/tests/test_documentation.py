@@ -41,6 +41,18 @@ class DocumentationTests(TestCase):
             )
         )
 
+    def test_swagger_ui_is_available(self):
+        response = self.client.get(reverse("api-doc-swagger"))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertContains(response, "swagger-ui")
+
+    def test_redoc_ui_is_available(self):
+        response = self.client.get(reverse("api-doc-redoc"))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertContains(response, "redoc")
+
     def test_throttling_settings(self):
         rest_framework_settings = settings.REST_FRAMEWORK
 
@@ -48,4 +60,3 @@ class DocumentationTests(TestCase):
             rest_framework_settings["DEFAULT_THROTTLE_RATES"],
             {"anon": "10/min", "user": "30/min"},
         )
-
