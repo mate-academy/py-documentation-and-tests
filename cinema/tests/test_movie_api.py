@@ -10,6 +10,7 @@ from rest_framework.test import APIClient
 from rest_framework import status
 
 from cinema.models import Movie, MovieSession, CinemaHall, Genre, Actor
+from cinema.serializers import MovieSerializer, MovieListSerializer
 
 MOVIE_URL = reverse("cinema:movie-list")
 MOVIE_SESSION_URL = reverse("cinema:moviesession-list")
@@ -157,3 +158,70 @@ class MovieImageUploadTests(TestCase):
         res = self.client.get(MOVIE_SESSION_URL)
 
         self.assertIn("movie_image", res.data[0].keys())
+
+
+class MovieFilterTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.user = get_user_model().objects.create_superuser(
+            "admin@myproject.com", "password"
+        )
+        self.client.force_authenticate(self.user)
+        self.genre_1 = sample_genre()
+        self.genre_2 = sample_genre(name="Action")
+        self.genre_3 = sample_genre(name="Comedy")
+        self.movie_1 = sample_movie(title="Oppenheimer")
+        self.movie_2 = sample_movie(title="Oppenheimer 2")
+        self.movie_3 = sample_movie()
+        self.actor_1 = sample_actor(first_name="John", last_name="Doe")
+        self.actor_2 = sample_actor(first_name="Gerry", last_name="Doe")
+        self.actor_3 = sample_actor()
+        self.movie_session = sample_movie_session(movie=self.movie_1)
+
+        self.movie_1.genres.add(self.genre_1)
+        self.movie_2.genres.add(self.genre_2)
+        self.movie_3.genres.add(self.genre_3)
+
+        self.movie_1.actors.add(self.actor_1)
+        self.movie_2.actors.add(self.actor_2)
+        self.movie_3.actors.add(self.actor_3)
+
+    def test_filter_movie_by_title(self):
+        res = self.client.get(
+            MOVIE_URL,
+            {"title": "Oppenheimer"},
+        )
+        serializer_movie_oppenheimer_1 = MovieListSerializer(self.movie_1)
+        serializer_movie_oppenheimer_2 = MovieListSerializer(self.movie_2)
+        serializer_movie_3 = MovieListSerializer(self.movie_3)
+
+        self.assertIn(serializer_movie_oppenheimer_1.data, res.data)
+        self.assertIn(serializer_movie_oppenheimer_2.data, res.data)
+        self.assertNotIn(serializer_movie_3.data, res.data)
+
+    def test_filter_movie_by_genre(self):
+        res = self.client.get(
+            MOVIE_URL,
+            {"genres": f"1,2"},
+        )
+        serializer_movie_1 = MovieListSerializer(self.movie_1)
+        serializer_movie_2 = MovieListSerializer(self.movie_2)
+        serializer_movie_3 = MovieListSerializer(self.movie_3)
+
+        self.assertIn(serializer_movie_1.data, res.data)
+        self.assertIn(serializer_movie_2.data, res.data)
+        self.assertNotIn(serializer_movie_3.data, res.data)
+
+    def test_filter_movie_by_actor(self):
+        res = self.client.get(
+            MOVIE_URL,
+            {"actors": f"1,2"},
+        )
+
+        serializer_movie_1 = MovieListSerializer(self.movie_1)
+        serializer_movie_2 = MovieListSerializer(self.movie_2)
+        serializer_movie_3 = MovieListSerializer(self.movie_3)
+
+        self.assertIn(serializer_movie_1.data, res.data)
+        self.assertIn(serializer_movie_2.data, res.data)
+        self.assertNotIn(serializer_movie_3.data, res.data)
