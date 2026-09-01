@@ -210,13 +210,15 @@ class MovieViewSet(
             OpenApiParameter(
                 "genres",
                 type=int,
-                description="Comma-separated list of genre IDs. Example: ?grenres=1,2,3",
+                description="Comma-separated list of "
+                            "genre IDs. Example: ?grenres=1,2,3",
                 required=False,
             ),
             OpenApiParameter(
                 "actors",
                 type=int,
-                description="Comma-separated list of actor IDs. Example: ?actors=1,2,3",
+                description="Comma-separated list "
+                            "of actor IDs. Example: ?actors=1,2,3",
                 required=False,
             ),
         ]
@@ -297,7 +299,8 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
 
     @extend_schema(
         summary="Get movie session details",
-        description="Retrieve detailed information about a specific movie session.",
+        description="Retrieve detailed information "
+                    "about a specific movie session.",
     )
     def retrieve(self, request, *args, **kwargs):
         """Get movie session details"""
@@ -361,7 +364,8 @@ class OrderViewSet(
 
     @extend_schema(
         summary="Get user's orders",
-        description="Retrieve a paginated list of orders belonging to the authenticated user.",
+        description="Retrieve a paginated list of "
+                    "orders belonging to the authenticated user.",
     )
     def list(self, request, *args, **kwargs):
         """Get list of orders"""

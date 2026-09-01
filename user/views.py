@@ -27,7 +27,8 @@ class ManageUserView(generics.RetrieveUpdateAPIView):
 
     @extend_schema(
         summary="Get current user",
-        description="Retrieve information about the currently authenticated user.",
+        description="Retrieve information about "
+                    "the currently authenticated user.",
     )
     def get(self, request, *args, **kwargs):
         return super().get(request, *args, **kwargs)
@@ -41,7 +42,8 @@ class ManageUserView(generics.RetrieveUpdateAPIView):
 
     @extend_schema(
         summary="Partially update current user",
-        description="Partially update information of the currently authenticated user.",
+        description="Partially update information "
+                    "of the currently authenticated user.",
     )
     def patch(self, request, *args, **kwargs):
         return super().patch(request, *args, **kwargs)
