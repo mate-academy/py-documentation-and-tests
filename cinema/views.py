@@ -204,14 +204,14 @@ class MovieViewSet(
             ),
             OpenApiParameter(
                 "genres",
-                type=int,
+                type=str,
                 description="Comma-separated list of "
-                            "genre IDs. Example: ?grenres=1,2,3",
+                            "genre IDs. Example: ?genres=1,2,3",
                 required=False,
             ),
             OpenApiParameter(
                 "actors",
-                type=int,
+                type=str,
                 description="Comma-separated list "
                             "of actor IDs. Example: ?actors=1,2,3",
                 required=False,
