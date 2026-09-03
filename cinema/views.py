@@ -12,6 +12,12 @@ from rest_framework.viewsets import GenericViewSet, ReadOnlyModelViewSet
 from cinema.models import Genre, Actor, CinemaHall, Movie, MovieSession, Order
 from cinema.permissions import IsAdminOrIfAuthenticatedReadOnly
 
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import (
+    OpenApiParameter,
+    extend_schema,
+)
+
 from cinema.serializers import (
     GenreSerializer,
     ActorSerializer,
@@ -74,27 +80,27 @@ class MovieViewSet(
 
     @staticmethod
     def _params_to_ints(qs):
-        """Converts a list of string IDs to a list of integers"""
+        """Convert comma-separated string IDs to integers."""
         return [int(str_id) for str_id in qs.split(",")]
 
     def get_queryset(self):
-        """Retrieve the movies with filters"""
+        """Retrieve movies with filters."""
+        queryset = self.queryset
+
         title = self.request.query_params.get("title")
         genres = self.request.query_params.get("genres")
         actors = self.request.query_params.get("actors")
-
-        queryset = self.queryset
 
         if title:
             queryset = queryset.filter(title__icontains=title)
 
         if genres:
-            genres_ids = self._params_to_ints(genres)
-            queryset = queryset.filter(genres__id__in=genres_ids)
+            genre_ids = self._params_to_ints(genres)
+            queryset = queryset.filter(genres__id__in=genre_ids)
 
         if actors:
-            actors_ids = self._params_to_ints(actors)
-            queryset = queryset.filter(actors__id__in=actors_ids)
+            actor_ids = self._params_to_ints(actors)
+            queryset = queryset.filter(actors__id__in=actor_ids)
 
         return queryset.distinct()
 
@@ -110,6 +116,37 @@ class MovieViewSet(
 
         return MovieSerializer
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="title",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
+                description="Filter movies by title.",
+            ),
+            OpenApiParameter(
+                name="genres",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
+                description=(
+                    "Filter movies by genre IDs separated by commas. "
+                    "Example: ?genres=1,3"
+                ),
+            ),
+            OpenApiParameter(
+                name="actors",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
+                description=(
+                    "Filter movies by actor IDs separated by commas. "
+                    "Example: ?actors=2,5"
+                ),
+            ),
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
     @action(
         methods=["POST"],
         detail=True,
@@ -117,55 +154,54 @@ class MovieViewSet(
         permission_classes=[IsAdminUser],
     )
     def upload_image(self, request, pk=None):
-        """Endpoint for uploading image to specific movie"""
+        """Upload an image to a specific movie."""
         movie = self.get_object()
         serializer = self.get_serializer(movie, data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
 
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
-
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class MovieSessionViewSet(viewsets.ModelViewSet):
-    queryset = (
-        MovieSession.objects.all()
-        .select_related("movie", "cinema_hall")
-        .annotate(
-            tickets_available=(
-                F("cinema_hall__rows") * F("cinema_hall__seats_in_row")
-                - Count("tickets")
-            )
-        )
-    )
+    queryset = MovieSession.objects.select_related("movie", "cinema_hall")
     serializer_class = MovieSessionSerializer
-    authentication_classes = (TokenAuthentication,)
-    permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
     def get_queryset(self):
-        date = self.request.query_params.get("date")
-        movie_id_str = self.request.query_params.get("movie")
-
         queryset = self.queryset
 
+        date = self.request.query_params.get("date")
+        movie_id = self.request.query_params.get("movie")
+
         if date:
-            date = datetime.strptime(date, "%Y-%m-%d").date()
             queryset = queryset.filter(show_time__date=date)
 
-        if movie_id_str:
-            queryset = queryset.filter(movie_id=int(movie_id_str))
+        if movie_id:
+            queryset = queryset.filter(movie_id=movie_id)
 
         return queryset
 
-    def get_serializer_class(self):
-        if self.action == "list":
-            return MovieSessionListSerializer
-
-        if self.action == "retrieve":
-            return MovieSessionDetailSerializer
-
-        return MovieSessionSerializer
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="date",
+                type=OpenApiTypes.DATE,
+                location=OpenApiParameter.QUERY,
+                description=(
+                    "Filter movie sessions by date. "
+                    "Format: YYYY-MM-DD."
+                ),
+            ),
+            OpenApiParameter(
+                name="movie",
+                type=OpenApiTypes.INT,
+                location=OpenApiParameter.QUERY,
+                description="Filter movie sessions by movie ID.",
+            ),
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
 
 
 class OrderPagination(PageNumberPagination):
