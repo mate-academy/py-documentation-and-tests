@@ -70,6 +70,7 @@ class MovieViewSet(
     mixins.RetrieveModelMixin,
     viewsets.GenericViewSet,
 ):
+    http_method_names = ["get", "post", "head", "options"]
     queryset = Movie.objects.prefetch_related("genres", "actors")
     serializer_class = MovieSerializer
     authentication_classes = (TokenAuthentication,)
