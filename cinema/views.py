@@ -4,7 +4,6 @@ from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import (
-    AllowAny,
     IsAdminUser,
     IsAuthenticated,
 )
@@ -49,6 +48,31 @@ class MovieViewSet(
     mixins.UpdateModelMixin,
     viewsets.GenericViewSet,
 ):
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                "title",
+                type=OpenApiTypes.STR,
+                description="Filter by title (ex. ?title=Avatar)",
+                required=False,
+            ),
+            OpenApiParameter(
+                "genres",
+                type={"type": "array", "items": {"type": "integer"}},
+                description="Filter by genre ids (ex. ?genres=1,2)",
+                required=False,
+            ),
+            OpenApiParameter(
+                "actors",
+                type={"type": "array", "items": {"type": "integer"}},
+                description="Filter by actor ids (ex. ?actors=1,2)",
+                required=False,
+            ),
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
     queryset = Movie.objects.all()
     serializer_class = MovieSerializer
     permission_classes = (IsAdminOrReadOnly,)
