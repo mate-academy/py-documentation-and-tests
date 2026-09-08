@@ -8,11 +8,17 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet, ReadOnlyModelViewSet
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import (
+    OpenApiParameter,
+    extend_schema,
+    extend_schema_view
+)
 
-from cinema.models import Genre, Actor, CinemaHall, Movie, MovieSession, Order
-from cinema.permissions import IsAdminOrIfAuthenticatedReadOnly
+from .models import Genre, Actor, CinemaHall, Movie, MovieSession, Order
+from .permissions import IsAdminOrIfAuthenticatedReadOnly
 
-from cinema.serializers import (
+from .serializers import (
     GenreSerializer,
     ActorSerializer,
     CinemaHallSerializer,
@@ -61,6 +67,31 @@ class CinemaHallViewSet(
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
 
+@extend_schema_view(
+    list=extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="title",
+                type=OpenApiTypes.STR,
+                description="Filter movies by title (ex. ?title=inception)",
+            ),
+            OpenApiParameter(
+                name="genres",
+                type={"type": "array", "items": {"type": "integer"}},
+                description=""
+                            "Filter movies by genre IDs separated by comma"
+                            " (ex. ?genres=1,2)",
+            ),
+            OpenApiParameter(
+                name="actors",
+                type={"type": "array", "items": {"type": "integer"}},
+                description=""
+                            "Filter movies by actor IDs separated by comma"
+                            " (ex. ?actors=1,2)",
+            ),
+        ]
+    )
+)
 class MovieViewSet(
     mixins.ListModelMixin,
     mixins.CreateModelMixin,
@@ -128,6 +159,25 @@ class MovieViewSet(
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+@extend_schema_view(
+    list=extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="date",
+                type=OpenApiTypes.DATE,
+                description=""
+                            "Filter movie sessions by date"
+                            " (ex. ?date=2024-10-25)",
+            ),
+            OpenApiParameter(
+                name="movie",
+                type=OpenApiTypes.INT,
+                description=""
+                            "Filter movie sessions by movie ID (ex. ?movie=1)",
+            ),
+        ]
+    )
+)
 class MovieSessionViewSet(viewsets.ModelViewSet):
     queryset = (
         MovieSession.objects.all()
