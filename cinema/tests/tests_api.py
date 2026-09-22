@@ -95,3 +95,11 @@ class AuthenticatedMovieApiTests(TestCase):
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(res.data, serializer.data)
+
+    def test_filter_movies_by_actors(self) -> None:
+        url = reverse("cinema:movie-list")
+        res = self.client.get(url, {"actors": f"{self.actor_jack.id}"})
+        movies = Movie.objects.filter(actors__id__in=[self.actor_jack.id]).distinct()
+        serializer = MovieListSerializer(movies, many=True)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data, serializer.data)
