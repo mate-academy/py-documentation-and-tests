@@ -1,6 +1,8 @@
 from datetime import datetime
 
 from django.db.models import F, Count
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import viewsets, mixins, status
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import action
@@ -67,6 +69,37 @@ class MovieViewSet(
     mixins.RetrieveModelMixin,
     viewsets.GenericViewSet,
 ):
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                "title",
+                OpenApiTypes.STR,
+                OpenApiParameter.QUERY,
+                description=(
+                    "Filter movies by title "
+                    "(case-insensitive substring)."
+                ),
+            ),
+            OpenApiParameter(
+                "genres",
+                OpenApiTypes.STR,
+                OpenApiParameter.QUERY,
+                description=(
+                    "Comma-separated genre IDs to filter movies."
+                ),
+            ),
+            OpenApiParameter(
+                "actors",
+                OpenApiTypes.STR,
+                OpenApiParameter.QUERY,
+                description=(
+                    "Comma-separated actor IDs to filter movies."
+                ),
+            ),
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
     queryset = Movie.objects.prefetch_related("genres", "actors")
     serializer_class = MovieSerializer
     authentication_classes = (TokenAuthentication,)
@@ -129,6 +162,28 @@ class MovieViewSet(
 
 
 class MovieSessionViewSet(viewsets.ModelViewSet):
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                "date",
+                OpenApiTypes.DATE,
+                OpenApiParameter.QUERY,
+                description=(
+                    "Filter movie sessions by show date in "
+                    "YYYY-MM-DD format."
+                ),
+            ),
+            OpenApiParameter(
+                "movie",
+                OpenApiTypes.INT,
+                OpenApiParameter.QUERY,
+                description="Filter movie sessions by movie ID.",
+            ),
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
     queryset = (
         MovieSession.objects.all()
         .select_related("movie", "cinema_hall")
