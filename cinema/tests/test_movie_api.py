@@ -157,3 +157,72 @@ class MovieImageUploadTests(TestCase):
         res = self.client.get(MOVIE_SESSION_URL)
 
         self.assertIn("movie_image", res.data[0].keys())
+
+
+class MovieApiTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.user = get_user_model().objects.create_user(
+            email="user@test.com", password="password123",
+        )
+        self.admin = get_user_model().objects.create_superuser(
+            email="admin@test.com", password="password123",
+        )
+
+    def test_list_movies(self):
+        self.client.force_authenticate(self.user)
+        sample_movie(title="Movie 1")
+        sample_movie(title="Movie 2")
+
+        res = self.client.get(MOVIE_URL)
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(res.data), 2)
+
+    def test_filter_movie_by_title(self):
+        self.client.force_authenticate(self.user)
+        mov1 = sample_movie(title="Movie 1")
+        res = self.client.get(MOVIE_URL, {"title": "Movie 1"})
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(res.data), 1)
+        self.assertEqual(res.data[0]["title"], mov1.title)
+
+    def test_filter_movie_by_genres(self):
+        self.client.force_authenticate(self.user)
+        genre1 = sample_genre(name="Genre 1")
+        genre2 = sample_genre(name="Genre 2")
+        mov1 = sample_movie(title="Movie 1")
+        mov2 = sample_movie(title="Movie 2")
+        mov1.genres.add(genre1)
+        mov2.genres.add(genre2)
+
+        res = self.client.get(MOVIE_URL, {"genres": f"{genre1.id}"})
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(res.data), 1)
+        self.assertEqual(res.data[0]["title"], mov1.title)
+
+    def test_create_movie_authenticated(self):
+        self.client.force_authenticate(self.user)
+        payload = {
+            "title": "Movie",
+            "description": "Movie description",
+            "duration": 90,
+        }
+        res = self.client.post(MOVIE_URL, payload)
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_create_movie_allowed_for_admin(self):
+        self.client.force_authenticate(self.admin)
+        genre = sample_genre(name="Action")
+        actor = sample_actor(first_name="Brad", last_name="Pitt")
+        payload = {
+            "title": "Movie",
+            "description": "Movie description",
+            "duration": 90,
+            "genres": [genre.id],
+            "actors": [actor.id],
+        }
+        res = self.client.post(MOVIE_URL, payload)
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
