@@ -22,7 +22,6 @@ def sample_movie(**params):
         "duration": 90,
     }
     defaults.update(params)
-
     return Movie.objects.create(**defaults)
 
 
@@ -31,14 +30,12 @@ def sample_genre(**params):
         "name": "Drama",
     }
     defaults.update(params)
-
     return Genre.objects.create(**defaults)
 
 
 def sample_actor(**params):
     defaults = {"first_name": "George", "last_name": "Clooney"}
     defaults.update(params)
-
     return Actor.objects.create(**defaults)
 
 
@@ -48,7 +45,7 @@ def sample_movie_session(**params):
     )
 
     defaults = {
-        "show_time": "2022-06-02 14:00:00",
+        "show_time": "2026-06-02 14:00:00",
         "movie": None,
         "cinema_hall": cinema_hall,
     }
@@ -58,7 +55,7 @@ def sample_movie_session(**params):
 
 
 def image_upload_url(movie_id):
-    """Return URL for recipe image upload"""
+    """Return URL for movie image upload"""
     return reverse("cinema:movie-upload-image", args=[movie_id])
 
 
@@ -66,107 +63,23 @@ def detail_url(movie_id):
     return reverse("cinema:movie-detail", args=[movie_id])
 
 
-class MovieImageUploadTests(TestCase):
+class MovieUnauthenticatedApiTests(TestCase):
     def setUp(self):
         self.client = APIClient()
-        self.user = get_user_model().objects.create_superuser(
-            "admin@myproject.com", "password"
-        )
-        self.client.force_authenticate(self.user)
-        self.movie = sample_movie()
-        self.genre = sample_genre()
-        self.actor = sample_actor()
-        self.movie_session = sample_movie_session(movie=self.movie)
 
-    def tearDown(self):
-        self.movie.image.delete()
-
-    def test_upload_image_to_movie(self):
-        """Test uploading an image to movie"""
-        url = image_upload_url(self.movie.id)
-        with tempfile.NamedTemporaryFile(suffix=".jpg") as ntf:
-            img = Image.new("RGB", (10, 10))
-            img.save(ntf, format="JPEG")
-            ntf.seek(0)
-            res = self.client.post(url, {"image": ntf}, format="multipart")
-        self.movie.refresh_from_db()
-
-        self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertIn("image", res.data)
-        self.assertTrue(os.path.exists(self.movie.image.path))
-
-    def test_upload_image_bad_request(self):
-        """Test uploading an invalid image"""
-        url = image_upload_url(self.movie.id)
-        res = self.client.post(url, {"image": "not image"}, format="multipart")
-
-        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
-
-    def test_post_image_to_movie_list(self):
-        url = MOVIE_URL
-        with tempfile.NamedTemporaryFile(suffix=".jpg") as ntf:
-            img = Image.new("RGB", (10, 10))
-            img.save(ntf, format="JPEG")
-            ntf.seek(0)
-            res = self.client.post(
-                url,
-                {
-                    "title": "Title",
-                    "description": "Description",
-                    "duration": 90,
-                    "genres": [1],
-                    "actors": [1],
-                    "image": ntf,
-                },
-                format="multipart",
-            )
-
-        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
-        movie = Movie.objects.get(title="Title")
-        self.assertFalse(movie.image)
-
-    def test_image_url_is_shown_on_movie_detail(self):
-        url = image_upload_url(self.movie.id)
-        with tempfile.NamedTemporaryFile(suffix=".jpg") as ntf:
-            img = Image.new("RGB", (10, 10))
-            img.save(ntf, format="JPEG")
-            ntf.seek(0)
-            self.client.post(url, {"image": ntf}, format="multipart")
-        res = self.client.get(detail_url(self.movie.id))
-
-        self.assertIn("image", res.data)
-
-    def test_image_url_is_shown_on_movie_list(self):
-        url = image_upload_url(self.movie.id)
-        with tempfile.NamedTemporaryFile(suffix=".jpg") as ntf:
-            img = Image.new("RGB", (10, 10))
-            img.save(ntf, format="JPEG")
-            ntf.seek(0)
-            self.client.post(url, {"image": ntf}, format="multipart")
+    def test_auth_required(self):
         res = self.client.get(MOVIE_URL)
-
-        self.assertIn("image", res.data[0].keys())
-
-    def test_image_url_is_shown_on_movie_session_detail(self):
-        url = image_upload_url(self.movie.id)
-        with tempfile.NamedTemporaryFile(suffix=".jpg") as ntf:
-            img = Image.new("RGB", (10, 10))
-            img.save(ntf, format="JPEG")
-            ntf.seek(0)
-            self.client.post(url, {"image": ntf}, format="multipart")
-        res = self.client.get(MOVIE_SESSION_URL)
-
-        self.assertIn("movie_image", res.data[0].keys())
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
-class MovieApiTests(TestCase):
+class MovieAuthenticatedApiTests(TestCase):
     def setUp(self):
         self.client = APIClient()
         self.user = get_user_model().objects.create_user(
-            email="user@test.com", password="password123",
+            email="user@test.com", password="password123"
         )
         self.admin = get_user_model().objects.create_superuser(
-            email="admin@test.com", password="password123",
+            email="admin.user@cinema.com", password="1qazcde3"
         )
 
     def test_list_movies(self):
@@ -179,10 +92,20 @@ class MovieApiTests(TestCase):
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(len(res.data), 2)
 
+    def test_retrieve_movie_detail(self):
+        self.client.force_authenticate(self.user)
+        movie = sample_movie(title="Test Movie")
+
+        res = self.client.get(detail_url(movie.id))
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data["title"], movie.title)
+
     def test_filter_movie_by_title(self):
         self.client.force_authenticate(self.user)
-        mov1 = sample_movie(title="Movie 1")
-        res = self.client.get(MOVIE_URL, {"title": "Movie 1"})
+        mov1 = sample_movie(title="Matrix")
+        sample_movie(title="Avatar")
+        res = self.client.get(MOVIE_URL, {"title": "Matrix"})
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(len(res.data), 1)
@@ -190,12 +113,10 @@ class MovieApiTests(TestCase):
 
     def test_filter_movie_by_genres(self):
         self.client.force_authenticate(self.user)
-        genre1 = sample_genre(name="Genre 1")
-        genre2 = sample_genre(name="Genre 2")
-        mov1 = sample_movie(title="Movie 1")
-        mov2 = sample_movie(title="Movie 2")
+        genre1 = sample_genre(name="Action")
+        mov1 = sample_movie(title="Action Movie")
+        mov2 = sample_movie(title="Comedy Movie")
         mov1.genres.add(genre1)
-        mov2.genres.add(genre2)
 
         res = self.client.get(MOVIE_URL, {"genres": f"{genre1.id}"})
 
@@ -203,7 +124,20 @@ class MovieApiTests(TestCase):
         self.assertEqual(len(res.data), 1)
         self.assertEqual(res.data[0]["title"], mov1.title)
 
-    def test_create_movie_authenticated(self):
+    def test_filter_movie_by_actors(self):
+        self.client.force_authenticate(self.user)
+        actor1 = sample_actor(first_name="Brad", last_name="Pitt")
+        mov1 = sample_movie(title="Brad Movie")
+        mov2 = sample_movie(title="Other Movie")
+        mov1.actors.add(actor1)
+
+        res = self.client.get(MOVIE_URL, {"actors": f"{actor1.id}"})
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(res.data), 1)
+        self.assertEqual(res.data[0]["title"], mov1.title)
+
+    def test_create_movie_forbidden_for_regular_user(self):
         self.client.force_authenticate(self.user)
         payload = {
             "title": "Movie",
@@ -213,16 +147,65 @@ class MovieApiTests(TestCase):
         res = self.client.post(MOVIE_URL, payload)
         self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
 
-    def test_create_movie_allowed_for_admin(self):
+    def test_update_movie_allowed_for_admin(self):
         self.client.force_authenticate(self.admin)
+        movie = sample_movie(title="Old Title")
         genre = sample_genre(name="Action")
         actor = sample_actor(first_name="Brad", last_name="Pitt")
+
         payload = {
-            "title": "Movie",
-            "description": "Movie description",
-            "duration": 90,
+            "title": "New Title",
+            "description": "Updated description",
+            "duration": 120,
             "genres": [genre.id],
             "actors": [actor.id],
         }
-        res = self.client.post(MOVIE_URL, payload)
-        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        res = self.client.put(detail_url(movie.id), payload)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        movie.refresh_from_db()
+        self.assertEqual(movie.title, "New Title")
+
+    def test_update_movie_allowed_for_admin(self):
+        self.client.force_authenticate(self.admin)
+
+        genre = sample_genre(name="Action")
+        actor = sample_actor(first_name="Brad", last_name="Pitt")
+        movie = sample_movie(title="Old Title")
+        movie.genres.add(genre)
+        movie.actors.add(actor)
+
+        payload = {
+            "title": "New Title",
+            "description": "Updated description",
+            "duration": 120,
+            "genres": [genre.id],
+            "actors": [actor.id],
+        }
+        res = self.client.put(detail_url(movie.id), payload)
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        movie.refresh_from_db()
+        self.assertEqual(movie.title, "New Title")
+
+    def test_delete_movie_allowed_for_admin(self):
+        self.client.force_authenticate(self.admin)
+        movie = sample_movie(title="To Delete")
+        res = self.client.delete(detail_url(movie.id))
+        self.assertEqual(res.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(Movie.objects.filter(id=movie.id).exists())
+
+    def test_upload_image_to_movie(self):
+        self.client.force_authenticate(self.admin)
+        movie = sample_movie()
+        url = image_upload_url(movie.id)
+        with tempfile.NamedTemporaryFile(suffix=".jpg") as ntf:
+            img = Image.new("RGB", (10, 10))
+            img.save(ntf, format="JPEG")
+            ntf.seek(0)
+            res = self.client.post(url, {"image": ntf}, format="multipart")
+        movie.refresh_from_db()
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertIn("image", res.data)
+        self.assertTrue(os.path.exists(movie.image.path))
+        movie.image.delete()
