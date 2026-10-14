@@ -157,3 +157,96 @@ class MovieImageUploadTests(TestCase):
         res = self.client.get(MOVIE_SESSION_URL)
 
         self.assertIn("movie_image", res.data[0].keys())
+
+
+class MovieViewSetTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.movie = sample_movie()
+        self.genre = sample_genre()
+        self.actor = sample_actor()
+        self.movie.genres.add(self.genre)
+        self.movie.actors.add(self.actor)
+
+    def test_get_movie_list(self):
+        response = self.client.get(MOVIE_URL, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["title"], self.movie.title)
+
+    def test_filter_movies_by_title(self):
+        response = self.client.get(
+            MOVIE_URL,
+            {"title": "Sample"},
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["title"], self.movie.title)
+
+    def test_filter_movies_by_genre(self):
+        response = self.client.get(
+            MOVIE_URL,
+            {"genres": str(self.genre.id)},
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["title"], self.movie.title)
+
+    def test_filter_movies_by_actor(self):
+        response = self.client.get(
+            MOVIE_URL,
+            {"actors": str(self.actor.id)},
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["title"], self.movie.title)
+
+    def test_get_movie_detail(self):
+        response = self.client.get(detail_url(self.movie.id))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["id"], self.movie.id)
+        self.assertEqual(response.data["title"], self.movie.title)
+
+
+    def test_create_movie(self):
+        self.client.force_authenticate(
+            get_user_model().objects.create_superuser(
+                "admin@test.com",
+                "password123",
+            )
+        )
+
+        payload = {
+            "title": "New movie",
+            "description": "New description",
+            "duration": 120,
+            "genres": [self.genre.id],
+            "actors": [self.actor.id],
+        }
+
+        response = self.client.post(MOVIE_URL, payload, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertTrue(Movie.objects.filter(title="New movie").exists())
+
+
+    def test_create_movie_unauthenticated(self):
+        payload = {
+            "title": "New movie",
+            "description": "New description",
+            "duration": 120,
+            "genres": [self.genre.id],
+            "actors": [self.actor.id],
+        }
+
+        response = self.client.post(MOVIE_URL, payload, format="json")
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_401_UNAUTHORIZED
+        )
