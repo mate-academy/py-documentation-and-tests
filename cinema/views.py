@@ -143,6 +143,20 @@ class MovieViewSet(
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+@extend_schema(
+    parameters=[
+        OpenApiParameter(
+            name="movie",
+            description="Filter by movie ID",
+            type=int,
+        ),
+        OpenApiParameter(
+            name="date",
+            description="Filter by date (YYYY-MM-DD)",
+            type=str,
+        ),
+    ]
+)
 class MovieSessionViewSet(viewsets.ModelViewSet):
     queryset = (
         MovieSession.objects.all()
