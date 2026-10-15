@@ -134,17 +134,20 @@ class MovieViewSet(
             OpenApiParameter(
                 "title",
                 type=OpenApiTypes.STR,
-                description="Filter by movie title (case-insensitive, partial match)",
+                description="Filter by movie title"
+                            " (case-insensitive, partial match)",
             ),
             OpenApiParameter(
                 "genres",
                 type=OpenApiTypes.STR,
-                description="Filter by genre ids, comma-separated (e.g. ?genres=1,2)",
+                description="Filter by genre ids,"
+                            " comma-separated (e.g. ?genres=1,2)",
             ),
             OpenApiParameter(
                 "actors",
                 type=OpenApiTypes.STR,
-                description="Filter by actor ids, comma-separated (e.g. ?actors=1,2)",
+                description="Filter by actor ids,"
+                            " comma-separated (e.g. ?actors=1,2)",
             ),
         ]
     )
