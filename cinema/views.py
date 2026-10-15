@@ -1,17 +1,20 @@
 from datetime import datetime
-
 from django.db.models import F, Count
 from rest_framework import viewsets, mixins, status
-from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
-from rest_framework.viewsets import GenericViewSet, ReadOnlyModelViewSet
-
+from rest_framework.viewsets import GenericViewSet
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import (
+    extend_schema,
+    extend_schema_view,
+    OpenApiParameter,
+)
+from rest_framework_simplejwt.authentication import JWTAuthentication
 from cinema.models import Genre, Actor, CinemaHall, Movie, MovieSession, Order
 from cinema.permissions import IsAdminOrIfAuthenticatedReadOnly
-
 from cinema.serializers import (
     GenreSerializer,
     ActorSerializer,
@@ -28,6 +31,10 @@ from cinema.serializers import (
 )
 
 
+@extend_schema_view(
+    list=extend_schema(summary="List genres"),
+    create=extend_schema(summary="Create a genre", description="Admin only."),
+)
 class GenreViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
@@ -35,10 +42,14 @@ class GenreViewSet(
 ):
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
-    authentication_classes = (TokenAuthentication,)
+    authentication_classes = (JWTAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
 
+@extend_schema_view(
+    list=extend_schema(summary="List actors"),
+    create=extend_schema(summary="Create an actor", description="Admin only."),
+)
 class ActorViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
@@ -46,10 +57,17 @@ class ActorViewSet(
 ):
     queryset = Actor.objects.all()
     serializer_class = ActorSerializer
-    authentication_classes = (TokenAuthentication,)
+    authentication_classes = (JWTAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
 
+@extend_schema_view(
+    list=extend_schema(summary="List cinema halls"),
+    create=extend_schema(
+        summary="Create a cinema hall",
+        description="Admin only."
+    ),
+)
 class CinemaHallViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
@@ -57,10 +75,45 @@ class CinemaHallViewSet(
 ):
     queryset = CinemaHall.objects.all()
     serializer_class = CinemaHallSerializer
-    authentication_classes = (TokenAuthentication,)
+    authentication_classes = (JWTAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
 
+@extend_schema_view(
+    list=extend_schema(
+        summary="List movies",
+        description="Returns a list of movies with optional filtering.",
+        parameters=[
+            OpenApiParameter(
+                name="title",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
+                description="Filter by title (case-insensitive contains).",
+            ),
+            OpenApiParameter(
+                name="genres",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
+                description="Comma-separated genre IDs, e.g. `1,2`.",
+            ),
+            OpenApiParameter(
+                name="actors",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
+                description="Comma-separated actor IDs, e.g. `1,3`.",
+            ),
+        ],
+    ),
+    retrieve=extend_schema(
+        summary="Retrieve a movie",
+        description="Returns detailed info about a movie,"
+                    " including genres and actors.",
+    ),
+    create=extend_schema(
+        summary="Create a movie",
+        description="Admin only.",
+    ),
+)
 class MovieViewSet(
     mixins.ListModelMixin,
     mixins.CreateModelMixin,
@@ -69,7 +122,7 @@ class MovieViewSet(
 ):
     queryset = Movie.objects.prefetch_related("genres", "actors")
     serializer_class = MovieSerializer
-    authentication_classes = (TokenAuthentication,)
+    authentication_classes = (JWTAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
     @staticmethod
@@ -110,6 +163,12 @@ class MovieViewSet(
 
         return MovieSerializer
 
+    @extend_schema(
+        summary="Upload movie image",
+        description="Upload an image for a specific movie. Admin only.",
+        request={"multipart/form-data": MovieImageSerializer},
+        responses={200: MovieImageSerializer},
+    )
     @action(
         methods=["POST"],
         detail=True,
@@ -128,6 +187,46 @@ class MovieViewSet(
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+@extend_schema_view(
+    list=extend_schema(
+        summary="List movie sessions",
+        description="Returns movie sessions with"
+                    " the number of available tickets.",
+        parameters=[
+            OpenApiParameter(
+                name="date",
+                type=OpenApiTypes.DATE,
+                location=OpenApiParameter.QUERY,
+                description="Filter by session date (format: `YYYY-MM-DD`).",
+            ),
+            OpenApiParameter(
+                name="movie",
+                type=OpenApiTypes.INT,
+                location=OpenApiParameter.QUERY,
+                description="Filter by movie ID.",
+            ),
+        ],
+    ),
+    retrieve=extend_schema(
+        summary="Retrieve a movie session",
+        description="Returns session details, including taken seats.",
+    ),
+    create=extend_schema(
+        summary="Create a movie session",
+        description="Admin only."
+    ),
+    update=extend_schema(
+        summary="Update a movie session",
+        description="Admin only."
+    ),
+    partial_update=extend_schema(
+        summary="Partially update a movie session", description="Admin only."
+    ),
+    destroy=extend_schema(
+        summary="Delete a movie session",
+        description="Admin only."
+    ),
+)
 class MovieSessionViewSet(viewsets.ModelViewSet):
     queryset = (
         MovieSession.objects.all()
@@ -140,7 +239,7 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
         )
     )
     serializer_class = MovieSessionSerializer
-    authentication_classes = (TokenAuthentication,)
+    authentication_classes = (JWTAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
     def get_queryset(self):
@@ -173,6 +272,17 @@ class OrderPagination(PageNumberPagination):
     max_page_size = 100
 
 
+@extend_schema_view(
+    list=extend_schema(
+        summary="List my orders",
+        description="Returns a paginated list of the current user's orders "
+        "(page size 10, max 100).",
+    ),
+    create=extend_schema(
+        summary="Create an order",
+        description="Creates an order with tickets for the current user.",
+    ),
+)
 class OrderViewSet(
     mixins.ListModelMixin,
     mixins.CreateModelMixin,
@@ -183,7 +293,7 @@ class OrderViewSet(
     )
     serializer_class = OrderSerializer
     pagination_class = OrderPagination
-    authentication_classes = (TokenAuthentication,)
+    authentication_classes = (JWTAuthentication,)
     permission_classes = (IsAuthenticated,)
 
     def get_queryset(self):
