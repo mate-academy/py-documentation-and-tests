@@ -72,7 +72,6 @@ class CinemaHallViewSet(
 ):
     queryset = CinemaHall.objects.all()
     serializer_class = CinemaHallSerializer
-    # authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
 
@@ -115,7 +114,6 @@ class MovieViewSet(
 ):
     queryset = Movie.objects.prefetch_related("genres", "actors")
     serializer_class = MovieSerializer
-    # authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
 
     @staticmethod
@@ -181,8 +179,7 @@ class MovieViewSet(
 
 @extend_schema_view(
     list=extend_schema(
-        description="qwewe",
-        summary="qwe",
+        description="movie session list API",
         parameters=[
             OpenApiParameter(
                 "date",

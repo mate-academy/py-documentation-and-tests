@@ -1,4 +1,3 @@
-from django.contrib.auth import get_user_model
 from django.test import TestCase
 from rest_framework import status
 from rest_framework.reverse import reverse
@@ -9,7 +8,6 @@ from cinema.serializers import GenreSerializer
 from cinema.tests.test_base import sample_user, sample_genre, sample_admin_user
 
 GENRE_URL = reverse("cinema:genre-list")
-User = get_user_model()
 
 
 class UnauthenticatedGenreTests(TestCase):
