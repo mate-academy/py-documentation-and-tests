@@ -28,7 +28,7 @@ MOVIE_SESSION_URL = reverse("cinema:movie_session-list")
 
 
 def image_upload_url(movie_id):
-    """Return URL for recipe image upload"""
+    """Return URL for movie image upload"""
     return reverse("cinema:movie-upload-image", args=[movie_id])
 
 

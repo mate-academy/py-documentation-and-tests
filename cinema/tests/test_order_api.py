@@ -1,3 +1,4 @@
+from django.core.cache import cache
 from django.test import TestCase
 from rest_framework import status
 from rest_framework.reverse import reverse
@@ -21,6 +22,7 @@ class UnauthenticatedOrderTests(TestCase):
 
 class AuthenticatedOrderTests(TestCase):
     def setUp(self):
+        cache.clear()
         self.client = APIClient()
         self.user = sample_user()
         self.client.force_authenticate(user=self.user)
