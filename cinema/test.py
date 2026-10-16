@@ -148,7 +148,7 @@ class MovieViewSetAdminTests(APITestCase):
         res = self.client.post(MOVIE_LIST_URL, payload, format="json")
 
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
-        movie = Movie.objects.get(title="Admin Movie")
+        movie = Movie.objects.get(title="Test Movie")
         self.assertEqual(movie.duration, 120)
         self.assertEqual(list(movie.genres.all()), [self.drama])
         self.assertEqual(list(movie.actors.all()), [self.hanks])
