@@ -8,6 +8,7 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet, ReadOnlyModelViewSet
+from drf_spectacular.utils import OpenApiParameter, extend_schema
 
 from cinema.models import Genre, Actor, CinemaHall, Movie, MovieSession, Order
 from cinema.permissions import IsAdminOrIfAuthenticatedReadOnly
@@ -71,6 +72,31 @@ class MovieViewSet(
     serializer_class = MovieSerializer
     authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                "title",
+                str,
+                OpenApiParameter.QUERY,
+                description="Filter by a case-insensitive title match.",
+            ),
+            OpenApiParameter(
+                "genres",
+                str,
+                OpenApiParameter.QUERY,
+                description="Comma-separated genre IDs.",
+            ),
+            OpenApiParameter(
+                "actors",
+                str,
+                OpenApiParameter.QUERY,
+                description="Comma-separated actor IDs.",
+            ),
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
 
     @staticmethod
     def _params_to_ints(qs):
@@ -142,6 +168,25 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
     serializer_class = MovieSessionSerializer
     authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAdminOrIfAuthenticatedReadOnly,)
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                "date",
+                str,
+                OpenApiParameter.QUERY,
+                description="Show date in YYYY-MM-DD format.",
+            ),
+            OpenApiParameter(
+                "movie",
+                int,
+                OpenApiParameter.QUERY,
+                description="Movie ID.",
+            ),
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
 
     def get_queryset(self):
         date = self.request.query_params.get("date")
