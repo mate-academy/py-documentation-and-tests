@@ -10,7 +10,7 @@ from rest_framework.test import APIClient
 from rest_framework import status
 
 from cinema.models import Movie, MovieSession, CinemaHall, Genre, Actor
-from cinema.serializers import MovieSerializer, MovieListSerializer, MovieDetailSerializer
+from cinema.serializers import MovieListSerializer, MovieDetailSerializer
 
 MOVIE_URL = reverse("cinema:movie-list")
 MOVIE_SESSION_URL = reverse("cinema:moviesession-list")
@@ -92,7 +92,7 @@ class AuthenticatedMovieApiTests(TestCase):
 
     def test_get_retrieve_movie(self):
         movie = sample_movie()
-        res = self.client.get(f"{MOVIE_URL}{movie.id}/")
+        res = self.client.get(detail_url(movie.id))
         serializer = MovieDetailSerializer(movie)
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
