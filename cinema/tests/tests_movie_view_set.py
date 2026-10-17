@@ -1,5 +1,4 @@
 from django.contrib.auth import get_user_model
-from rest_framework.status import HTTP_403_FORBIDDEN
 from rest_framework.test import APITestCase
 from rest_framework import status
 from rest_framework.reverse import reverse
@@ -72,6 +71,67 @@ class AuthenticatedMovieViewSetTests(APITestCase):
         self.assertNotIn(serializer_without_title.data, res.data)
         self.assertNotIn(serializer_with_title_2.data, res.data)
 
+    def test_filter_movies_by_genre(self):
+        movie_without_genre = sample_movie()
+        movie_with_genre_1 = sample_movie()
+        movie_with_genre_2 = sample_movie()
+        movie_with_genre_3 = sample_movie()
+
+        genre_1 = Genre.objects.create(name="Sci-fi")
+        genre_2 = Genre.objects.create(name="Detective")
+        genre_3 = Genre.objects.create(name="Comedy")
+
+        movie_with_genre_1.genres.add(genre_1)
+        movie_with_genre_2.genres.add(genre_2)
+        movie_with_genre_3.genres.add(genre_3)
+
+        res = self.client.get(MOVIE_URL_LIST, {"genres": f"{genre_1.id},{genre_2.id}"})
+
+        serializer_without_genre = MovieListSerializer(movie_without_genre)
+        serializer_with_genre_1 = MovieListSerializer(movie_with_genre_1)
+        serializer_with_genre_2 = MovieListSerializer(movie_with_genre_2)
+        serializer_with_genre_3 = MovieListSerializer(movie_with_genre_3)
+
+        self.assertIn(serializer_with_genre_1.data, res.data)
+        self.assertNotIn(serializer_with_genre_3.data, res.data)
+        self.assertNotIn(serializer_without_genre.data, res.data)
+        self.assertIn(serializer_with_genre_2.data, res.data)
+
+    def test_filter_movies_by_actors(self):
+        movie_without_actors = sample_movie()
+        movie_with_actor_1 = sample_movie()
+        movie_with_actor_2 = sample_movie()
+        movie_with_actor_3 = sample_movie()
+
+        actor_1 = Actor.objects.create(
+            first_name="Kendric",
+            last_name="Lamar"
+        )
+        actor_2 = Actor.objects.create(
+            first_name="William",
+            last_name="Delupac"
+        )
+        actor_3 = Actor.objects.create(
+            first_name="Lil",
+            last_name="Uzi"
+        )
+
+        movie_with_actor_1.actors.add(actor_1)
+        movie_with_actor_2.actors.add(actor_2)
+        movie_with_actor_3.actors.add(actor_3)
+
+        res = self.client.get(MOVIE_URL_LIST, {"actors": f"{actor_1.id},{actor_3.id}"})
+
+        serializer_without_genre = MovieListSerializer(movie_without_actors)
+        serializer_with_genre_1 = MovieListSerializer(movie_with_actor_1)
+        serializer_with_genre_2 = MovieListSerializer(movie_with_actor_2)
+        serializer_with_genre_3 = MovieListSerializer(movie_with_actor_3)
+
+        self.assertIn(serializer_with_genre_1.data, res.data)
+        self.assertIn(serializer_with_genre_3.data, res.data)
+        self.assertNotIn(serializer_without_genre.data, res.data)
+        self.assertNotIn(serializer_with_genre_2.data, res.data)
+
     def test_retrieve_movie_detail(self):
         movie = sample_movie()
 
@@ -98,4 +158,5 @@ class AuthenticatedMovieViewSetTests(APITestCase):
 
         res = self.client.post(MOVIE_URL_LIST, payload)
 
-        self.assertEqual(res.status_code, HTTP_403_FORBIDDEN)
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+
