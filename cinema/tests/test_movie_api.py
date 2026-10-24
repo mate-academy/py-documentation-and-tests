@@ -4,6 +4,7 @@ import os
 from PIL import Image
 from django.contrib.auth import get_user_model
 from django.test import TestCase
+from django.core.cache import cache
 from django.urls import reverse
 
 from rest_framework.test import APIClient
@@ -68,6 +69,12 @@ def detail_url(movie_id):
 
 class MovieImageUploadTests(TestCase):
     def setUp(self):
+        cache.clear()
+        directory = tempfile.TemporaryDirectory()
+        self.addCleanup(directory.cleanup)
+        settings = self.settings(MEDIA_ROOT=directory.name)
+        settings.enable()
+        self.addCleanup(settings.disable)
         self.client = APIClient()
         self.user = get_user_model().objects.create_superuser(
             "admin@myproject.com", "password"
