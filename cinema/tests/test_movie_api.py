@@ -1,5 +1,6 @@
 import tempfile
 import os
+from os import name
 
 from PIL import Image
 from django.contrib.auth import get_user_model
@@ -10,6 +11,7 @@ from rest_framework.test import APIClient
 from rest_framework import status
 
 from cinema.models import Movie, MovieSession, CinemaHall, Genre, Actor
+from cinema.serializers import MovieSerializer, MovieDetailSerializer, MovieListSerializer
 
 MOVIE_URL = reverse("cinema:movie-list")
 MOVIE_SESSION_URL = reverse("cinema:moviesession-list")
@@ -157,3 +159,161 @@ class MovieImageUploadTests(TestCase):
         res = self.client.get(MOVIE_SESSION_URL)
 
         self.assertIn("movie_image", res.data[0].keys())
+
+
+class PublicMovieApiTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+
+    def test_auth_required(self):
+        res = self.client.get(MOVIE_URL)
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+
+class PrivateMovieApiTests(TestCase):
+    def setUp(self) -> None:
+        self.client = APIClient()
+        self.user = get_user_model().objects.create_user(
+            "test@gmail.com",
+            "testpassword123"
+        )
+        self.client.force_authenticate(self.user)
+
+
+
+    def test_items_list(self) -> None:
+        sample_movie()
+        sample_movie(title="Test movie")
+
+        url = reverse("cinema:movie-list")
+        res = self.client.get(url)  # get a list of data from url
+
+        items = Movie.objects.all()  # get a list of data from db
+        serializer = MovieListSerializer(items, many=True)
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(serializer.data, res.data)
+
+    def test_movies_retrieve(self):
+        item = sample_movie()
+        url = reverse("cinema:movie-detail", args=[item.id])
+        res = self.client.get(url)
+
+        serializer = MovieDetailSerializer(item)
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(serializer.data, res.data)
+
+    def test_filter_movies_by_title(self):
+        sample_movie(title="Titanic")
+        sample_movie(title="Titanic 2")
+        sample_movie(title="Test movie")
+
+        url = reverse("cinema:movie-list")
+        res = self.client.get(url, {"title": "Titanic"})  # get a list of data from url
+
+        items = Movie.objects.filter(title__icontains="Titanic")  # get a list of data from db
+        serializer = MovieListSerializer(items, many=True)
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(serializer.data, res.data)
+
+    def test_filter_movies_by_genres(self):
+        genre_1 = sample_genre()
+        genre_2 = sample_genre(name="Cartoon")
+
+        movie_1 = sample_movie(title="Titanic")
+        movie_2 = sample_movie(title="King Lion")
+
+        movie_1.genres.add(genre_1)
+        movie_2.genres.add(genre_2)
+
+        url = reverse("cinema:movie-list")
+        res = self.client.get(url, {"genres": genre_1.id})  # get a list of data from url
+
+        items = Movie.objects.filter(genres=genre_1)  # get a list of data from db
+        serializer = MovieListSerializer(items, many=True)
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(serializer.data, res.data)
+
+    def test_filter_movies_by_actors(self):
+        actor_1 = sample_actor()
+        actor_2 = sample_actor(first_name="Tom", last_name="Hanks")
+
+        movie_1 = sample_movie(title="Titanic")
+        movie_2 = sample_movie(title="King Lion")
+
+        movie_1.actors.add(actor_1)
+        movie_2.actors.add(actor_2)
+
+        url = reverse("cinema:movie-list")
+        res = self.client.get(url, {"actors": actor_1.id})  # get a list of data from url
+
+        items = Movie.objects.filter(actors=actor_1)  # get a list of data from db
+        serializer = MovieListSerializer(items, many=True)
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(serializer.data, res.data)
+
+    def test_create_movie_forbidden(self):
+        test_movie = {
+            "title": "Titanic",
+            "description": "Ship",
+            "duration": 120,
+        }
+
+        url = reverse("cinema:movie-list")
+        res = self.client.post(url, test_movie)
+
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_create_movie_as_admin(self):
+        self.admin = get_user_model().objects.create_superuser(
+            "test_admin@gmail.com",
+            "testpassword123"
+        )
+        self.client.force_authenticate(self.admin)
+        test_genre = sample_genre()
+        test_actor = sample_actor()
+        test_movie = {
+            "title": "Titanic",
+            "description": "Ship",
+            "duration": 120,
+            "genres": [test_genre.id],
+            "actors": [test_actor.id],
+        }
+
+        url = reverse("cinema:movie-list")
+        res = self.client.post(url, test_movie)
+
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        self.assertTrue(Movie.objects.filter(title="Titanic").exists())
+
+    def test_upload_image_forbidden(self):
+        movie_test = sample_movie()
+        url = image_upload_url(movie_test.id)
+        res = self.client.post(url)
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_filter_movies_by_multiple_genres(self):
+        genre_1 = sample_genre()
+        genre_2 = sample_genre(name="Cartoon")
+        genre_3 = sample_genre(name="Action")
+
+        movie_1 = sample_movie(title="Titanic")
+        movie_2 = sample_movie(title="King Lion")
+        movie_3 = sample_movie(title="Avengers")
+
+        movie_1.genres.add(genre_1)
+        movie_2.genres.add(genre_2)
+        movie_3.genres.add(genre_1, genre_3)
+
+        url = reverse("cinema:movie-list")
+        res = self.client.get(url, {"genres": f"{genre_1.id}, {genre_3.id}"})  # get a list of data from url
+
+        items = Movie.objects.filter(genres__in=[genre_1, genre_3]).distinct()  # get a list of data from db
+        serializer = MovieListSerializer(items, many=True)
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(serializer.data, res.data)
