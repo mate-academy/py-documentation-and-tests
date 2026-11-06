@@ -12,11 +12,7 @@ from rest_framework.viewsets import GenericViewSet
 from cinema.models import Genre, Actor, CinemaHall, Movie, MovieSession, Order
 from cinema.permissions import IsAdminOrIfAuthenticatedReadOnly
 
-from drf_spectacular.utils import (
-    extend_schema_view,
-    extend_schema,
-    OpenApiParameter
-)
+from drf_spectacular.utils import extend_schema_view, extend_schema, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
 
 from cinema.serializers import (
