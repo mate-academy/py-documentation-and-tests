@@ -10,9 +10,30 @@ from rest_framework.test import APIClient
 from rest_framework import status
 
 from cinema.models import Movie, MovieSession, CinemaHall, Genre, Actor
+from cinema.serializers import MovieSerializer
 
 MOVIE_URL = reverse("cinema:movie-list")
 MOVIE_SESSION_URL = reverse("cinema:moviesession-list")
+
+
+def image_upload_url(movie_id):
+    """Return URL for recipe image upload"""
+    return reverse("cinema:movie-upload-image", args=[movie_id])
+
+
+def detail_url(movie_id):
+    return reverse("cinema:movie-detail", args=[movie_id])
+
+
+def sample_user(admin: bool = False, **params):
+    defaults = {
+        "email": "simple_user@example.example",
+        "password": "UserPassword123"
+    }
+    defaults.update(params)
+    if admin:
+        defaults["is_staff"] = True
+    return get_user_model().objects.create_user(**defaults)
 
 
 def sample_movie(**params):
@@ -55,15 +76,6 @@ def sample_movie_session(**params):
     defaults.update(params)
 
     return MovieSession.objects.create(**defaults)
-
-
-def image_upload_url(movie_id):
-    """Return URL for recipe image upload"""
-    return reverse("cinema:movie-upload-image", args=[movie_id])
-
-
-def detail_url(movie_id):
-    return reverse("cinema:movie-detail", args=[movie_id])
 
 
 class MovieImageUploadTests(TestCase):
@@ -157,3 +169,111 @@ class MovieImageUploadTests(TestCase):
         res = self.client.get(MOVIE_SESSION_URL)
 
         self.assertIn("movie_image", res.data[0].keys())
+
+
+class MovieApiUnAuthenticatedTests(TestCase):
+    def setUp(self):
+        self.movie = sample_movie()
+        self.client = APIClient()
+
+    def test_movie_list_access(self):
+        res = self.client.get(MOVIE_URL)
+        self.assertEqual(
+            res.status_code,
+            status.HTTP_401_UNAUTHORIZED
+        )
+
+    def test_movie_detail_access(self):
+        res = self.client.get(detail_url(movie_id=self.movie.id))
+        self.assertEqual(
+            res.status_code,
+            status.HTTP_401_UNAUTHORIZED
+        )
+
+
+class MovieApiAuthenticatedTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        user = sample_user()
+        self.client.force_authenticate(user)
+        self.movie = sample_movie()
+
+    def test_movie_list_authenticated_access(self):
+        res = self.client.get(MOVIE_URL)
+        self.assertEqual(
+            res.status_code,
+            status.HTTP_200_OK
+        )
+
+    def test_movie_detail_access(self):
+        res = self.client.get(detail_url(movie_id=self.movie.id))
+        self.assertEqual(
+            res.status_code,
+            status.HTTP_200_OK
+        )
+
+    def test_movie_create_access(self):
+        genre = sample_genre()
+        actor = sample_actor()
+        data = {
+            "title": "new movie",
+            "description": "new movie description",
+            "duration": 120,
+            "genres": [genre.id],
+            "actors": [actor.id]
+        }
+        res = self.client.post(
+            MOVIE_URL,
+            data=data
+        )
+        self.assertEqual(
+            res.status_code,
+            status.HTTP_403_FORBIDDEN
+        )
+
+
+class MovieApiAdminTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        user = sample_user(admin=True)
+        self.client.force_authenticate(user)
+        self.genre = sample_genre()
+        self.actor = sample_actor()
+        self.data = {
+            "title": "new movie",
+            "description": "new movie description",
+            "duration": 120,
+            "genres": [self.genre.id],
+            "actors": [self.actor.id]
+        }
+
+    def test_movie_create_admin_access(self):
+        res = self.client.post(MOVIE_URL, data=self.data)
+        movie = Movie.objects.get(id=1)
+        serializer = MovieSerializer(movie)
+        self.assertEqual(
+            res.status_code,
+            status.HTTP_201_CREATED
+        )
+        self.assertEqual(
+            res.data,
+            serializer.data
+        )
+
+    def test_movie_create_admin_with_luck_of_data(self):
+        for key in self.data:
+            data = self.data.copy()
+            data.pop(key)
+            res = self.client.post(MOVIE_URL, data=data)
+            self.assertEqual(
+                res.status_code,
+                status.HTTP_400_BAD_REQUEST
+            )
+
+    def test_duration_field_negative(self):
+        self.data["duration"] = -10
+        res = self.client.post(MOVIE_URL, self.data)
+        self.assertEqual(
+            res.status_code,
+            status.HTTP_400_BAD_REQUEST
+        )
