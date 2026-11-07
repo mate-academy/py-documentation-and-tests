@@ -132,7 +132,9 @@ class AuthenticatedMovieApiTests(TestCase):
         movie1.genres.add(genre1)
         movie2.genres.add(genre2)
 
-        res = self.client.get(MOVIE_URL, {"genres": f"{genre1.id},{genre2.id}"})
+        res = self.client.get(
+            MOVIE_URL, {"genres": f"{genre1.id},{genre2.id}"}
+        )
 
         serializer1 = MovieListSerializer(movie1)
         serializer2 = MovieListSerializer(movie2)
@@ -153,7 +155,9 @@ class AuthenticatedMovieApiTests(TestCase):
         movie1.actors.add(actor1)
         movie2.actors.add(actor2)
 
-        res = self.client.get(MOVIE_URL, {"actors": f"{actor1.id},{actor2.id}"})
+        res = self.client.get(
+            MOVIE_URL, {"actors": f"{actor1.id},{actor2.id}"}
+        )
 
         serializer1 = MovieListSerializer(movie1)
         serializer2 = MovieListSerializer(movie2)
@@ -184,6 +188,25 @@ class AuthenticatedMovieApiTests(TestCase):
         }
 
         res = self.client.post(MOVIE_URL, payload)
+
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_update_movie_forbidden(self):
+        movie = sample_movie()
+        payload = {
+            "title": "New title",
+            "description": "New description",
+            "duration": 120,
+        }
+
+        res = self.client.put(detail_url(movie.id), payload)
+
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_delete_movie_forbidden(self):
+        movie = sample_movie()
+
+        res = self.client.delete(detail_url(movie.id))
 
         self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
 
@@ -270,6 +293,34 @@ class AdminMovieApiTests(TestCase):
         res = self.client.post(MOVIE_URL, payload, format="json")
 
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_update_movie(self):
+        movie = sample_movie()
+        genre = sample_genre()
+        actor = sample_actor()
+        payload = {
+            "title": "Updated movie",
+            "description": "Updated description",
+            "duration": 120,
+            "genres": [genre.id],
+            "actors": [actor.id],
+        }
+
+        res = self.client.put(detail_url(movie.id), payload, format="json")
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        movie.refresh_from_db()
+        self.assertEqual(movie.title, "Updated movie")
+        self.assertEqual(movie.description, "Updated description")
+        self.assertEqual(movie.duration, 120)
+
+    def test_delete_movie(self):
+        movie = sample_movie()
+
+        res = self.client.delete(detail_url(movie.id))
+
+        self.assertEqual(res.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(Movie.objects.filter(id=movie.id).exists())
 
 
 class MovieImageUploadTests(TestCase):
