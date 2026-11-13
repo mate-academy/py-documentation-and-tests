@@ -148,7 +148,7 @@ class MovieCreateApiTests(TestCase):
 
 
 class MovieUpdateApiTests(TestCase):
-    """Test that updating movies is not supported."""
+    """Test that updating movies works correctly."""
 
     def setUp(self):
         self.client = APIClient()
@@ -166,7 +166,7 @@ class MovieUpdateApiTests(TestCase):
         self.movie.genres.add(self.genre)
         self.movie.actors.add(self.actor)
 
-    def test_update_movie_not_supported(self):
+    def test_update_movie_full(self):
         url = detail_url("movie", self.movie.id)
         res = self.client.put(
             url,
@@ -178,16 +178,27 @@ class MovieUpdateApiTests(TestCase):
                 "actors": [self.actor.id],
             },
         )
-        self.assertEqual(res.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data["title"], "Updated Movie")
+        self.assertEqual(res.data["description"], "Updated description")
+        self.assertEqual(res.data["duration"], 120)
+        movie = Movie.objects.get(id=self.movie.id)
+        self.assertEqual(movie.title, "Updated Movie")
+        self.assertEqual(movie.description, "Updated description")
+        self.assertEqual(movie.duration, 120)
 
-    def test_partial_update_movie_not_supported(self):
+    def test_partial_update_movie(self):
         url = detail_url("movie", self.movie.id)
         res = self.client.patch(url, {"title": "Partially Updated"})
-        self.assertEqual(res.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data["title"], "Partially Updated")
+        movie = Movie.objects.get(id=self.movie.id)
+        self.assertEqual(movie.title, "Partially Updated")
+        self.assertEqual(movie.description, "Sample description")
 
 
 class MovieDeleteApiTests(TestCase):
-    """Test that deleting movies is not supported."""
+    """Test that deleting movies works correctly."""
 
     def setUp(self):
         self.client = APIClient()
@@ -201,10 +212,12 @@ class MovieDeleteApiTests(TestCase):
             duration=90,
         )
 
-    def test_delete_movie_not_supported(self):
+    def test_delete_movie(self):
         url = detail_url("movie", self.movie.id)
+        movie_id = self.movie.id
         res = self.client.delete(url)
-        self.assertEqual(res.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.assertEqual(res.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(Movie.objects.filter(id=movie_id).count(), 0)
 
 
 class UnauthenticatedMovieModifyTests(TestCase):
