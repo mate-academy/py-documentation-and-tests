@@ -122,6 +122,8 @@ class MovieSessionListSerializer(MovieSessionSerializer):
 
 
 class TicketSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(required=False)
+
     def validate(self, attrs):
         data = super(TicketSerializer, self).validate(attrs=attrs)
         Ticket.validate_ticket(

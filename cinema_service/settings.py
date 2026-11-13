@@ -43,11 +43,35 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "rest_framework",
+    "drf_spectacular",
     "rest_framework.authtoken",
+    "rest_framework_simplejwt",
     "debug_toolbar",
     "cinema",
     "user",
 ]
+
+REST_FRAMEWORK = {
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+    ),
+    "DEFAULT_THROTTLE_CLASSES": [
+        "rest_framework.throttling.AnonRateThrottle",
+        "rest_framework.throttling.UserRateThrottle",
+    ],
+    "DEFAULT_THROTTLE_RATES": {
+        "anon": "10/min",
+        "user": "30/min",
+    }
+}
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Cinema API",
+    "DESCRIPTION": "API service for movie theater management",
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
+}
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
