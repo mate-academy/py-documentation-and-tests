@@ -7,7 +7,7 @@ from django.urls import reverse
 from rest_framework.test import APIClient
 from rest_framework import status
 
-from cinema.models import Movie, MovieSession, CinemaHall, Genre, Actor, Order, Ticket
+from cinema.models import Movie, MovieSession, CinemaHall, Genre, Actor, Order
 
 
 MOVIE_URL = reverse("cinema:movie-list")
@@ -145,6 +145,102 @@ class MovieCreateApiTests(TestCase):
         self.assertEqual(movie.title, "New Movie")
         self.assertEqual(movie.genres.count(), 1)
         self.assertEqual(movie.actors.count(), 1)
+
+
+class MovieUpdateApiTests(TestCase):
+    """Test that updating movies is not supported."""
+
+    def setUp(self):
+        self.client = APIClient()
+        self.admin = get_user_model().objects.create_superuser(
+            "admin@myproject.com", "password"
+        )
+        self.client.force_authenticate(self.admin)
+        self.genre = Genre.objects.create(name="Drama")
+        self.actor = Actor.objects.create(first_name="George", last_name="Clooney")
+        self.movie = Movie.objects.create(
+            title="Sample movie",
+            description="Sample description",
+            duration=90,
+        )
+        self.movie.genres.add(self.genre)
+        self.movie.actors.add(self.actor)
+
+    def test_update_movie_not_supported(self):
+        url = detail_url("movie", self.movie.id)
+        res = self.client.put(
+            url,
+            {
+                "title": "Updated Movie",
+                "description": "Updated description",
+                "duration": 120,
+                "genres": [self.genre.id],
+                "actors": [self.actor.id],
+            },
+        )
+        self.assertEqual(res.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def test_partial_update_movie_not_supported(self):
+        url = detail_url("movie", self.movie.id)
+        res = self.client.patch(url, {"title": "Partially Updated"})
+        self.assertEqual(res.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+
+class MovieDeleteApiTests(TestCase):
+    """Test that deleting movies is not supported."""
+
+    def setUp(self):
+        self.client = APIClient()
+        self.admin = get_user_model().objects.create_superuser(
+            "admin@myproject.com", "password"
+        )
+        self.client.force_authenticate(self.admin)
+        self.movie = Movie.objects.create(
+            title="Sample movie",
+            description="Sample description",
+            duration=90,
+        )
+
+    def test_delete_movie_not_supported(self):
+        url = detail_url("movie", self.movie.id)
+        res = self.client.delete(url)
+        self.assertEqual(res.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+
+class UnauthenticatedMovieModifyTests(TestCase):
+    """Test that unauthenticated users cannot update or delete movies."""
+
+    def setUp(self):
+        self.client = APIClient()
+        self.movie = Movie.objects.create(
+            title="Sample movie",
+            description="Sample description",
+            duration=90,
+        )
+
+    def test_update_movie_requires_auth(self):
+        url = detail_url("movie", self.movie.id)
+        res = self.client.put(url, {"title": "Updated"})
+        self.assertIn(
+            res.status_code,
+            [status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN],
+        )
+
+    def test_partial_update_movie_requires_auth(self):
+        url = detail_url("movie", self.movie.id)
+        res = self.client.patch(url, {"title": "Updated"})
+        self.assertIn(
+            res.status_code,
+            [status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN],
+        )
+
+    def test_delete_movie_requires_auth(self):
+        url = detail_url("movie", self.movie.id)
+        res = self.client.delete(url)
+        self.assertIn(
+            res.status_code,
+            [status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN],
+        )
 
 
 class GenreApiTests(TestCase):
