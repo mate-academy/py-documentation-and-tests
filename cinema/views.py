@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from django.db.models import F, Count
+from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import viewsets, mixins, status
 from rest_framework.decorators import action
@@ -122,23 +123,41 @@ class MovieViewSet(
         parameters=[
             OpenApiParameter(
                 "title",
-                type={"type": "array", "items": {"type": "number"}},
-                description="Filter by title id (ex. ?title=1)",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
+                description=(
+                    "Case-insensitive search by part of the movie title "
+                    "(ex. ?title=matrix)."
+                ),
             ),
             OpenApiParameter(
                 "genres",
-                type={"type": "array", "items": {"type": "number"}},
-                description="Filter by genres id (ex. ?genres=2,3)",
+                type=OpenApiTypes.INT,
+                location=OpenApiParameter.QUERY,
+                many=True,
+                style="form",
+                explode=False,
+                description=(
+                    "Filter by comma-separated genre IDs "
+                    "(ex. ?genres=2,3)."
+                ),
             ),
             OpenApiParameter(
                 "actors",
-                type={"type": "array", "items": {"type": "number"}},
-                description="Filter by actors id (ex. ?actors=2,3)",
-            )
+                type=OpenApiTypes.INT,
+                location=OpenApiParameter.QUERY,
+                many=True,
+                style="form",
+                explode=False,
+                description=(
+                    "Filter by comma-separated actor IDs "
+                    "(ex. ?actors=2,3)."
+                ),
+            ),
         ]
     )
     def list(self, request, *args, **kwargs):
-        """Get list of buses. """
+        """Get list of movies."""
         return super().list(request, *args, **kwargs)
 
 
@@ -183,18 +202,23 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
         parameters=[
             OpenApiParameter(
                 "date",
-                type={"type": "array", "items": {"type": "date"}},
-                description="Filter by date (ex. ?date=date)",
+                type=OpenApiTypes.DATE,
+                location=OpenApiParameter.QUERY,
+                description=(
+                    "Filter by a single show date in YYYY-MM-DD format "
+                    "(ex. ?date=2026-11-13)."
+                ),
             ),
             OpenApiParameter(
                 "movie",
-                type={"type": "array", "items": {"type": "number"}},
-                description="Filter by movie id (ex. ?movie=2,3)",
-            )
+                type=OpenApiTypes.INT,
+                location=OpenApiParameter.QUERY,
+                description="Filter by a single movie ID (ex. ?movie=2).",
+            ),
         ]
     )
     def list(self, request, *args, **kwargs):
-        """Get list of buses. """
+        """Get list of movie sessions."""
         return super().list(request, *args, **kwargs)
 
 
