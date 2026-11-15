@@ -499,3 +499,55 @@ class MovieViewSetTests(TestCase):
                 status.HTTP_403_FORBIDDEN,
             ],
         )
+    def test_update_movie_not_allowed(self):
+        """Test that updating a movie using PUT is not allowed."""
+        url = detail_url(self.movie.id)
+
+        payload = {
+            "title": "Updated movie",
+            "description": "Updated description",
+            "duration": 120,
+        }
+
+        response = self.client.put(url, payload, format="json")
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
+
+        self.movie.refresh_from_db()
+        self.assertEqual(self.movie.title, "Avatar")
+
+    def test_partial_update_movie_not_allowed(self):
+        """Test that updating a movie using PATCH is not allowed."""
+        url = detail_url(self.movie.id)
+
+        response = self.client.patch(
+            url,
+            {"title": "Updated Avatar"},
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
+
+        self.movie.refresh_from_db()
+        self.assertEqual(self.movie.title, "Avatar")
+
+    def test_delete_movie_not_allowed(self):
+        """Test that deleting a movie is not allowed."""
+        url = detail_url(self.movie.id)
+
+        response = self.client.delete(url)
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
+
+        self.assertTrue(
+            Movie.objects.filter(id=self.movie.id).exists()
+        )
