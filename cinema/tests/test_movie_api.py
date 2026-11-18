@@ -157,3 +157,130 @@ class MovieImageUploadTests(TestCase):
         res = self.client.get(MOVIE_SESSION_URL)
 
         self.assertIn("movie_image", res.data[0].keys())
+
+
+class MovieViewSetTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.user = get_user_model().objects.create_superuser(
+            "admin@myproject.com",
+            "password",
+        )
+        self.client.force_authenticate(user=self.user)
+        self.movie = sample_movie()
+        self.genre = sample_genre()
+        self.actor = sample_actor()
+
+    def test_movie_list(self):
+        response = self.client.get(MOVIE_URL)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_movie_detail(self):
+        response = self.client.get(detail_url(self.movie.id))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_filter_movies_by_title(self):
+        movie = sample_movie(title="Inception")
+        response = self.client.get(
+            MOVIE_URL,
+            {"title": "Inception"},
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn(movie.id, [item["id"] for item in response.data])
+
+    def test_filter_movies_by_genre(self):
+        movie = sample_movie()
+        movie.genres.add(self.genre)
+        response = self.client.get(
+            MOVIE_URL,
+            {"genres": str(self.genre.id)},
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn(movie.id, [item["id"] for item in response.data])
+
+    def test_filter_movies_by_actor(self):
+        movie = sample_movie()
+        movie.actors.add(self.actor)
+        response = self.client.get(
+            MOVIE_URL,
+            {"actors": str(self.actor.id)},
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn(movie.id, [item["id"] for item in response.data])
+
+    def test_create_movie(self):
+        payload = {
+            "title": "Interstellar",
+            "description": "A science fiction movie",
+            "duration": 169,
+            "genres": [self.genre.id],
+            "actors": [self.actor.id],
+        }
+
+        response = self.client.post(MOVIE_URL, payload)
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_201_CREATED,
+        )
+
+        movie = Movie.objects.get(id=response.data["id"])
+
+        self.assertEqual(movie.title, payload["title"])
+        self.assertEqual(movie.description, payload["description"])
+        self.assertEqual(movie.duration, payload["duration"])
+
+    def test_partial_update_movie(self):
+        payload = {
+            "title": "Updated Movie",
+            "description": "Updated description",
+            "duration": 120,
+            "genres": [self.genre.id],
+            "actors": [self.actor.id],
+        }
+
+        response = self.client.patch(
+            detail_url(self.movie.id),
+            payload,
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.movie.refresh_from_db()
+
+        self.assertEqual(self.movie.title, payload["title"])
+        self.assertEqual(
+            self.movie.description,
+            payload["description"],
+        )
+
+    def test_delete_movie(self):
+        response = self.client.delete(
+            detail_url(self.movie.id)
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_204_NO_CONTENT,
+        )
+
+        self.assertFalse(
+            Movie.objects.filter(id=self.movie.id).exists()
+        )
+
+    def test_access_without_authentication(self):
+        self.client.force_authenticate(user=None)
+
+        response = self.client.post(MOVIE_URL, {})
+
+        self.assertIn(
+            response.status_code,
+            [
+                status.HTTP_401_UNAUTHORIZED,
+                status.HTTP_403_FORBIDDEN,
+            ],
+        )
