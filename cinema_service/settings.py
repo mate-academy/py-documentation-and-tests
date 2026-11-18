@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     "debug_toolbar",
     "cinema",
     "user",
+    "drf_spectacular",
 ]
 
 MIDDLEWARE = [
@@ -140,3 +141,28 @@ MEDIA_ROOT = BASE_DIR / "media"
 # https://docs.djangoproject.com/en/4.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+    ),
+    "DEFAULT_PERMISSION_CLASSES": (
+        "rest_framework.permissions.IsAuthenticated",
+    ),
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "DEFAULT_THROTTLE_CLASSES": [
+        "rest_framework.throttling.AnonRateThrottle",
+        "rest_framework.throttling.UserRateThrottle"
+    ],
+    "DEFAULT_THROTTLE_RATES": {
+        "anon": "10/day",
+        "user": "30/day",
+    }
+}
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Test Project API",
+    "DESCRIPTION": "Test Project System description",
+    "VERSION": "1.0.0",
+    "REDOC_DIST": "https://cdn.jsdelivr.net/npm/redoc@2.5.0",
+}
