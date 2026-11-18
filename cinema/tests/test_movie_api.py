@@ -157,3 +157,24 @@ class MovieImageUploadTests(TestCase):
         res = self.client.get(MOVIE_SESSION_URL)
 
         self.assertIn("movie_image", res.data[0].keys())
+
+
+class MovieViewSetTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.user = get_user_model().objects.create_superuser(
+            "admin@myproject.com",
+            "password",
+        )
+        self.client.force_authenticate(user=self.user)
+        self.movie = sample_movie()
+        self.genre = sample_genre()
+        self.actor = sample_actor()
+
+    def test_movie_list(self):
+        response = self.client.get(MOVIE_URL)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_movie_detail(self):
+        response = self.client.get(detail_url(self.movie.id))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
