@@ -5,7 +5,7 @@ from rest_framework.test import APITestCase, APIClient
 
 from cinema.models import Movie, Genre, Actor
 
-MOVIE_LIST_URL = reverse("cinema:movies-list")
+MOVIE_LIST_URL = reverse("cinema:movie-list")
 
 def create_sample_movie(**kwargs):
     default_values = {"title": "test_movie", "duration": 15}
@@ -22,7 +22,7 @@ class UnauthenticatedMovieApiTestCase(APITestCase):
 
     def test_auth_required_detail(self):
         movie = create_sample_movie()
-        url = reverse("cinema:movies-detail", args=[movie.id])
+        url = reverse("cinema:movie-detail", args=[movie.id])
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
@@ -43,7 +43,7 @@ class AuthenticatedMovieApiTestCase(APITestCase):
 
     def test_movie_detail(self):
         movie = create_sample_movie()
-        url = reverse("cinema:movies-detail", args=[movie.id])
+        url = reverse("cinema:movie-detail", args=[movie.id])
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.json()["title"], movie.title)
