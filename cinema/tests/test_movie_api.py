@@ -2,6 +2,8 @@ import tempfile
 import os
 
 from PIL import Image
+from datetime import datetime
+from django.utils import timezone
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
@@ -48,7 +50,9 @@ def sample_movie_session(**params):
     )
 
     defaults = {
-        "show_time": "2022-06-02 14:00:00",
+        "show_time": timezone.make_aware(
+            datetime(2022, 6, 2, 14, 0)
+        ),
         "movie": None,
         "cinema_hall": cinema_hall,
     }
